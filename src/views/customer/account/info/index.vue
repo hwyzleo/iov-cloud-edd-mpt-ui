@@ -1,59 +1,92 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="账号ID" prop="accountId">
+      <el-form-item label="账号ID" prop="userId">
         <el-input
-          v-model="queryParams.accountId"
+          v-model="queryParams.userId"
           placeholder="请输入账号ID"
           clearable
           style="width: 220px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="手机号" prop="mobile">
+      <el-form-item label="账号类型" prop="identityType">
+        <el-select
+          v-model="queryParams.identityType"
+          placeholder="请选择账号类型"
+          clearable
+          style="width: 120px"
+        >
+          <el-option label="手机号" value="MOBILE" />
+          <el-option label="邮箱" value="EMAIL" />
+          <el-option label="微信" value="WECHAT" />
+          <el-option label="苹果" value="APPLE" />
+          <el-option label="谷歌" value="GOOGLE" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="账号" prop="identityValue">
         <el-input
-          v-model="queryParams.mobile"
-          placeholder="请输入手机号"
+          v-model="queryParams.identityValue"
+          placeholder="请输入账号"
           clearable
           style="width: 140px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="注册来源" prop="regSource">
-        <el-select
-          v-model="queryParams.regSource"
-          placeholder="注册来源"
+      <el-form-item label="昵称" prop="nickname">
+        <el-input
+          v-model="queryParams.nickname"
+          placeholder="请输入昵称"
           clearable
           style="width: 120px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="注册来源" prop="registerSource">
+        <el-select
+          v-model="queryParams.registerSource"
+          placeholder="注册来源"
+          clearable
+          style="width: 140px"
         >
-          <el-option
-            v-for="dict in dict.type.iov_reg_source"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
+          <el-option label="手机号注册" value="mobile" />
+          <el-option label="邮箱注册" value="email" />
+          <el-option label="微信注册" value="wechat" />
+          <el-option label="Apple注册" value="apple" />
+          <el-option label="Google注册" value="google" />
+          <el-option label="微信小程序注册" value="wechat_mini_program" />
+          <el-option label="微信H5注册" value="wechat_h5" />
+          <el-option label="iOS App注册" value="app_ios" />
+          <el-option label="Android App注册" value="app_android" />
+          <el-option label="后台手机号创建" value="admin_mobile" />
+          <el-option label="后台邮箱创建" value="admin_email" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="enable">
+      <el-form-item label="状态" prop="userStatus">
         <el-select
-          v-model="queryParams.enable"
+          v-model="queryParams.userStatus"
           placeholder="账号状态"
           clearable
           style="width: 120px"
         >
-          <el-option key="1" label="正常" value="1"/>
-          <el-option key="0" label="停用" value="0"/>
+          <el-option key="0" label="待验证" :value="0"/>
+          <el-option key="1" label="正常" :value="1"/>
+          <el-option key="2" label="已锁定" :value="2"/>
+          <el-option key="3" label="已禁用" :value="3"/>
+          <el-option key="4" label="注销处理中" :value="4"/>
+          <el-option key="5" label="已注销" :value="5"/>
         </el-select>
       </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
-          value-format="yyyy-MM-dd"
-          type="daterange"
+          value-format="yyyy-MM-dd HH:mm:ss"
+          type="datetimerange"
           range-separator="-"
           start-placeholder="开始日期"
           end-placeholder="结束日期"
+          :default-time="['00:00:00', '23:59:59']"
         ></el-date-picker>
       </el-form-item>
       <el-form-item>
@@ -114,35 +147,41 @@
 
     <el-table v-loading="loading" :data="accountList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="账号ID" prop="accountId" width="200"/>
-      <el-table-column label="手机号" prop="mobile" width="120"/>
-      <el-table-column label="昵称" prop="nickname" width="150"/>
-      <el-table-column label="性别" prop="gender" width="100">
+      <el-table-column label="账号ID" prop="userId" width="225" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.userId)" title="复制"></el-button>
+          <span>{{ scope.row.userId }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="账号类型" prop="identityType" width="100" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.identityType === 'MOBILE' ? '手机号' : scope.row.identityType === 'EMAIL' ? '邮箱' : '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="账号" prop="identityValue" width="195"/>
+      <el-table-column label="昵称" prop="nickname" min-width="120"/>
+      <el-table-column label="性别" prop="gender" width="70" align="center">
         <template slot-scope="scope">
           <span>{{ getGenderLabel(scope.row.gender) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="注册来源" prop="regSource" width="100">
+      <el-table-column label="注册来源" prop="registerSource" width="130" align="center">
         <template slot-scope="scope">
-          <span>{{ getRegSourceLabel(scope.row.regSource) }}</span>
+          <span>{{ getRegSourceLabel(scope.row.registerSource) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="状态" prop="userStatus" width="90" align="center">
         <template slot-scope="scope">
-          <el-switch
-            v-model="scope.row.enable"
-            :active-value="true"
-            :inactive-value="false"
-          ></el-switch>
+          <el-tag :type="getUserStatusType(scope.row.userStatus)">{{ getUserStatusLabel(scope.row.userStatus) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ formatTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope" v-if="scope.row.roleId !== 1">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="100">
+        <template slot-scope="scope" v-if="scope.row.userId">
           <el-button
             size="mini"
             type="text"
@@ -174,22 +213,30 @@
     <!-- 添加或修改账号配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="手机号" prop="mobile">
-          <el-input v-model="form.roleName" placeholder="请输入手机号"/>
+        <el-form-item label="账号类型" prop="identityType">
+          <el-select v-model="form.identityType" placeholder="请选择账号类型" style="width: 100%" :disabled="!!form.userId">
+            <el-option label="手机号" value="MOBILE" />
+            <el-option label="邮箱" value="EMAIL" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="form.enable">
-            <el-radio
-              key="1"
-              label="1"
-            >正常
-            </el-radio>
-            <el-radio
-              key="0"
-              label="0"
-            >停用
-            </el-radio>
-          </el-radio-group>
+        <el-form-item v-if="form.identityType === 'MOBILE'" label="手机号" prop="mobile" :required="form.identityType === 'MOBILE'">
+          <el-input v-model="form.mobile" placeholder="请输入手机号" :disabled="!!form.userId"/>
+        </el-form-item>
+        <el-form-item v-if="form.identityType === 'EMAIL'" label="邮箱" prop="email" :required="form.identityType === 'EMAIL'">
+          <el-input v-model="form.email" placeholder="请输入邮箱" :disabled="!!form.userId"/>
+        </el-form-item>
+        <el-form-item v-if="!form.userId" label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码"/>
+        </el-form-item>
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="form.nickname" placeholder="请输入昵称"/>
+        </el-form-item>
+        <el-form-item label="性别" prop="gender">
+          <el-select v-model="form.gender" placeholder="请选择性别" style="width: 100%">
+            <el-option label="未知" :value="0" />
+            <el-option label="男" :value="1" />
+            <el-option label="女" :value="2" />
+          </el-select>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
@@ -245,55 +292,157 @@ export default {
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        userId: undefined,
+        identityType: undefined,
+        identityValue: undefined,
+        nickname: undefined,
+        registerSource: undefined,
+        userStatus: undefined,
+        startTime: undefined,
+        endTime: undefined
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        mobile: [
-          {required: true, message: "手机号不能为空", trigger: "blur"}
+        identityType: [
+          {required: true, message: "请选择账号类型", trigger: "change"}
         ],
-        enable: [
-          {required: true, message: "状态不能为空", trigger: "blur"}
+        mobile: [
+          { validator: (rule, value, callback) => {
+              if (this.form.identityType === 'MOBILE') {
+                if (!value) {
+                  callback(new Error("手机号不能为空"))
+                } else if (!/^1[3-9]\d{9}$/.test(value)) {
+                  callback(new Error("请输入正确的手机号"))
+                } else {
+                  callback()
+                }
+              } else {
+                callback()
+              }
+            }, trigger: "blur" }
+        ],
+        email: [
+          { validator: (rule, value, callback) => {
+              if (this.form.identityType === 'EMAIL') {
+                if (!value) {
+                  callback(new Error("邮箱不能为空"))
+                } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+                  callback(new Error("请输入正确的邮箱"))
+                } else {
+                  callback()
+                }
+              } else {
+                callback()
+              }
+            }, trigger: "blur" }
         ]
       }
     };
   },
   created() {
-    this.queryParams.accountId = this.$route.query.accountId;
+    this.queryParams.userId = this.$route.query.userId;
     this.getList();
+  },
+  watch: {
+    'form.identityType'(val) {
+      this.$refs.form.validateField(val === 'MOBILE' ? 'mobile' : 'email')
+    }
   },
   methods: {
     /** 查询账号列表 */
     getList() {
       this.loading = true;
-      listAccount(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.accountList = response.rows;
-          this.total = response.total;
+      const params = { ...this.queryParams }
+      if (this.dateRange && this.dateRange.length === 2) {
+        params.startTime = this.dateRange[0]
+        params.endTime = this.dateRange[1]
+      }
+      listAccount(params).then(response => {
+          const data = response.data || response
+          this.accountList = data.items || data.rows || []
+          this.total = data.total || 0
           this.loading = false;
         }
       );
     },
     // 获取性别
     getGenderLabel(gender) {
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_user_gender) {
-        return gender;
+      const genderMap = { 0: '未知', 1: '男', 2: '女' }
+      return genderMap[gender] || '未知'
+    },
+    // 格式化时间（处理数组格式）
+    formatTime(time) {
+      if (!time) return ''
+      if (Array.isArray(time)) {
+        const [year, month, day, hour, minute, second] = time
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
       }
-      const item = this.dict.type.iov_user_gender.find(
-        dict => dict.value === gender
-      )
-      return item ? item.label : gender
+      return this.parseTime(time)
     },
     // 获取注册来源
     getRegSourceLabel(regSource) {
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_reg_source) {
-        return regSource;
+      const regSourceMap = {
+        'mobile': '手机号注册',
+        'email': '邮箱注册',
+        'wechat': '微信注册',
+        'apple': 'Apple注册',
+        'google': 'Google注册',
+        'wechat_mini_program': '微信小程序注册',
+        'wechat_h5': '微信H5注册',
+        'app_ios': 'iOS App注册',
+        'app_android': 'Android App注册',
+        'admin_mobile': '后台手机号创建',
+        'admin_email': '后台邮箱创建',
+        'ADMIN_MOBILE': '后台手机号创建',
+        'ADMIN_EMAIL': '后台邮箱创建'
       }
-      const item = this.dict.type.iov_reg_source.find(
-        dict => dict.value === regSource
-      )
-      return item ? item.label : regSource
+      return regSourceMap[regSource] || regSource || '-'
+    },
+    // 获取用户状态
+    getUserStatusLabel(userStatus) {
+      const statusMap = {
+        0: '待验证',
+        1: '正常',
+        2: '已锁定',
+        3: '已禁用',
+        4: '注销处理中',
+        5: '已注销'
+      }
+      return statusMap[userStatus] || '未知'
+    },
+    // 获取用户状态标签类型
+    getUserStatusType(userStatus) {
+      const typeMap = {
+        0: 'info',
+        1: 'success',
+        2: 'warning',
+        3: 'danger',
+        4: 'warning',
+        5: 'info'
+      }
+      return typeMap[userStatus] || 'info'
+    },
+    // 复制文本
+    copyText(text) {
+      if (!text) return
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$modal.msgSuccess('复制成功')
+        }).catch(() => {
+          this.$modal.msgError('复制失败')
+        })
+      } else {
+        const input = document.createElement('input')
+        input.value = text
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+        this.$modal.msgSuccess('复制成功')
+      }
     },
     // 取消按钮
     cancel() {
@@ -303,10 +452,12 @@ export default {
     // 表单重置
     reset() {
       this.form = {
-        accountId: undefined,
+        userId: undefined,
+        identityType: 'MOBILE',
         mobile: undefined,
-        regSource: undefined,
-        enable: undefined
+        nickname: undefined,
+        gender: undefined,
+        remark: undefined
       };
       this.resetForm("form");
     },
@@ -323,7 +474,7 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.roleId)
+      this.ids = selection.map(item => item.userId)
       this.single = selection.length != 1
       this.multiple = !selection.length
     },
@@ -332,29 +483,56 @@ export default {
       this.reset();
       this.open = true;
       this.title = "添加账号";
+      this.$nextTick(() => {
+        this.$refs.form.clearValidate()
+      })
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const accountId = row.id || this.ids
-      getAccount(accountId).then(response => {
-        this.form = response.data;
+      // 如果是点击行，使用row.userId；如果是选中复选框，使用this.ids（但只取第一个）
+      const userId = row.userId || (this.ids.length > 0 ? this.ids[0] : undefined)
+      if (!userId) {
+        this.$modal.msgWarning('请选择要修改的记录')
+        return
+      }
+      getAccount(userId).then(response => {
+        const data = response.data
+        const identityType = data.identityType || 'MOBILE'
+        this.form = {
+          userId: data.userId,
+          identityType: identityType,
+          mobile: identityType === 'MOBILE' ? data.identityValue : undefined,
+          email: identityType === 'EMAIL' ? data.identityValue : undefined,
+          nickname: data.nickname,
+          gender: data.gender,
+          remark: data.description
+        };
         this.open = true;
       });
       this.title = "修改账号";
     },
     /** 提交按钮 */
     submitForm: function () {
+      const form = this.form
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.id != undefined) {
-            updateAccount(this.form).then(response => {
+          // 根据身份类型清理不需要的字段
+          const submitData = { ...form }
+          if (submitData.identityType === 'MOBILE') {
+            submitData.email = undefined
+          } else if (submitData.identityType === 'EMAIL') {
+            submitData.mobile = undefined
+          }
+          
+          if (submitData.userId != undefined) {
+            updateAccount(submitData).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addAccount(this.form).then(response => {
+            addAccount(submitData).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -365,9 +543,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const accountIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除账号ID为"' + accountIds + '"的数据项？').then(function () {
-        return delAccount(accountIds);
+      const userIds = row.userId ? [row.userId] : this.ids;
+      this.$modal.confirm('是否确认删除选中的数据项？').then(function () {
+        return delAccount(userIds);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -376,7 +554,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-account/mpt/account/export', {
+      this.download('sec-ciam/api/mp/admin/v1/accounts/export', {
         ...this.queryParams
       }, `account_${new Date().getTime()}.xlsx`)
     }
