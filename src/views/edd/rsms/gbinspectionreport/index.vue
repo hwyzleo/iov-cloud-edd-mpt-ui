@@ -71,7 +71,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:rsms:gbInspectionReport:add']"
+          v-hasPermi="['edd:rsms:gbInspectionReport:add']"
         >新增
         </el-button>
       </el-col>
@@ -83,7 +83,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:rsms:gbInspectionReport:edit']"
+          v-hasPermi="['edd:rsms:gbInspectionReport:edit']"
         >修改
         </el-button>
       </el-col>
@@ -95,7 +95,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:rsms:gbInspectionReport:remove']"
+          v-hasPermi="['edd:rsms:gbInspectionReport:remove']"
         >删除
         </el-button>
       </el-col>
@@ -106,7 +106,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:rsms:gbInspectionReport:export']"
+          v-hasPermi="['edd:rsms:gbInspectionReport:export']"
         >导出
         </el-button>
       </el-col>
@@ -154,7 +154,7 @@
             icon="el-icon-edit"
             @click="handleResult(scope.row)"
             :disabled="scope.row.reportState !== 2"
-            v-hasPermi="['iov:rsms:gbInspectionReport:query']"
+            v-hasPermi="['edd:rsms:gbInspectionReport:query']"
           >报告
           </el-button>
           <el-button
@@ -162,7 +162,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:rsms:gbInspectionReport:edit']"
+            v-hasPermi="['edd:rsms:gbInspectionReport:edit']"
           >修改
           </el-button>
           <el-button
@@ -170,7 +170,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:rsms:gbInspectionReport:remove']"
+            v-hasPermi="['edd:rsms:gbInspectionReport:remove']"
           >删除
           </el-button>
         </template>
@@ -427,7 +427,7 @@ import {
   listGbInspectionReportState,
   listGbInspectionReportType,
   updateGbInspectionReport
-} from "@/api/iov/rsms/gbinspectionreport";
+} from "@/api/edd/rsms/gbinspectionreport";
 
 export default {
   name: "GbInspectionReport",

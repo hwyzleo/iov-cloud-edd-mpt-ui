@@ -1,12 +1,39 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="ICCID" prop="iccid">
+      <el-form-item label="匹配规则" prop="predicates">
         <el-input
-          v-model="queryParams.iccid"
-          placeholder="请输入ICCID"
+          v-model="queryParams.predicates"
+          placeholder="请输入匹配规则"
           clearable
-          style="width: 140px"
+          style="width: 150px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="过滤器" prop="filters">
+        <el-input
+          v-model="queryParams.filters"
+          placeholder="请输入过滤器"
+          clearable
+          style="width: 200px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="目标类型" prop="targetType">
+        <el-input
+          v-model="queryParams.targetType"
+          placeholder="请输入目标类型"
+          clearable
+          style="width: 200px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="目标URI" prop="targetUri">
+        <el-input
+          v-model="queryParams.targetUri"
+          placeholder="请输入目标URI"
+          clearable
+          style="width: 200px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -35,7 +62,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:mno:sim:add']"
+          v-hasPermi="['edd:sgw:route:add']"
         >新增
         </el-button>
       </el-col>
@@ -47,7 +74,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:mno:sim:edit']"
+          v-hasPermi="['edd:sgw:route:edit']"
         >修改
         </el-button>
       </el-col>
@@ -59,7 +86,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:mno:sim:remove']"
+          v-hasPermi="['edd:sgw:route:remove']"
         >删除
         </el-button>
       </el-col>
@@ -70,41 +97,31 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:mno:sim:export']"
+          v-hasPermi="['edd:sgw:route:export']"
         >导出
+        </el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="info"
+          plain
+          icon="el-icon-refresh"
+          size="mini"
+          @click="handleRefresh"
+          v-hasPermi="['edd:sgw:route:refresh']"
+        >刷新
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="routeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="ICCID" prop="iccid"/>
-      <el-table-column label="IMSI" prop="imsi"/>
-      <el-table-column label="手机号" prop="msisdn"/>
-      <el-table-column label="短信能力" prop="smsAbility" width="100" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.smsAbility ? '启用' : '未启用' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="数据能力" prop="dataAbility" width="100" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.dataAbility ? '启用' : '未启用' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="语音能力" prop="voiceAbility" width="100" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.voiceAbility ? '启用' : '未启用' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="运营商" prop="mnoCode" width="120" align="center"/>
-      <el-table-column label="状态" prop="simState" width="120" align="center">
-        <template slot-scope="scope">
-          <span v-if="scope.row.simState===1">测试</span>
-          <span v-if="scope.row.simState===2">库存</span>
-          <span v-if="scope.row.simState===3">激活</span>
-        </template>
-      </el-table-column>
+      <el-table-column label="路由地址" prop="predicates"/>
+      <el-table-column label="过滤器" prop="filters" width="200"/>
+      <el-table-column label="目标类型" prop="targetType" width="100"/>
+      <el-table-column label="目标URI" prop="targetUri" width="150"/>
+      <el-table-column label="排序" prop="sort" align="center" width="60"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -117,7 +134,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:mno:sim:edit']"
+            v-hasPermi="['edd:sgw:route:edit']"
           >修改
           </el-button>
           <el-button
@@ -125,7 +142,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:mno:sim:remove']"
+            v-hasPermi="['edd:sgw:route:remove']"
           >删除
           </el-button>
         </template>
@@ -140,55 +157,23 @@
       @pagination="getList"
     />
 
+    <!-- 添加或修改路由配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="ICCID" prop="iccid">
-          <el-input v-model="form.iccid" :disabled="true" placeholder="请输入ICCID"/>
+        <el-form-item label="路由断言" prop="predicates">
+          <el-input v-model="form.predicates" placeholder="请输入路由断言"/>
         </el-form-item>
-        <el-form-item label="IMSI" prop="imsi">
-          <el-input v-model="form.imsi" :disabled="true" placeholder="请输入IMSI"/>
+        <el-form-item label="过滤器集合" prop="filters">
+          <el-input v-model="form.filters" placeholder="请输入过滤器集合"/>
         </el-form-item>
-        <el-form-item label="手机号" prop="msisdn">
-          <el-input v-model="form.msisdn" :disabled="true" placeholder="请输入手机号"/>
+        <el-form-item label="目标类型" prop="targetType">
+          <el-input v-model="form.targetType" placeholder="请输入目标类型"/>
         </el-form-item>
-        <el-form-item label="短信能力">
-          <el-radio-group v-model="form.smsAbility" :disabled="true">
-            <el-radio
-              :label="true"
-            >启用
-            </el-radio>
-            <el-radio
-              :label="false"
-            >未启用
-            </el-radio>
-          </el-radio-group>
+        <el-form-item label="目标类型" prop="targetUri">
+          <el-input v-model="form.targetUri" placeholder="请输入目标URI"/>
         </el-form-item>
-        <el-form-item label="数据能力">
-          <el-radio-group v-model="form.dataAbility" :disabled="true">
-            <el-radio
-              :label="true"
-            >启用
-            </el-radio>
-            <el-radio
-              :label="false"
-            >未启用
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="语音能力">
-          <el-radio-group v-model="form.voiceAbility" :disabled="true">
-            <el-radio
-              :label="true"
-            >启用
-            </el-radio>
-            <el-radio
-              :label="false"
-            >未启用
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="运营商" prop="mnoCode">
-          <el-input v-model="form.mnoCode" :disabled="true" placeholder="请输入运营商"/>
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
@@ -203,10 +188,17 @@
 </template>
 
 <script>
-import {addSim, delSim, getSim, listSim, updateSim} from "@/api/iov/mno/sim";
+import {
+  addRoute,
+  delRoute,
+  getRoute,
+  listRoute,
+  refreshRoute,
+  updateRoute
+} from "@/api/edd/sgw/route";
 
 export default {
-  name: "Sim",
+  name: "TspSgwRoute",
   dicts: [],
   data() {
     return {
@@ -222,25 +214,47 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 表格数据
-      list: [],
+      // 路由表格数据
+      routeList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
+      menuExpand: false,
+      menuNodeAll: false,
       // 日期范围
       dateRange: [],
+      // 菜单列表
+      menuOptions: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        predicates: undefined,
+        filters: undefined
       },
-      // 表单参数
+      // 路由表单参数
       form: {},
-      // 表单校验
+      defaultProps: {
+        children: "children",
+        label: "label"
+      },
+      // 路由表单校验
       rules: {
-        iccid: [
-          {required: true, message: "ICCID不能为空", trigger: "blur"}
+        predicates: [
+          {required: true, message: "路由断言不能为空", trigger: "blur"}
+        ],
+        filters: [
+          {required: true, message: "过滤器不能为空", trigger: "blur"}
+        ],
+        targetType: [
+          {required: true, message: "目标类型不能为空", trigger: "blur"}
+        ],
+        targetUri: [
+          {required: true, message: "目标URI不能为空", trigger: "blur"}
+        ],
+        sort: [
+          {required: true, message: "排序不能为空", trigger: "blur"}
         ]
       },
     };
@@ -249,11 +263,11 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询列表 */
+    /** 查询路由列表 */
     getList() {
       this.loading = true;
-      listSim(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
+      listRoute(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+          this.routeList = response.rows;
           this.total = response.total;
           this.loading = false;
         }
@@ -266,8 +280,19 @@ export default {
     },
     /** 表单重置 */
     reset() {
+      if (this.$refs.menu != undefined) {
+        this.$refs.menu.setCheckedKeys([]);
+      }
+      this.menuExpand = false,
+      this.menuNodeAll = false,
+      this.deptExpand = true,
+      this.deptNodeAll = false,
       this.form = {
-        iccid: undefined
+        predicates: undefined,
+        filters: undefined,
+        targetType: true,
+        targetUri: undefined,
+        sort: 99
       };
       this.resetForm("form");
     },
@@ -292,31 +317,37 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加SIM卡";
-      this.form = {};
+      this.title = "添加路由";
+      this.form = {
+        predicates: "{\"Path\": {\"pattern\": \"\"}}",
+        filters: "{\"Authentication\": {}}",
+        targetType: "LB",
+        targetUri: undefined,
+        sort: 99
+      };
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const id = row.id || this.ids
-      getSim(id).then(response => {
+      const routeId = row.id || this.ids
+      getRoute(routeId).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "修改SIM卡";
+      this.title = "修改路由";
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateSim(this.form).then(response => {
+            updateRoute(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addSim(this.form).then(response => {
+            addRoute(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -327,9 +358,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除SIM卡ID为"' + ids + '"的数据项？').then(function () {
-        return delSim(ids);
+      const routeIds = row.id || this.ids;
+      this.$modal.confirm('是否确认删除路由ID为"' + routeIds + '"的数据项？').then(function () {
+        return delRoute(routeIds);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -338,9 +369,15 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-mno/mpt/sim/export', {
+      this.download('tsp-sgw/route/export', {
         ...this.queryParams
-      }, `sim_${new Date().getTime()}.xlsx`)
+      }, `tsp_sgw_route_${new Date().getTime()}.xlsx`)
+    },
+    /** 刷新路由 */
+    handleRefresh() {
+      refreshRoute().then(() => {
+        this.$modal.msgSuccess('刷新成功')
+      })
     }
   }
 };

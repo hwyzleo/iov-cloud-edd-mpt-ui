@@ -42,3 +42,11 @@ export function delRoute(routeId) {
     method: 'delete'
   })
 }
+
+// 刷新路由
+export function refreshRoute() {
+  return request({
+    url: '/system/tsp-sgw-route/refresh',
+    method: 'post'
+  })
+}

@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="配置项代码" prop="configItemCode">
+      <el-form-item label="车架号" prop="vin">
         <el-input
-          v-model="queryParams.configItemCode"
-          placeholder="请输入枚举值代码"
+          v-model="queryParams.vin"
+          placeholder="请输入车架号"
           clearable
-          style="width: 150px"
+          style="width: 140px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -30,47 +30,12 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['iov:configCenter:configItem:add']"
-        >新增
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['iov:configCenter:configItem:edit']"
-        >修改
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['iov:configCenter:configItem:remove']"
-        >删除
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:configCenter:configItem:export']"
+          v-hasPermi="['edd:configCenter:vehicleConfig:export']"
         >导出
         </el-button>
       </el-col>
@@ -79,25 +44,35 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
+      <el-table-column label="车架号" prop="vin"/>
       <el-table-column label="配置版本" prop="version"/>
-      <el-table-column label="配置项代码" prop="configItemCode"/>
-      <el-table-column label="配置项值" prop="configItemValue"/>
-      <el-table-column label="源系统值" prop="sourceValue"/>
-      <el-table-column label="源系统" prop="sourceSystem"/>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+      <el-table-column label="配置状态" prop="state" width="120" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span v-if="scope.row.state==='ACTIVE'">有效</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="140">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-edit"
             @click="handleDetail(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:edit']"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
           >查看
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-notebook-2"
+            @click="handleConfigItem(scope.row)"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
+          >配置项
           </el-button>
         </template>
       </el-table-column>
@@ -111,43 +86,36 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <!-- 添加或修改对话框 -->
+    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-form-item label="车架号" prop="vin">
+          <el-input v-model="form.vin" :readonly="true"/>
+        </el-form-item>
         <el-form-item label="配置版本" prop="version">
           <el-input v-model="form.version" :readonly="true"/>
         </el-form-item>
-        <el-form-item label="配置项代码" prop="configItemCode">
-          <el-input v-model="form.configItemCode" :readonly="true"/>
-        </el-form-item>
-        <el-form-item label="配置项值" prop="configItemValue">
-          <el-input v-model="form.configItemValue" :readonly="true"/>
-        </el-form-item>
-        <el-form-item label="源系统值" prop="sourceValue">
-          <el-input v-model="form.sourceValue" :readonly="true"/>
-        </el-form-item>
-        <el-form-item label="源系统" prop="sourceSystem">
-          <el-input v-model="form.sourceSystem" :readonly="true"/>
+        <el-form-item label="配置状态" prop="state">
+          <el-select v-model="form.state" placeholder="配置状态" :readonly="true">
+            <el-option key="ACTIVE" label="有效" value="ACTIVE"/>
+          </el-select>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
+          <el-input v-model="form.description" type="textarea" :readonly="true"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="cancel">关 闭</el-button>
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import {
-  listVehicleConfigItem,
-  getVehicleConfigItem
-} from "@/api/iov/configcenter/vehicleconfig";
+import {getVehicleConfig, listVehicleConfig} from "@/api/edd/configcenter/vehicleconfig";
 
 export default {
-  name: "VehicleConfigItem",
+  name: "VehicleConfig",
   dicts: [],
   data() {
     return {
@@ -181,19 +149,18 @@ export default {
       // 表单校验
       rules: {
       },
-      vin: undefined
     };
   },
   created() {
-    this.vin = this.$route.query.vin;
     this.getList();
   },
   methods: {
     /** 查询列表 */
     getList() {
       this.loading = true;
-      listVehicleConfigItem(this.vin, this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.data;
+      listVehicleConfig(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+          this.list = response.rows;
+          this.total = response.total;
           this.loading = false;
         }
       );
@@ -240,15 +207,24 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
+      this.download('tsp-vmd/mpt/vehicleConfig/export', {
+        ...this.queryParams
+      }, `vehicle_config_${new Date().getTime()}.xlsx`)
     },
     handleDetail(row) {
       this.reset();
       const id = row.id || this.ids
-      getVehicleConfigItem(this.vin, id).then(response => {
+      getVehicleConfig(id).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "查看车辆配置项";
+      this.title = "查看车辆配置";
+    },
+    handleConfigItem(row) {
+      this.$router.push({
+        path: "/edd/configCenter/vehicleConfigItem",
+        query: { vin: row.vin }
+      });
     },
   }
 };

@@ -59,7 +59,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:rsms:serverPlatform:add']"
+          v-hasPermi="['edd:rsms:serverPlatform:add']"
         >新增
         </el-button>
       </el-col>
@@ -71,7 +71,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:rsms:serverPlatform:edit']"
+          v-hasPermi="['edd:rsms:serverPlatform:edit']"
         >修改
         </el-button>
       </el-col>
@@ -83,7 +83,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:rsms:serverPlatform:remove']"
+          v-hasPermi="['edd:rsms:serverPlatform:remove']"
         >删除
         </el-button>
       </el-col>
@@ -94,7 +94,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:rsms:serverPlatform:export']"
+          v-hasPermi="['edd:rsms:serverPlatform:export']"
         >导出
         </el-button>
       </el-col>
@@ -139,7 +139,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:rsms:serverPlatform:edit']"
+            v-hasPermi="['edd:rsms:serverPlatform:edit']"
           >修改
           </el-button>
           <el-button
@@ -147,7 +147,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:rsms:serverPlatform:remove']"
+            v-hasPermi="['edd:rsms:serverPlatform:remove']"
           >删除
           </el-button>
           <el-button
@@ -155,7 +155,7 @@
             type="text"
             icon="el-icon-s-promotion"
             @click="handleSyncPlatform(scope.row)"
-            v-hasPermi="['iov:rsms:serverPlatform:syncPlatform']"
+            v-hasPermi="['edd:rsms:serverPlatform:syncPlatform']"
           >同步平台
           </el-button>
         </template>
@@ -281,7 +281,7 @@ import {
   updateServerPlatform,
   delServerPlatform,
   syncServerPlatformInfo
-} from "@/api/iov/rsms/serverplatform";
+} from "@/api/edd/rsms/serverplatform";
 
 export default {
   name: "ServerPlatform",

@@ -1,10 +1,23 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="源系统" prop="sourceSystem">
-        <el-select v-model="queryParams.sourceSystem" placeholder="源系统" clearable>
-          <el-option key="MES" label="MES" value="MES"/>
-        </el-select>
+      <el-form-item label="枚举值代码" prop="code">
+        <el-input
+          v-model="queryParams.code"
+          placeholder="请输入枚举值代码"
+          clearable
+          style="width: 150px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="枚举值名称" prop="name">
+        <el-input
+          v-model="queryParams.name"
+          placeholder="请输入枚举值名称"
+          clearable
+          style="width: 200px"
+          @keyup.enter.native="handleQuery"
+        />
       </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
@@ -31,7 +44,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:configCenter:configItem:add']"
+          v-hasPermi="['edd:configCenter:configItem:add']"
         >新增
         </el-button>
       </el-col>
@@ -43,7 +56,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:configCenter:configItem:edit']"
+          v-hasPermi="['edd:configCenter:configItem:edit']"
         >修改
         </el-button>
       </el-col>
@@ -55,7 +68,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:configCenter:configItem:remove']"
+          v-hasPermi="['edd:configCenter:configItem:remove']"
         >删除
         </el-button>
       </el-col>
@@ -66,7 +79,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:configCenter:configItem:export']"
+          v-hasPermi="['edd:configCenter:configItem:export']"
         >导出
         </el-button>
       </el-col>
@@ -75,11 +88,8 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="源系统" prop="sourceSystem"/>
-      <el-table-column label="源系统代码" prop="sourceCode"/>
-      <el-table-column label="源系统值" prop="sourceValue"/>
-      <el-table-column label="映射的枚举值编码" prop="targetOptionCode"/>
-      <el-table-column label="映射值" prop="targetValue"/>
+      <el-table-column label="枚举值代码" prop="code"/>
+      <el-table-column label="枚举值名称" prop="name"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="160">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -92,7 +102,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:edit']"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
           >修改
           </el-button>
           <el-button
@@ -100,7 +110,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:remove']"
+            v-hasPermi="['edd:configCenter:configItem:remove']"
           >删除
           </el-button>
         </template>
@@ -117,29 +127,11 @@
 
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="源系统" prop="sourceSystem">
-          <el-select v-model="form.sourceSystem" placeholder="源系统" :readonly="form.id !== undefined" clearable>
-            <el-option key="MES" label="MES" value="MES"/>
-          </el-select>
+        <el-form-item label="枚举值代码" prop="code">
+          <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入枚举值代码"/>
         </el-form-item>
-        <el-form-item label="源系统代码" prop="sourceCode">
-          <el-input v-model="form.sourceCode" placeholder="请输入源系统代码"/>
-        </el-form-item>
-        <el-form-item label="源系统值" prop="sourceValue">
-          <el-input v-model="form.sourceValue" placeholder="请输入源系统值"/>
-        </el-form-item>
-        <el-form-item v-if="configItemType==='ENUM'" label="映射的枚举值" prop="targetOptionCode">
-          <el-select v-model="form.targetOptionCode" placeholder="映射的枚举值" clearable>
-            <el-option
-              v-for="option in optionList"
-              :key="option.code"
-              :label="option.name + ':' + option.code"
-              :value="option.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="configItemType!=='ENUM'" label="映射值" prop="targetValue">
-          <el-input v-model="form.targetValue" placeholder="请输入映射值"/>
+        <el-form-item label="枚举值名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入枚举值名称"/>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
@@ -156,15 +148,14 @@
 <script>
 import {
   listConfigItemOption,
-  listConfigItemMapping,
-  getConfigItemMapping,
-  addConfigItemMapping,
-  updateConfigItemMapping,
-  delConfigItemMapping
-} from "@/api/iov/configcenter/configitem";
+  getConfigItemOption,
+  addConfigItemOption,
+  updateConfigItemOption,
+  delConfigItemOption
+} from "@/api/edd/configcenter/configitem";
 
 export default {
-  name: "ConfigItemMapping",
+  name: "ConfigItemOption",
   dicts: [],
   data() {
     return {
@@ -182,7 +173,6 @@ export default {
       total: 0,
       // 表格数据
       list: [],
-      optionList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -198,38 +188,27 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        sourceSystem: [
-          {required: true, message: "源系统不能为空", trigger: "blur"}
+        code: [
+          {required: true, message: "枚举值代码不能为空", trigger: "blur"}
         ],
-        sourceCode: [
-          {required: true, message: "源系统代码不能为空", trigger: "blur"}
+        name: [
+          {required: true, message: "枚举值名称不能为空", trigger: "blur"}
         ]
       },
-      configItemCode: undefined,
-      configItemType: undefined
+      configItemCode: undefined
     };
   },
   created() {
     this.configItemCode = this.$route.query.code;
-    this.configItemType = this.$route.query.type;
-    if(this.configItemType === "ENUM") {
-      this.getOptionList();
-    }
     this.getList();
   },
   methods: {
     /** 查询列表 */
     getList() {
       this.loading = true;
-      listConfigItemMapping(this.configItemCode, this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+      listConfigItemOption(this.configItemCode, this.addDateRange(this.queryParams, this.dateRange)).then(response => {
           this.list = response.data;
           this.loading = false;
-        }
-      );
-    },
-    getOptionList() {
-      listConfigItemOption(this.configItemCode, this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.optionList = response.data;
         }
       );
     },
@@ -241,11 +220,8 @@ export default {
     /** 表单重置 */
     reset() {
       this.form = {
-        sourceSystem: undefined,
-        sourceCode: undefined,
-        sourceValue: undefined,
-        targetOptionCode: undefined,
-        targetValue: undefined
+        code: undefined,
+        name: undefined
       };
       this.resetForm("form");
     },
@@ -270,7 +246,7 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加配置项映射";
+      this.title = "添加配置项枚举值";
       this.form = {
         configItemCode: this.configItemCode
       };
@@ -279,24 +255,24 @@ export default {
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getConfigItemMapping(this.configItemCode, id).then(response => {
+      getConfigItemOption(this.configItemCode, id).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "修改配置项映射";
+      this.title = "修改配置项枚举值";
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateConfigItemMapping(this.configItemCode, this.form).then(response => {
+            updateConfigItemOption(this.configItemCode, this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addConfigItemMapping(this.configItemCode, this.form).then(response => {
+            addConfigItemOption(this.configItemCode, this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -310,7 +286,7 @@ export default {
       const ids = row.id || this.ids;
       const configItemCode = this.configItemCode;
       this.$modal.confirm('是否确认删除枚举值ID为"' + ids + '"的数据项？').then(function () {
-        return delConfigItemMapping(configItemCode, ids);
+        return delConfigItemOption(configItemCode, ids);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

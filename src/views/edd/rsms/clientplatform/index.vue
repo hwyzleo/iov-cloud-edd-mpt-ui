@@ -50,7 +50,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:rsms:clientPlatform:add']"
+          v-hasPermi="['edd:rsms:clientPlatform:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +62,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:rsms:clientPlatform:edit']"
+          v-hasPermi="['edd:rsms:clientPlatform:edit']"
         >修改
         </el-button>
       </el-col>
@@ -74,7 +74,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:rsms:clientPlatform:remove']"
+          v-hasPermi="['edd:rsms:clientPlatform:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +85,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:rsms:clientPlatform:export']"
+          v-hasPermi="['edd:rsms:clientPlatform:export']"
         >导出
         </el-button>
       </el-col>
@@ -130,7 +130,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:edit']"
+            v-hasPermi="['edd:rsms:clientPlatform:edit']"
           >修改
           </el-button>
           <el-button
@@ -138,7 +138,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:remove']"
+            v-hasPermi="['edd:rsms:clientPlatform:remove']"
           >删除
           </el-button>
           <el-button
@@ -146,7 +146,7 @@
             type="text"
             icon="el-icon-menu"
             @click="handleAccount(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:listAccount']"
+            v-hasPermi="['edd:rsms:clientPlatform:listAccount']"
           >账号管理
           </el-button>
           <el-button
@@ -154,7 +154,7 @@
             type="text"
             icon="el-icon-menu"
             @click="handleNode(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:listNode']"
+            v-hasPermi="['edd:rsms:clientPlatform:listNode']"
           >节点管理
           </el-button>
           <el-button
@@ -162,7 +162,7 @@
             type="text"
             icon="el-icon-menu"
             @click="handleVehicle(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:listVehicle']"
+            v-hasPermi="['edd:rsms:clientPlatform:listVehicle']"
           >车辆管理
           </el-button>
           <el-button
@@ -170,7 +170,7 @@
             type="text"
             icon="el-icon-info"
             @click="handleLoginHistory(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:listLoginHistory']"
+            v-hasPermi="['edd:rsms:clientPlatform:listLoginHistory']"
           >登录历史
           </el-button>
           <el-button
@@ -178,7 +178,7 @@
             type="text"
             icon="el-icon-s-promotion"
             @click="handleSyncPlatform(scope.row)"
-            v-hasPermi="['iov:rsms:clientPlatform:syncPlatform']"
+            v-hasPermi="['edd:rsms:clientPlatform:syncPlatform']"
           >同步平台
           </el-button>
         </template>
@@ -355,7 +355,7 @@
             icon="el-icon-plus"
             size="mini"
             @click="handleAddAccount"
-            v-hasPermi="['iov:rsms:clientPlatform:addAccount']"
+            v-hasPermi="['edd:rsms:clientPlatform:addAccount']"
           >新增
           </el-button>
         </el-col>
@@ -385,7 +385,7 @@
               type="text"
               icon="el-icon-edit"
               @click="handleUpdateAccount(scope.row)"
-              v-hasPermi="['iov:rsms:clientPlatform:editAccount']"
+              v-hasPermi="['edd:rsms:clientPlatform:editAccount']"
             >修改
             </el-button>
             <el-button
@@ -393,7 +393,7 @@
               type="text"
               icon="el-icon-delete"
               @click="handleDeleteAccount(scope.row)"
-              v-hasPermi="['iov:rsms:clientPlatform:removeAccount']"
+              v-hasPermi="['edd:rsms:clientPlatform:removeAccount']"
             >删除
             </el-button>
           </template>
@@ -439,7 +439,7 @@
             icon="el-icon-plus"
             size="mini"
             @click="handleAddVehicle"
-            v-hasPermi="['iov:rsms:clientPlatform:addVehicle']"
+            v-hasPermi="['edd:rsms:clientPlatform:addVehicle']"
           >新增
           </el-button>
         </el-col>
@@ -451,7 +451,7 @@
             size="mini"
             :disabled="multipleVehicle"
             @click="handleDeleteVehicle"
-            v-hasPermi="['iov:rsms:clientPlatform:removeVehicle']"
+            v-hasPermi="['edd:rsms:clientPlatform:removeVehicle']"
           >删除
           </el-button>
         </el-col>
@@ -462,7 +462,7 @@
             icon="el-icon-download"
             size="mini"
             @click="handleExport"
-            v-hasPermi="['iov:rsms:clientPlatform:exportVehicle']"
+            v-hasPermi="['edd:rsms:clientPlatform:exportVehicle']"
           >导出为《车辆静态信息导入表》
           </el-button>
         </el-col>
@@ -482,7 +482,7 @@
               type="text"
               icon="el-icon-delete"
               @click="handleDeleteVehicle(scope.row)"
-              v-hasPermi="['iov:rsms:clientPlatform:removeVehicle']"
+              v-hasPermi="['edd:rsms:clientPlatform:removeVehicle']"
             >删除
             </el-button>
           </template>
@@ -548,8 +548,8 @@ import {
   syncClientPlatformInfo,
   updateClientPlatform,
   updateClientPlatformAccount
-} from "@/api/iov/rsms/clientplatform";
-import {listAllServerPlatform} from "@/api/iov/rsms/serverplatform";
+} from "@/api/edd/rsms/clientplatform";
+import {listAllServerPlatform} from "@/api/edd/rsms/serverplatform";
 
 export default {
   name: "ClientPlatform",

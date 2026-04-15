@@ -59,7 +59,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:rsms:reportVehicle:add']"
+          v-hasPermi="['edd:rsms:reportVehicle:add']"
         >新增
         </el-button>
       </el-col>
@@ -71,7 +71,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:rsms:reportVehicle:edit']"
+          v-hasPermi="['edd:rsms:reportVehicle:edit']"
         >修改
         </el-button>
       </el-col>
@@ -83,7 +83,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:rsms:reportVehicle:remove']"
+          v-hasPermi="['edd:rsms:reportVehicle:remove']"
         >删除
         </el-button>
       </el-col>
@@ -94,7 +94,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:rsms:reportVehicle:export']"
+          v-hasPermi="['edd:rsms:reportVehicle:export']"
         >导出
         </el-button>
       </el-col>
@@ -127,7 +127,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:rsms:reportVehicle:edit']"
+            v-hasPermi="['edd:rsms:reportVehicle:edit']"
           >修改
           </el-button>
           <el-button
@@ -135,7 +135,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:rsms:reportVehicle:remove']"
+            v-hasPermi="['edd:rsms:reportVehicle:remove']"
           >删除
           </el-button>
         </template>
@@ -262,7 +262,7 @@ import {
   delReportVehicle,
   getReportVehicle,
   listReportVehicle
-} from "@/api/iov/rsms/reportvehicle";
+} from "@/api/edd/rsms/reportvehicle";
 
 export default {
   name: "ReportVehicle",

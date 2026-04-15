@@ -44,7 +44,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['iov:configCenter:configItem:add']"
+          v-hasPermi="['edd:configCenter:configItem:add']"
         >新增
         </el-button>
       </el-col>
@@ -56,7 +56,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['iov:configCenter:configItem:edit']"
+          v-hasPermi="['edd:configCenter:configItem:edit']"
         >修改
         </el-button>
       </el-col>
@@ -68,7 +68,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['iov:configCenter:configItem:remove']"
+          v-hasPermi="['edd:configCenter:configItem:remove']"
         >删除
         </el-button>
       </el-col>
@@ -79,7 +79,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['iov:configCenter:configItem:export']"
+          v-hasPermi="['edd:configCenter:configItem:export']"
         >导出
         </el-button>
       </el-col>
@@ -126,7 +126,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:edit']"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
           >修改
           </el-button>
           <el-button
@@ -135,7 +135,7 @@
             icon="el-icon-notebook-2"
             @click="handleOption(scope.row)"
             v-if="scope.row.type==='ENUM'"
-            v-hasPermi="['iov:configCenter:configItem:edit']"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
           >枚举值
           </el-button>
           <el-button
@@ -143,7 +143,7 @@
             type="text"
             icon="el-icon-c-scale-to-original"
             @click="handleMapping(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:edit']"
+            v-hasPermi="['edd:configCenter:configItem:edit']"
           >映射
           </el-button>
           <el-button
@@ -151,7 +151,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['iov:configCenter:configItem:remove']"
+            v-hasPermi="['edd:configCenter:configItem:remove']"
           >删除
           </el-button>
         </template>
@@ -236,7 +236,7 @@
 </template>
 
 <script>
-import {addConfigItem, delConfigItem, getConfigItem, listConfigItem, updateConfigItem} from "@/api/iov/configcenter/configitem";
+import {addConfigItem, delConfigItem, getConfigItem, listConfigItem, updateConfigItem} from "@/api/edd/configcenter/configitem";
 
 export default {
   name: "ConfigItem",
@@ -394,13 +394,13 @@ export default {
     },
     handleOption(row) {
       this.$router.push({
-        path: "/iov/configCenter/configItemOption",
+        path: "/edd/configCenter/configItemOption",
         query: { code: row.code }
       });
     },
     handleMapping(row) {
       this.$router.push({
-        path: "/iov/configCenter/configItemMapping",
+        path: "/edd/configCenter/configItemMapping",
         query: { code: row.code, type: row.type }
       });
     },
