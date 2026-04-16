@@ -24,7 +24,7 @@ export function addAccount(data) {
     url: '/sec-ciam/api/mp/admin/v1/accounts',
     method: 'post',
     data: {
-      identityType: data.identityType || 'MOBILE',
+      identityType: data.identityType || 'mobile',
       mobile: data.mobile,
       email: data.email,
       password: data.password,

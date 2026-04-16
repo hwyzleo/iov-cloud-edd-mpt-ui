@@ -17,11 +17,11 @@
           clearable
           style="width: 120px"
         >
-          <el-option label="手机号" value="MOBILE" />
-          <el-option label="邮箱" value="EMAIL" />
-          <el-option label="微信" value="WECHAT" />
-          <el-option label="苹果" value="APPLE" />
-          <el-option label="谷歌" value="GOOGLE" />
+          <el-option label="手机号" value="mobile" />
+          <el-option label="邮箱" value="email" />
+          <el-option label="微信" value="wechat" />
+          <el-option label="苹果" value="apple" />
+          <el-option label="谷歌" value="google" />
         </el-select>
       </el-form-item>
       <el-form-item label="账号" prop="identityValue">
@@ -155,7 +155,7 @@
       </el-table-column>
       <el-table-column label="账号类型" prop="identityType" width="100" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.identityType === 'MOBILE' ? '手机号' : scope.row.identityType === 'EMAIL' ? '邮箱' : '-' }}</span>
+          <span>{{ getIdentityTypeLabel(scope.row.identityType) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="账号" prop="identityValue" width="195"/>
@@ -373,6 +373,17 @@ export default {
       const genderMap = { 0: '未知', 1: '男', 2: '女' }
       return genderMap[gender] || '未知'
     },
+    // 获取账号类型
+    getIdentityTypeLabel(identityType) {
+      const identityTypeMap = {
+        'mobile': '手机号',
+        'email': '邮箱',
+        'wechat': '微信',
+        'apple': '苹果',
+        'google': '谷歌'
+      }
+      return identityTypeMap[identityType] || '-'
+    },
     // 格式化时间（处理数组格式）
     formatTime(time) {
       if (!time) return ''
@@ -524,7 +535,7 @@ export default {
           } else if (submitData.identityType === 'EMAIL') {
             submitData.mobile = undefined
           }
-          
+
           if (submitData.userId != undefined) {
             updateAccount(submitData).then(response => {
               this.$modal.msgSuccess("修改成功");
