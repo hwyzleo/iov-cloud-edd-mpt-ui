@@ -147,7 +147,7 @@
 
     <el-table v-loading="loading" :data="accountList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="账号ID" prop="userId" width="225" show-overflow-tooltip>
+      <el-table-column label="账号ID" prop="userId" width="180" show-overflow-tooltip>
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.userId)" title="复制"></el-button>
           <span>{{ scope.row.userId }}</span>
@@ -565,7 +565,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('sec-ciam/api/mp/admin/v1/accounts/export', {
+      this.download('sec-ciam/api/mp/account/v1/accounts/export', {
         ...this.queryParams
       }, `account_${new Date().getTime()}.xlsx`)
     }

@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询账号列表
 export function listAccount(query) {
   return request({
-    url: '/sec-ciam/api/mp/admin/v1/accounts',
+    url: '/sec-ciam/api/mp/account/v1/accounts',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listAccount(query) {
 // 查询账号详细
 export function getAccount(userId) {
   return request({
-    url: '/sec-ciam/api/mp/admin/v1/accounts/detail',
+    url: '/sec-ciam/api/mp/account/v1/accounts/detail',
     method: 'get',
     params: { userId }
   })
@@ -21,7 +21,7 @@ export function getAccount(userId) {
 // 新增账号
 export function addAccount(data) {
   return request({
-    url: '/sec-ciam/api/mp/admin/v1/accounts',
+    url: '/sec-ciam/api/mp/account/v1/accounts',
     method: 'post',
     data: {
       identityType: data.identityType || 'mobile',
@@ -40,7 +40,7 @@ export function addAccount(data) {
 // 修改账号
 export function updateAccount(data) {
   return request({
-    url: '/sec-ciam/api/mp/admin/v1/accounts',
+    url: '/sec-ciam/api/mp/account/v1/accounts',
     method: 'put',
     data: {
       userId: data.userId,
@@ -60,7 +60,7 @@ export function updateAccount(data) {
 export function delAccount(userIds) {
   const ids = Array.isArray(userIds) ? userIds : [userIds]
   return request({
-    url: '/sec-ciam/api/mp/admin/v1/accounts',
+    url: '/sec-ciam/api/mp/account/v1/accounts',
     method: 'delete',
     data: {
       userId: ids
