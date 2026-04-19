@@ -105,9 +105,9 @@
     </el-row>
 
     <el-table v-loading="loading" :data="deviceList">
-      <el-table-column label="设备ID" prop="deviceId"  width="150" show-overflow-tooltip/>
-      <el-table-column label="用户ID" prop="userId"  width="150" show-overflow-tooltip/>
-      <el-table-column label="客户端ID" prop="clientId"  width="150" show-overflow-tooltip/>
+      <el-table-column label="设备ID" prop="deviceId"  width="140" show-overflow-tooltip/>
+      <el-table-column label="用户ID" prop="userId"  width="140" show-overflow-tooltip/>
+      <el-table-column label="客户端ID" prop="clientId"  width="120" show-overflow-tooltip/>
       <el-table-column label="设备名称" prop="deviceName"/>
       <el-table-column label="设备系统" prop="deviceOs" width="80" align="center"/>
       <el-table-column label="设备状态" prop="deviceStatus" width="80">
