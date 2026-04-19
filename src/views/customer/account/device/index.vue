@@ -72,6 +72,17 @@
           <el-option label="否" :value="false"/>
         </el-select>
       </el-form-item>
+      <el-form-item label="语言" prop="language">
+        <el-select
+          v-model="queryParams.language"
+          placeholder="请选择语言"
+          clearable
+          style="width: 150px"
+        >
+          <el-option label="简体中文" value="zh"/>
+          <el-option label="英语" value="en"/>
+        </el-select>
+      </el-form-item>
       <el-form-item label="首次登录时间">
         <el-date-picker
           v-model="dateRange"
@@ -111,6 +122,11 @@
           <el-tag :type="scope.row.trustedFlag === 1 ? 'success' : 'info'">
             {{ scope.row.trustedFlag === 1 ? '是' : '否' }}
           </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="语言" prop="language" width="100" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.language === 'zh' ? '简体中文' : scope.row.language === 'en' ? '英语' : scope.row.language }}</span>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="160">
@@ -157,7 +173,8 @@ export default {
         deviceName: undefined,
         deviceOs: undefined,
         deviceStatus: undefined,
-        trustedFlag: undefined
+        trustedFlag: undefined,
+        language: undefined
       }
     };
   },
