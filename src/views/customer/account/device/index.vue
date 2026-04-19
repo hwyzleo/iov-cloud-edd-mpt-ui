@@ -129,14 +129,14 @@
           <span>{{ scope.row.language === 'zh' ? '简体中文' : scope.row.language === 'en' ? '英语' : scope.row.language }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+      <el-table-column label="首次登录时间" align="center" prop="firstLoginTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.firstLoginTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="160">
+      <el-table-column label="最后登录时间" align="center" prop="lastLoginTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updateTime) }}</span>
+          <span>{{ parseTime(scope.row.lastLoginTime) }}</span>
         </template>
       </el-table-column>
     </el-table>
