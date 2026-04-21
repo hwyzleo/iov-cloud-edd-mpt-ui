@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询设备列表
 export function listDevice(query) {
   return request({
-    url: '/sec-ciam/api/mp/device/v1/devices',
+    url: '/sec-ciam/api/mpt/device/v1/devices',
     method: 'get',
     params: {
       ...query,
@@ -16,7 +16,7 @@ export function listDevice(query) {
 // 查询设备详细
 export function getDevice(deviceId) {
   return request({
-    url: '/sec-ciam/api/mp/device/v1/devices/detail',
+    url: '/sec-ciam/api/mpt/device/v1/devices/detail',
     method: 'get',
     params: { deviceId }
   })
@@ -25,7 +25,7 @@ export function getDevice(deviceId) {
 // 查询用户的设备列表
 export function getUserDevices(userId) {
   return request({
-    url: '/sec-ciam/api/mp/device/v1/devices/user',
+    url: '/sec-ciam/api/mpt/device/v1/devices/user',
     method: 'get',
     params: { userId }
   })
