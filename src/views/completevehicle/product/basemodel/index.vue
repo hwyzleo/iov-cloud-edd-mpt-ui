@@ -360,8 +360,8 @@ export default {
     getList() {
       this.loading = true;
       listBaseModel(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -407,7 +407,7 @@ export default {
     handlePlatformChange(value) {
       if(value !== undefined && value !== null && value !== "") {
         listSeriesByPlatformCode(value).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
         });
       }
     },
@@ -415,7 +415,7 @@ export default {
     handleSeriesChange(value) {
       if(value !== undefined && value !== null && value !== "") {
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, value).then(response => {
-          this.modelList = response;
+          this.modelList = response.data;
         });
       }
     },
@@ -423,7 +423,7 @@ export default {
     handleAdd() {
       this.reset();
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
         this.open = true;
       });
       this.title = "添加基础车型";
@@ -442,10 +442,10 @@ export default {
       getBaseModel(id).then(response => {
         this.form = response.data;
         listSeriesByPlatformCode(this.form.platformCode).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
-          this.modelList = response;
+          this.modelList = response.data;
         })
         this.open = true;
       });
@@ -484,7 +484,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/baseModel/export', {
+      this.download('edd-vmd/api/mpt/baseModel/v1/export', {
         ...this.queryParams
       }, `base_model_${new Date().getTime()}.xlsx`)
     },

@@ -239,8 +239,8 @@ export default {
     getList() {
       this.loading = true;
       listPlatform(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.platformList = response.rows;
-          this.total = response.total;
+          this.platformList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -331,7 +331,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/platform/export', {
+      this.download('edd-vmd/api/mpt/platform/v1/export', {
         ...this.queryParams
       }, `platform_${new Date().getTime()}.xlsx`)
     }

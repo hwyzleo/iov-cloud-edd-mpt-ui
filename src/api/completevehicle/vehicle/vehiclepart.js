@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车辆零件列表
 export function listVehiclePart(query) {
   return request({
-    url: '/tsp-vmd/mpt/vehiclePart/list',
+    url: '/edd-vmd/api/mpt/vehiclePart/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listVehiclePart(query) {
 // 查询车辆零件详细
 export function getVehiclePart(vehiclePartId) {
   return request({
-    url: '/tsp-vmd/mpt/vehiclePart/' + vehiclePartId,
+    url: '/edd-vmd/api/mpt/vehiclePart/v1/' + vehiclePartId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getVehiclePart(vehiclePartId) {
 // 新增车辆零件
 export function addVehiclePart(data) {
   return request({
-    url: '/tsp-vmd/mpt/vehiclePart',
+    url: '/edd-vmd/api/mpt/vehiclePart/v1',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addVehiclePart(data) {
 // 修改车辆零件
 export function updateVehiclePart(data) {
   return request({
-    url: '/tsp-vmd/mpt/vehiclePart',
+    url: '/edd-vmd/api/mpt/vehiclePart/v1',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateVehiclePart(data) {
 // 删除车辆零件
 export function delVehiclePart(vehiclePartIds) {
   return request({
-    url: '/tsp-vmd/mpt/vehiclePart/' + vehiclePartIds,
+    url: '/edd-vmd/api/mpt/vehiclePart/v1/' + vehiclePartIds,
     method: 'delete'
   })
 }

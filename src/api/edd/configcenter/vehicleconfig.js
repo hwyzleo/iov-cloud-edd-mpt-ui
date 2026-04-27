@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车辆配置列表
 export function listVehicleConfig(query) {
   return request({
-    url: '/tsp-vmd/mpt/vehicleConfig/list',
+    url: '/edd-vmd/api/mpt/vehicleConfig/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listVehicleConfig(query) {
 // 查询车辆配置项列表
 export function listVehicleConfigItem(vin, query) {
   return request({
-    url: '/tsp-vmd/mpt/vehicleConfig/' + vin + '/configItem/list',
+    url: '/edd-vmd/api/mpt/vehicleConfig/v1/' + vin + '/configItem/list',
     method: 'get',
     params: query
   })
@@ -21,7 +21,7 @@ export function listVehicleConfigItem(vin, query) {
 // 查询车辆配置详细
 export function getVehicleConfig(id) {
   return request({
-    url: '/tsp-vmd/mpt/vehicleConfig/' + id,
+    url: '/edd-vmd/api/mpt/vehicleConfig/v1/' + id,
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function getVehicleConfig(id) {
 // 查询车辆配置详细
 export function getVehicleConfigItem(vin, id) {
   return request({
-    url: '/tsp-vmd/mpt/vehicleConfig/' + vin + '/configItem/' + id,
+    url: '/edd-vmd/api/mpt/vehicleConfig/v1/' + vin + '/configItem/' + id,
     method: 'get'
   })
 }

@@ -593,8 +593,8 @@ export default {
     getList() {
       this.loading = true;
       listBuildConfig(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -679,7 +679,7 @@ export default {
     handlePlatformChange(value) {
       if (value !== undefined && value !== null && value !== "") {
         listSeriesByPlatformCode(value).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
         });
       }
     },
@@ -687,7 +687,7 @@ export default {
     handleSeriesChange(value) {
       if (value !== undefined && value !== null && value !== "") {
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, value).then(response => {
-          this.modelList = response;
+          this.modelList = response.data;
         });
       }
     },
@@ -695,7 +695,7 @@ export default {
     handleModelChange(value) {
       if (value !== undefined && value !== null && value !== "") {
         listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(this.form.platformCode, this.form.seriesCode, value).then(response => {
-          this.baseModelList = response;
+          this.baseModelList = response.data;
         });
       }
     },
@@ -741,7 +741,7 @@ export default {
     handleAdd() {
       this.reset();
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
         this.open = true;
       });
       this.title = "添加生产配置";
@@ -755,18 +755,18 @@ export default {
       this.reset();
       const id = row.id || this.ids
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
       });
       getBuildConfig(id).then(response => {
         this.form = response.data;
         listSeriesByPlatformCode(this.form.platformCode).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
-          this.modelList = response;
+          this.modelList = response.data;
         });
         listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(this.form.platformCode, this.form.seriesCode, this.form.modelCode).then(response => {
-          this.baseModelList = response;
+          this.baseModelList = response.data;
         });
         this.open = true;
       });
@@ -805,7 +805,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/buildConfig/export', {
+      this.download('edd-vmd/api/mpt/buildConfig/v1/export', {
         ...this.queryParams
       }, `build_config_${new Date().getTime()}.xlsx`)
     }

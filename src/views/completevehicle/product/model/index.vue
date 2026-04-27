@@ -306,8 +306,8 @@ export default {
     getList() {
       this.loading = true;
       listModel(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.modelList = response.rows;
-          this.total = response.total;
+          this.modelList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -351,7 +351,7 @@ export default {
     handlePlatformChange(value) {
       if(value !== undefined && value !== null && value !== "") {
         listSeriesByPlatformCode(value).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
         });
       }
     },
@@ -359,7 +359,7 @@ export default {
     handleAdd() {
       this.reset();
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
         this.open = true;
       });
       this.title = "添加车型";
@@ -373,12 +373,12 @@ export default {
       this.reset();
       const modelId = row.id || this.ids
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
       });
       getModel(modelId).then(response => {
         this.form = response.data;
         listSeriesByPlatformCode(this.form.platformCode).then(response => {
-          this.seriesList = response;
+          this.seriesList = response.data;
           this.open = true;
         });
       });
@@ -417,7 +417,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/model/export', {
+      this.download('edd-vmd/api/mpt/model/v1/export', {
         ...this.queryParams
       }, `model_${new Date().getTime()}.xlsx`)
     }

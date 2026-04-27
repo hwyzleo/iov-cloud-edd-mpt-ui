@@ -290,8 +290,8 @@ export default {
     getList() {
       this.loading = true;
       listFeatureFamily(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -382,7 +382,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/featureFamily/export', {
+      this.download('edd-vmd/api/mpt/featureFamily/v1/export', {
         ...this.queryParams
       }, `feature_family_${new Date().getTime()}.xlsx`)
     },

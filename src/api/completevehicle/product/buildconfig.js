@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询生产配置列表
 export function listBuildConfig(query) {
   return request({
-    url: '/tsp-vmd/mpt/buildConfig/list',
+    url: '/edd-vmd/api/mpt/buildConfig/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listBuildConfig(query) {
 // 查询生产配置详细
 export function getBuildConfig(buildConfigId) {
   return request({
-    url: '/tsp-vmd/mpt/buildConfig/' + buildConfigId,
+    url: '/edd-vmd/api/mpt/buildConfig/v1/' + buildConfigId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getBuildConfig(buildConfigId) {
 // 新增生产配置
 export function addBuildConfig(data) {
   return request({
-    url: '/tsp-vmd/mpt/buildConfig',
+    url: '/edd-vmd/api/mpt/buildConfig/v1',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addBuildConfig(data) {
 // 修改生产配置
 export function updateBuildConfig(data) {
   return request({
-    url: '/tsp-vmd/mpt/buildConfig',
+    url: '/edd-vmd/api/mpt/buildConfig/v1',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateBuildConfig(data) {
 // 删除生产配置
 export function delBuildConfig(buildConfigIds) {
   return request({
-    url: '/tsp-vmd/mpt/buildConfig/' + buildConfigIds,
+    url: '/edd-vmd/api/mpt/buildConfig/v1/' + buildConfigIds,
     method: 'delete'
   })
 }

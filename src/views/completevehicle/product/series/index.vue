@@ -272,8 +272,8 @@ export default {
     getList() {
       this.loading = true;
       listSeries(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.seriesList = response.rows;
-          this.total = response.total;
+          this.seriesList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -316,7 +316,7 @@ export default {
     handleAdd() {
       this.reset();
       listAllPlatform().then(response => {
-        this.platformList = response;
+        this.platformList = response.data;
         this.open = true;
       });
       this.title = "添加车系";
@@ -371,7 +371,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/mpt/series/export', {
+      this.download('edd-vmd/api/mpt/series/v1/export', {
         ...this.queryParams
       }, `series_${new Date().getTime()}.xlsx`)
     }

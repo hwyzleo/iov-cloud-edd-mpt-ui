@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询配置项列表
 export function listConfigItem(query) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/list',
+    url: '/edd-vmd/api/mpt/configItem/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listConfigItem(query) {
 // 查询配置项枚举值列表
 export function listConfigItemOption(configItemCode, query) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/option/list',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/option/list',
     method: 'get',
     params: query
   })
@@ -21,7 +21,7 @@ export function listConfigItemOption(configItemCode, query) {
 // 查询配置项映射列表
 export function listConfigItemMapping(configItemCode, query) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/mapping/list',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/mapping/list',
     method: 'get',
     params: query
   })
@@ -30,7 +30,7 @@ export function listConfigItemMapping(configItemCode, query) {
 // 查询配置项详细
 export function getConfigItem(id) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + id,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + id,
     method: 'get'
   })
 }
@@ -38,7 +38,7 @@ export function getConfigItem(id) {
 // 查询配置项枚举值详细
 export function getConfigItemOption(configItemCode, id) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/option/' + id,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/option/' + id,
     method: 'get'
   })
 }
@@ -46,7 +46,7 @@ export function getConfigItemOption(configItemCode, id) {
 // 查询配置项枚举值详细
 export function getConfigItemMapping(configItemCode, id) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/mapping/' + id,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/mapping/' + id,
     method: 'get'
   })
 }
@@ -54,7 +54,7 @@ export function getConfigItemMapping(configItemCode, id) {
 // 新增配置项
 export function addConfigItem(data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem',
+    url: '/edd-vmd/api/mpt/configItem/v1',
     method: 'post',
     data: data
   })
@@ -63,7 +63,7 @@ export function addConfigItem(data) {
 // 新增配置项枚举值
 export function addConfigItemOption(configItemCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/option',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/option',
     method: 'post',
     data: data
   })
@@ -72,7 +72,7 @@ export function addConfigItemOption(configItemCode, data) {
 // 新增配置项映射
 export function addConfigItemMapping(configItemCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/mapping',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/mapping',
     method: 'post',
     data: data
   })
@@ -81,7 +81,7 @@ export function addConfigItemMapping(configItemCode, data) {
 // 修改配置项
 export function updateConfigItem(data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem',
+    url: '/edd-vmd/api/mpt/configItem/v1',
     method: 'put',
     data: data
   })
@@ -90,7 +90,7 @@ export function updateConfigItem(data) {
 // 修改配置项枚举值
 export function updateConfigItemOption(configItemCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/option',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/option',
     method: 'put',
     data: data
   })
@@ -99,7 +99,7 @@ export function updateConfigItemOption(configItemCode, data) {
 // 修改配置项映射
 export function updateConfigItemMapping(configItemCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/mapping',
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/mapping',
     method: 'put',
     data: data
   })
@@ -108,7 +108,7 @@ export function updateConfigItemMapping(configItemCode, data) {
 // 删除配置项
 export function delConfigItem(ids) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + ids,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + ids,
     method: 'delete'
   })
 }
@@ -116,7 +116,7 @@ export function delConfigItem(ids) {
 // 删除配置项枚举值
 export function delConfigItemOption(configItemCode, ids) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/option/' + ids,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/option/' + ids,
     method: 'delete'
   })
 }
@@ -124,7 +124,7 @@ export function delConfigItemOption(configItemCode, ids) {
 // 删除配置项映射
 export function delConfigItemMapping(configItemCode, ids) {
   return request({
-    url: '/tsp-vmd/mpt/configItem/' + configItemCode + '/mapping/' + ids,
+    url: '/edd-vmd/api/mpt/configItem/v1/' + configItemCode + '/mapping/' + ids,
     method: 'delete'
   })
 }

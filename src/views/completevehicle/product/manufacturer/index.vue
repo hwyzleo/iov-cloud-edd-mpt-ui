@@ -235,8 +235,8 @@ export default {
     getList() {
       this.loading = true;
       listManufacturer(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.manufacturerList = response.rows;
-          this.total = response.total;
+          this.manufacturerList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -327,7 +327,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/manufacturer/export', {
+      this.download('edd-vmd/api/manufacturer/v1/export', {
         ...this.queryParams
       }, `manufacturer_${new Date().getTime()}.xlsx`)
     }

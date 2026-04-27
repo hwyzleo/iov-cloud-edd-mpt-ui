@@ -246,8 +246,8 @@ export default {
     getList() {
       this.loading = true;
       listVehicleImportData(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.vehicleImportDataList = response.rows;
-          this.total = response.total;
+          this.vehicleImportDataList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -355,7 +355,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/vehicleImportData/export', {
+      this.download('edd-vmd/api/vehicleImportData/v1/export', {
         ...this.queryParams
       }, `vehicle_import_data_${new Date().getTime()}.xlsx`)
     }

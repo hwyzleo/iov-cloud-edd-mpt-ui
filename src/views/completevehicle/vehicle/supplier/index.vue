@@ -239,8 +239,8 @@ export default {
     getList() {
       this.loading = true;
       listSupplier(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -331,7 +331,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/supplier/export', {
+      this.download('edd-vmd/api/supplier/v1/export', {
         ...this.queryParams
       }, `supplier_${new Date().getTime()}.xlsx`)
     }

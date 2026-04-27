@@ -94,11 +94,6 @@
           <span>{{ parseTime(scope.row.usedTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
     </el-table>
 
     <pagination

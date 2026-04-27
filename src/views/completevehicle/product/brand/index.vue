@@ -235,8 +235,8 @@ export default {
     getList() {
       this.loading = true;
       listBrand(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.brandList = response.rows;
-          this.total = response.total;
+          this.brandList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -327,7 +327,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/brand/export', {
+      this.download('edd-vmd/api/brand/v1/export', {
         ...this.queryParams
       }, `brand_${new Date().getTime()}.xlsx`)
     }

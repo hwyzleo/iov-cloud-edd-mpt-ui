@@ -330,8 +330,8 @@ export default {
     getList() {
       this.loading = true;
       listVehicle(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.vehicleList = response.rows;
-          this.total = response.total;
+          this.vehicleList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

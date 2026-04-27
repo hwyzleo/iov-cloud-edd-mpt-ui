@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车型列表
 export function listModel(query) {
   return request({
-    url: '/tsp-vmd/mpt/model/list',
+    url: '/edd-vmd/api/mpt/model/v1/list',
     method: 'get',
     params: query
   })
@@ -16,7 +16,7 @@ export function listModelByPlatformCodeAndSeriesCode(platformCode, seriesCode) {
     seriesCode: seriesCode
   }
   return request({
-    url: '/tsp-vmd/mpt/model/listByPlatformCodeAndSeriesCode',
+    url: '/edd-vmd/api/mpt/model/v1/listByPlatformCodeAndSeriesCode',
     method: 'get',
     params: params
   })
@@ -25,7 +25,7 @@ export function listModelByPlatformCodeAndSeriesCode(platformCode, seriesCode) {
 // 查询车型详细
 export function getModel(modelId) {
   return request({
-    url: '/tsp-vmd/mpt/model/' + modelId,
+    url: '/edd-vmd/api/mpt/model/v1/' + modelId,
     method: 'get'
   })
 }
@@ -33,7 +33,7 @@ export function getModel(modelId) {
 // 新增车型
 export function addModel(data) {
   return request({
-    url: '/tsp-vmd/mpt/model',
+    url: '/edd-vmd/api/mpt/model/v1',
     method: 'post',
     data: data
   })
@@ -42,7 +42,7 @@ export function addModel(data) {
 // 修改车型
 export function updateModel(data) {
   return request({
-    url: '/tsp-vmd/mpt/model',
+    url: '/edd-vmd/api/mpt/model/v1',
     method: 'put',
     data: data
   })
@@ -51,7 +51,7 @@ export function updateModel(data) {
 // 删除车型
 export function delModel(modelIds) {
   return request({
-    url: '/tsp-vmd/mpt/model/' + modelIds,
+    url: '/edd-vmd/api/mpt/model/v1/' + modelIds,
     method: 'delete'
   })
 }

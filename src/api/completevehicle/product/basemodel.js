@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询基础车型列表
 export function listBaseModel(query) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/list',
+    url: '/edd-vmd/api/mpt/baseModel/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listBaseModel(query) {
 // 查询基础车型列表
 export function listBaseModelFeatureCode(baseModelCode, query) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelCode + '/featureCode/list',
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelCode + '/featureCode/list',
     method: 'get',
     params: query
   })
@@ -26,7 +26,7 @@ export function listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(platformCod
     modelCode: modelCode
   }
   return request({
-    url: '/tsp-vmd/mpt/baseModel/listByPlatformCodeAndSeriesCodeAndModelCode',
+    url: '/edd-vmd/api/mpt/baseModel/v1/listByPlatformCodeAndSeriesCodeAndModelCode',
     method: 'get',
     params: params
   })
@@ -35,7 +35,7 @@ export function listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(platformCod
 // 查询基础车型详细
 export function getBaseModel(basicModelId) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + basicModelId,
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + basicModelId,
     method: 'get'
   })
 }
@@ -43,7 +43,7 @@ export function getBaseModel(basicModelId) {
 // 查询基础车型详细
 export function getBaseModelFeatureCode(baseModelCode, baseModelFeatureCodeId) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelCode + '/featureCode/' + baseModelFeatureCodeId,
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelCode + '/featureCode/' + baseModelFeatureCodeId,
     method: 'get'
   })
 }
@@ -51,7 +51,7 @@ export function getBaseModelFeatureCode(baseModelCode, baseModelFeatureCodeId) {
 // 新增基础车型
 export function addBaseModel(data) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel',
+    url: '/edd-vmd/api/mpt/baseModel/v1',
     method: 'post',
     data: data
   })
@@ -60,7 +60,7 @@ export function addBaseModel(data) {
 // 新增基础车型
 export function addBaseModelFeatureCode(baseModelCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelCode + '/featureCode',
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelCode + '/featureCode',
     method: 'post',
     data: data
   })
@@ -69,7 +69,7 @@ export function addBaseModelFeatureCode(baseModelCode, data) {
 // 修改基础车型
 export function updateBaseModel(data) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel',
+    url: '/edd-vmd/api/mpt/baseModel/v1',
     method: 'put',
     data: data
   })
@@ -78,7 +78,7 @@ export function updateBaseModel(data) {
 // 修改基础车型
 export function updateBaseModelFeatureCode(baseModelCode, data) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelCode + '/featureCode',
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelCode + '/featureCode',
     method: 'put',
     data: data
   })
@@ -87,7 +87,7 @@ export function updateBaseModelFeatureCode(baseModelCode, data) {
 // 删除基础车型
 export function delBaseModel(baseModelIds) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelIds,
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelIds,
     method: 'delete'
   })
 }
@@ -95,7 +95,7 @@ export function delBaseModel(baseModelIds) {
 // 删除基础车型
 export function delBaseModelFeatureCode(baseModelCode, baseModelIds) {
   return request({
-    url: '/tsp-vmd/mpt/baseModel/' + baseModelCode + '/featureCode/' + baseModelIds,
+    url: '/edd-vmd/api/mpt/baseModel/v1/' + baseModelCode + '/featureCode/' + baseModelIds,
     method: 'delete'
   })
 }

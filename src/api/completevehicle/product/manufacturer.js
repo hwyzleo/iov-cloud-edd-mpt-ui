@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车辆工厂列表
 export function listManufacturer(query) {
   return request({
-    url: '/tsp-vmd/mpt/manufacturer/list',
+    url: '/edd-vmd/api/mpt/manufacturer/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listManufacturer(query) {
 // 查询车辆工厂详细
 export function getManufacturer(manufacturerId) {
   return request({
-    url: '/tsp-vmd/mpt/manufacturer/' + manufacturerId,
+    url: '/edd-vmd/api/mpt/manufacturer/v1/' + manufacturerId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getManufacturer(manufacturerId) {
 // 新增车辆工厂
 export function addManufacturer(data) {
   return request({
-    url: '/tsp-vmd/mpt/manufacturer',
+    url: '/edd-vmd/api/mpt/manufacturer/v1',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addManufacturer(data) {
 // 修改车辆工厂
 export function updateManufacturer(data) {
   return request({
-    url: '/tsp-vmd/mpt/manufacturer',
+    url: '/edd-vmd/api/mpt/manufacturer/v1',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateManufacturer(data) {
 // 删除车辆工厂
 export function delManufacturer(manufacturerIds) {
   return request({
-    url: '/tsp-vmd/mpt/manufacturer/' + manufacturerIds,
+    url: '/edd-vmd/api/mpt/manufacturer/v1/' + manufacturerIds,
     method: 'delete'
   })
 }

@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车辆特征族列表
 export function listFeatureFamily(query) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/list',
+    url: '/edd-vmd/api/mpt/featureFamily/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listFeatureFamily(query) {
 // 查询所有车辆特征族列表
 export function listAllFeatureFamily() {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/listAllFeatureFamily',
+    url: '/edd-vmd/api/mpt/featureFamily/v1/listAllFeatureFamily',
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function listAllFeatureFamily() {
 // 查询所有车辆特征族列表
 export function listAllFeatureCode(familyCode) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/listAllFeatureCode?familyCode=' + familyCode,
+    url: '/edd-vmd/api/mpt/featureFamily/v1/listAllFeatureCode?familyCode=' + familyCode,
     method: 'get'
   })
 }
@@ -28,7 +28,7 @@ export function listAllFeatureCode(familyCode) {
 // 查询车辆特征值列表
 export function listFeatureCode(familyId, query) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + familyId + '/featureCode/list',
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + familyId + '/featureCode/list',
     method: 'get',
     params: query
   })
@@ -37,7 +37,7 @@ export function listFeatureCode(familyId, query) {
 // 查询车辆特征族详细
 export function getFeatureFamily(featureFamilyId) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + featureFamilyId,
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + featureFamilyId,
     method: 'get'
   })
 }
@@ -45,7 +45,7 @@ export function getFeatureFamily(featureFamilyId) {
 // 查询车辆特征值详细
 export function getFeatureCode(familyId, featureCodeId) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + familyId + '/featureCode/' + featureCodeId,
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + familyId + '/featureCode/' + featureCodeId,
     method: 'get'
   })
 }
@@ -53,7 +53,7 @@ export function getFeatureCode(familyId, featureCodeId) {
 // 新增车辆特征族
 export function addFeatureFamily(data) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily',
+    url: '/edd-vmd/api/mpt/featureFamily/v1',
     method: 'post',
     data: data
   })
@@ -62,7 +62,7 @@ export function addFeatureFamily(data) {
 // 新增车辆特征值
 export function addFeatureCode(familyId, data) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + familyId + '/featureCode',
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + familyId + '/featureCode',
     method: 'post',
     data: data
   })
@@ -71,7 +71,7 @@ export function addFeatureCode(familyId, data) {
 // 修改车辆特征族
 export function updateFeatureFamily(data) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily',
+    url: '/edd-vmd/api/mpt/featureFamily/v1',
     method: 'put',
     data: data
   })
@@ -80,7 +80,7 @@ export function updateFeatureFamily(data) {
 // 修改车辆特征值
 export function updateFeatureCode(familyId, data) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + familyId + '/featureCode',
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + familyId + '/featureCode',
     method: 'put',
     data: data
   })
@@ -89,7 +89,7 @@ export function updateFeatureCode(familyId, data) {
 // 删除车辆特征族
 export function delFeatureFamily(featureFamilyIds) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + featureFamilyIds,
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + featureFamilyIds,
     method: 'delete'
   })
 }
@@ -97,7 +97,7 @@ export function delFeatureFamily(featureFamilyIds) {
 // 删除车辆特征值
 export function delFeatureCode(familyId, featureCodeIds) {
   return request({
-    url: '/tsp-vmd/mpt/featureFamily/' + familyId + '/featureCode/' + featureCodeIds,
+    url: '/edd-vmd/api/mpt/featureFamily/v1/' + familyId + '/featureCode/' + featureCodeIds,
     method: 'delete'
   })
 }
