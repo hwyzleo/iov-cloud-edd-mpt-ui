@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询销售车型列表
 export function listSaleModel(query) {
   return request({
-    url: '/otd-vso/mpt/saleModel/list',
+    url: '/otd-vso/api/mpt/saleModel/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listSaleModel(query) {
 // 查询销售车型详细
 export function getSaleModel(saleModelId) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId,
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getSaleModel(saleModelId) {
 // 查询销售车型配置列表
 export function listSaleModelConfig(saleModelId) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config',
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config',
     method: 'get'
   })
 }
@@ -28,7 +28,7 @@ export function listSaleModelConfig(saleModelId) {
 // 查询销售车型配置详细
 export function getSaleModelConfig(saleModelId, saleModelConfigId) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config/' + saleModelConfigId,
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config/' + saleModelConfigId,
     method: 'get'
   })
 }
@@ -36,7 +36,7 @@ export function getSaleModelConfig(saleModelId, saleModelConfigId) {
 // 新增销售车型
 export function addSaleModel(data) {
   return request({
-    url: '/otd-vso/mpt/saleModel',
+    url: '/otd-vso/api/mpt/saleModel/v1',
     method: 'post',
     data: data
   })
@@ -45,7 +45,7 @@ export function addSaleModel(data) {
 // 修改销售车型
 export function updateSaleModel(data) {
   return request({
-    url: '/otd-vso/mpt/saleModel',
+    url: '/otd-vso/api/mpt/saleModel/v1',
     method: 'put',
     data: data
   })
@@ -54,7 +54,7 @@ export function updateSaleModel(data) {
 // 修改销售车型图片集
 export function updateSaleModelImages(data) {
   return request({
-    url: '/otd-vso/mpt/saleModel/images',
+    url: '/otd-vso/api/mpt/saleModel/v1/images',
     method: 'put',
     data: data
   })
@@ -63,7 +63,7 @@ export function updateSaleModelImages(data) {
 // 新增销售车型配置
 export function addSaleModelConfig(saleModelId, data) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config',
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config',
     method: 'post',
     data: data
   })

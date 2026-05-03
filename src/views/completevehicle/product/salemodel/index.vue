@@ -504,8 +504,8 @@ export default {
     getList() {
       this.loading = true;
       listSaleModel(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.saleModelList = response.rows;
-          this.total = response.total;
+          this.saleModelList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
