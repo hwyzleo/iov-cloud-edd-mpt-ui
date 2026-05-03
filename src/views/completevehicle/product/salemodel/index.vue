@@ -514,7 +514,7 @@ export default {
     getListConfig(saleModelId) {
       this.loadingConfig = true;
       listSaleModelConfig(saleModelId).then(response => {
-          this.saleModelConfigList = response.rows;
+          this.saleModelConfigList = response.data;
           this.loadingConfig = false;
         }
       );
@@ -628,7 +628,7 @@ export default {
         this.form = response.data;
       });
       listSaleModelConfig(row.id).then(response => {
-        this.saleModelConfigList = response.rows;
+        this.saleModelConfigList = response.data;
         this.loadingConfig = false;
         this.openConfigList = true;
       });
@@ -767,7 +767,6 @@ export default {
     handleDeleteConfig(saleModelId, row) {
       const saleModelConfigIds = row.id || this.ids;
       this.$modal.confirm('是否确认删除销售车型配置ID为"' + saleModelConfigIds + '"的数据项？').then(function () {
-        console.log(saleModelId);
         return delSaleModelConfig(saleModelId, saleModelConfigIds);
       }).then(() => {
         this.getListConfig(saleModelId);
@@ -777,7 +776,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('otd-vso/mpt/saleModel/export', {
+      this.download('otd-vso/mpt/saleModel/v1/export', {
         ...this.queryParams
       }, `sale_model_${new Date().getTime()}.xlsx`)
     }
