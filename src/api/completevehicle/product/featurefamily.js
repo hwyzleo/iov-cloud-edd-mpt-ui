@@ -10,10 +10,11 @@ export function listFeatureFamily(query) {
 }
 
 // 查询所有车辆特征族列表
-export function listAllFeatureFamily() {
+export function listAllFeatureFamily(query) {
   return request({
-    url: '/edd-vmd/api/mpt/featureFamily/v1/listAllFeatureFamily',
-    method: 'get'
+    url: '/edd-vmd/api/mpt/featureFamily/v1/listAll',
+    method: 'get',
+    params: query
   })
 }
 
