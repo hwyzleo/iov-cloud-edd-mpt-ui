@@ -72,7 +72,7 @@ export function addSaleModelConfig(saleModelId, data) {
 // 修改销售车型配置
 export function updateSaleModelConfig(saleModelId, data) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config',
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config',
     method: 'put',
     data: data
   })
@@ -81,7 +81,7 @@ export function updateSaleModelConfig(saleModelId, data) {
 // 删除销售车型
 export function delSaleModel(saleModelId) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId,
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId,
     method: 'delete'
   })
 }
@@ -89,7 +89,66 @@ export function delSaleModel(saleModelId) {
 // 删除销售车型配置
 export function delSaleModelConfig(saleModelId, saleModelConfigId) {
   return request({
-    url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config/' + saleModelConfigId,
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config/' + saleModelConfigId,
     method: 'delete'
+  })
+}
+
+// 查询销售车型生产配置关联列表
+export function listSaleModelBuildConfig(saleModelId) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
+    method: 'get'
+  })
+}
+
+// 查询销售车型聚合后的特征值范围
+export function getSaleModelFeatureCodeRanges(saleModelId) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/featureCodeRanges',
+    method: 'get'
+  })
+}
+
+// 新增销售车型生产配置关联
+export function addSaleModelBuildConfig(saleModelId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改销售车型生产配置关联
+export function updateSaleModelBuildConfig(saleModelId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除销售车型生产配置关联
+export function delSaleModelBuildConfig(saleModelId, ids) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
+    method: 'delete',
+    params: { ids: ids.join(',') }
+  })
+}
+
+// 根据基础车型代码获取生产配置列表
+export function listBuildConfigByBaseModelCode(baseModelCode) {
+  return request({
+    url: '/edd-vmd/api/mpt/buildConfig/v1/listByBaseModelCode/' + baseModelCode,
+    method: 'get'
+  })
+}
+
+// 手动同步销售车型配置
+export function syncSaleModelConfig(saleModelId) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/syncConfigs',
+    method: 'post'
   })
 }
