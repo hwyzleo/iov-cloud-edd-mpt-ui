@@ -154,30 +154,22 @@
             v-hasPermi="['completeVehicle:product:saleModel:edit']"
           >维护图片
           </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-connection"
-            @click="handleBuildConfig(scope.row)"
-            v-hasPermi="['completeVehicle:product:saleModel:edit']"
-          >生产配置
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-setting"
-            @click="handleConfig(scope.row)"
-            v-hasPermi="['completeVehicle:product:saleModel:edit']"
-          >车型配置
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['completeVehicle:product:saleModel:remove']"
-          >删除
-          </el-button>
+<el-button
+             size="mini"
+             type="text"
+             icon="el-icon-connection"
+             @click="handleBuildConfig(scope.row)"
+             v-hasPermi="['completeVehicle:product:saleModel:edit']"
+           >生产配置
+           </el-button>
+           <el-button
+             size="mini"
+             type="text"
+             icon="el-icon-delete"
+             @click="handleDelete(scope.row)"
+             v-hasPermi="['completeVehicle:product:saleModel:remove']"
+           >删除
+           </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -665,8 +657,6 @@ export default {
       open: false,
       // 是否显示弹出层（图片维护）
       openImages: false,
-      // 是否显示弹出层（车型配置列表）
-      openConfigList: false,
       // 是否显示弹出层（车型配置）
       openConfig: false,
       // 是否显示弹出层（生产配置关联管理）
@@ -822,11 +812,6 @@ export default {
       this.openImages = false;
       this.reset();
     },
-    /** 取消按钮（车型配置列表） */
-    cancelConfigList() {
-      this.openConfigList = false;
-      this.reset();
-    },
     /** 取消按钮（车型配置） */
     cancelConfig() {
       this.openConfig = false;
@@ -954,20 +939,7 @@ export default {
       });
       this.title = "图片维护";
     },
-    /** 车型配置操作 */
-    handleConfig(row) {
-      this.reset();
-      getSaleModel(row.id).then(response => {
-        this.form = response.data;
-      });
-      listSaleModelConfig(row.id).then(response => {
-        this.saleModelConfigList = response.data;
-        this.loadingConfig = false;
-        this.openConfigList = true;
-      });
-      this.title = "车型配置";
-    },
-    /** 获取销售车型配置类型 */
+/** 获取销售车型配置类型 */
     getSaleModelConfigTypeLabel(saleModelConfigType) {
       return saleModelConfigType;
     },
