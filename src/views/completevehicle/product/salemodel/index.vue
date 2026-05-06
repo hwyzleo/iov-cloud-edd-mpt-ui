@@ -277,10 +277,11 @@
           <el-input v-model="formConfig.saleCode" :disabled="true"/>
         </el-form-item>
         <el-form-item label="配置类型">
-          <el-input v-model="formConfig.type" :disabled="true"/>
+          <el-tag v-if="formConfig.isFeatureValue" type="primary" size="small">特征值</el-tag>
+          <el-tag v-else type="success" size="small">特征族</el-tag>
         </el-form-item>
         <el-form-item label="配置代码">
-          <el-input v-model="formConfig.typeCode" :disabled="true"/>
+          <el-input v-model="formConfig.code" :disabled="true"/>
         </el-form-item>
         <el-form-item label="名称">
           <el-input v-model="formConfig.typeName" placeholder="请输入名称"/>
@@ -348,7 +349,7 @@
               <el-input v-model="form.modelName" :disabled="true"/>
             </el-form-item>
           </el-form>
-          <div v-if="aggregatedFeatureCodeRanges.length > 0" style="margin-top: 10px;">
+          <div v-if="aggregatedFeatureCodeRanges && aggregatedFeatureCodeRanges.length > 0" style="margin-top: 10px;">
             <el-collapse accordion>
               <el-collapse-item
                 v-for="(range, index) in aggregatedFeatureCodeRanges"
@@ -357,17 +358,17 @@
                 <template slot="title">
                   <span style="font-weight: 500;">{{ range.familyName }}</span>
                   <el-tag size="mini" type="success" style="margin-left: 10px;">
-                    {{ range.featureCode.length }}个可选
+                    {{ (range.featureDetails && range.featureDetails.length) || 0 }}个可选
                   </el-tag>
                 </template>
                 <div style="padding: 10px 0;">
                   <el-tag
-                    v-for="(code, i) in range.featureCode"
+                    v-for="(detail, i) in range.featureDetails"
                     :key="i"
                     size="small"
                     style="margin: 3px;"
                   >
-                    {{ range.featureName[i] }}
+                    {{ detail.featureName }}
                   </el-tag>
                 </div>
               </el-collapse-item>
@@ -465,47 +466,38 @@
           >
             <el-table-column label="特征族/特征值代码" prop="code" width="150" show-overflow-tooltip/>
             <el-table-column label="名称" prop="typeName" show-overflow-tooltip/>
-            <el-table-column label="价格" prop="typePrice" width="100" align="right">
-              <template slot-scope="scope">
-                <span v-if="scope.row.isFeatureValue">{{ scope.row.typePrice || 0 }}</span>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="图片" align="center" width="80">
-              <template slot-scope="scope">
-                <span v-if="scope.row.isFeatureValue">
-                  <el-tag v-if="scope.row.typeImage && scope.row.typeImage.length > 0" size="mini" type="success">
-                    {{ scope.row.typeImage.length }}张
-                  </el-tag>
-                  <el-tag v-else size="mini" type="warning">待维护</el-tag>
-                </span>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" align="center" width="70">
-              <template slot-scope="scope">
-                <span v-if="scope.row.isFeatureValue">
-                  <el-tag v-if="scope.row.enable" size="mini" type="success">启用</el-tag>
-                  <el-tag v-else size="mini" type="info">禁用</el-tag>
-                </span>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
-              <template slot-scope="scope">
-                <el-button
-                  v-if="scope.row.isFeatureValue"
-                  size="mini"
-                  type="text"
-                  icon="el-icon-edit"
-                  @click="handleUpdateConfig(scope.row)"
-                  v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                  :disabled="!scope.row.enable"
-                >维护
-                </el-button>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
+<el-table-column label="价格" prop="typePrice" width="100" align="right">
+               <template slot-scope="scope">
+                 <span>{{ scope.row.typePrice || 0 }}</span>
+               </template>
+             </el-table-column>
+             <el-table-column label="图片" align="center" width="80">
+               <template slot-scope="scope">
+                 <el-tag v-if="scope.row.typeImage && scope.row.typeImage.length > 0" size="mini" type="success">
+                   {{ scope.row.typeImage.length }}张
+                 </el-tag>
+                 <el-tag v-else size="mini" type="warning">待维护</el-tag>
+               </template>
+             </el-table-column>
+             <el-table-column label="状态" align="center" width="70">
+               <template slot-scope="scope">
+                 <el-tag v-if="scope.row.enable" size="mini" type="success">启用</el-tag>
+                 <el-tag v-else size="mini" type="info">禁用</el-tag>
+               </template>
+             </el-table-column>
+             <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
+               <template slot-scope="scope">
+                 <el-button
+                   size="mini"
+                   type="text"
+                   icon="el-icon-edit"
+                   @click="handleUpdateConfig(scope.row)"
+                   v-hasPermi="['completeVehicle:product:saleModel:edit']"
+                   :disabled="!scope.row.enable"
+                 >维护
+                 </el-button>
+               </template>
+             </el-table-column>
           </el-table>
         </el-tab-pane>
       </el-tabs>
@@ -635,8 +627,8 @@ export default {
       total: 0,
       // 销售车型表格数据
       saleModelList: [],
-      // 销售车型配置表格数据
-      saleModelConfigList: [],
+      // 销售车型配置表格数据（特征族列表）
+      saleModelConfigFamilyList: [],
       // 生产配置关联表格数据
       buildConfigRelationList: [],
       // 聚合后的特征值范围
@@ -645,8 +637,6 @@ export default {
       baseModelList: [],
       // 生产配置选项列表（用于新增关联）
       buildConfigOptions: [],
-      // 聚合后的特征值范围
-      aggregatedFeatureCodeRanges: [],
       // 弹出层标题
       title: "",
       // 2级弹出层标题
@@ -716,36 +706,41 @@ export default {
 },
   computed: {
     configTreeData() {
-      if (!this.saleModelConfigList || this.saleModelConfigList.length === 0) {
+      if (!this.saleModelConfigFamilyList || this.saleModelConfigFamilyList.length === 0) {
         return [];
       }
       
-      // 按特征族分组
-      const familyMap = {};
-      this.saleModelConfigList.forEach(config => {
-        const familyCode = config.type;
-        if (!familyMap[familyCode]) {
-          familyMap[familyCode] = {
-            id: `family-${familyCode}`,  // 树形节点的唯一key
-            treeId: `family-${familyCode}`,
-            code: familyCode,
-            typeName: this.getFamilyName(config.typeName),
-            isFeatureValue: false,
-            children: []
-          };
-        }
-        
-        // 添加特征值作为子节点，保留原始的Long类型id
-        familyMap[familyCode].children.push({
-          ...config,
-          treeId: `value-${familyCode}-${config.typeCode}`,  // 树形节点的唯一key
-          code: config.typeCode,
-          isFeatureValue: true
-        });
-      });
+      console.log('saleModelConfigFamilyList:', this.saleModelConfigFamilyList);
       
-      // 转换为数组
-      return Object.values(familyMap).sort((a, b) => a.code.localeCompare(b.code));
+      return this.saleModelConfigFamilyList.map(family => {
+        const children = (family.features || family.featureDetails || []).map(feature => ({
+          ...feature,
+          treeId: `value-${family.familyCode}-${feature.typeCode || feature.featureCode}`,
+          code: feature.typeCode || feature.featureCode,
+          typeName: feature.typeName || feature.featureName,
+          typePrice: feature.typePrice || feature.featurePrice,
+          typeImage: feature.typeImage || feature.featureImage || [],
+          typeDesc: feature.typeDesc || feature.featureDesc,
+          typeParam: feature.typeParam || feature.featureParam,
+          isFeatureValue: true
+        }));
+        
+        const familyNode = {
+          id: family.familyId || family.familyCode,
+          treeId: `family-${family.familyCode}`,
+          code: family.familyCode,
+          typeName: family.familyName,
+          typePrice: family.familyPrice,
+          typeImage: family.familyImage || [],
+          typeDesc: family.familyDesc,
+          typeParam: family.familyParam,
+          enable: family.enable,
+          sort: family.sort,
+          isFeatureValue: false,
+          children: children
+        };
+        return familyNode;
+      });
     }
   },
   created() {
@@ -770,11 +765,11 @@ export default {
         this.baseModelList = response.data;
       });
     },
-    /** 查询销售车型配置列表 */
+    /** 查询销售车型配置列表（特征族+特征值） */
     getListConfig(saleModelId) {
       this.loadingConfig = true;
       listSaleModelConfig(saleModelId).then(response => {
-          this.saleModelConfigList = response.data;
+          this.saleModelConfigFamilyList = response.data || [];
           this.loadingConfig = false;
         }
       );
@@ -822,7 +817,7 @@ export default {
       this.openBuildConfig = false;
       this.buildConfigRelationList = [];
       this.aggregatedFeatureCodeRanges = [];
-      this.saleModelConfigList = [];
+      this.saleModelConfigFamilyList = [];
       this.activeBuildConfigTab = 'buildConfigList';
     },
     /** 取消按钮（新增生产配置关联） */
@@ -855,12 +850,14 @@ export default {
       this.formConfig = {
         id: undefined,
         saleCode: undefined,
-        type: undefined,
-        typeCode: undefined,
+        code: undefined,
         typeName: undefined,
         typePrice: 0,
         typeDesc: undefined,
         typeParam: undefined,
+        type: undefined,
+        typeCode: undefined,
+        isFeatureValue: true,
         enable: true,
         sort: 0,
         typeImage: []
@@ -943,13 +940,6 @@ export default {
     getSaleModelConfigTypeLabel(saleModelConfigType) {
       return saleModelConfigType;
     },
-    /** 从typeName中提取特征族名称 */
-    getFamilyName(typeName) {
-      if (!typeName) return '';
-      // typeName格式：特征族名称-特征值代码
-      const parts = typeName.split('-');
-      return parts.length > 0 ? parts[0] : typeName;
-    },
     /** 添加图片 */
     addImage() {
       this.form.images.push('')
@@ -990,18 +980,20 @@ export default {
       this.formConfig = {
         id: row.id,
         saleCode: this.form.saleCode,
-        type: row.type,
-        typeCode: row.typeCode,
+        code: row.code,
         typeName: row.typeName,
         typePrice: row.typePrice || 0,
-        typeDesc: row.typeDesc,
-        typeParam: row.typeParam,
+        typeDesc: row.typeDesc || '',
+        typeParam: row.typeParam || '',
+        type: row.isFeatureValue ? (row.type || row.code) : row.code,
+        typeCode: row.isFeatureValue ? row.code : null,
+        isFeatureValue: row.isFeatureValue,
         enable: row.enable,
         sort: row.sort,
         typeImage: row.typeImage || []
       };
       this.openConfig = true;
-      this.title2 = "维护配置价格图片";
+      this.title2 = row.isFeatureValue ? "维护特征值价格图片" : "维护特征族价格图片";
     },
     /** 同步特征值配置 */
     handleSyncConfigs() {
@@ -1050,7 +1042,19 @@ export default {
     submitConfig: function () {
       this.$refs["formConfig"].validate(valid => {
         if (valid) {
-          updateSaleModelConfig(this.form.id, this.formConfig).then(response => {
+          const dto = {
+            id: this.formConfig.id,
+            type: this.formConfig.type,
+            typeCode: this.formConfig.typeCode,
+            typeName: this.formConfig.typeName,
+            typePrice: this.formConfig.typePrice,
+            typeImage: this.formConfig.typeImage,
+            typeDesc: this.formConfig.typeDesc,
+            typeParam: this.formConfig.typeParam,
+            enable: this.formConfig.enable,
+            sort: this.formConfig.sort
+          };
+          updateSaleModelConfig(this.form.id, dto).then(response => {
             this.$modal.msgSuccess("维护成功");
             this.openConfig = false;
             this.getListConfig(this.form.id);
@@ -1090,9 +1094,11 @@ export default {
     },
     /** 新增生产配置关联按钮操作 */
     handleAddBuildConfig() {
+      console.log('点击新增生产配置，当前openAddBuildConfig:', this.openAddBuildConfig);
       this.resetBuildConfig();
       this.openAddBuildConfig = true;
       this.titleBuildConfig = "新增生产配置关联";
+      console.log('设置后openAddBuildConfig:', this.openAddBuildConfig);
     },
     /** 修改生产配置关联按钮操作 */
     handleUpdateBuildConfig(row) {
@@ -1110,13 +1116,14 @@ export default {
     /** 删除生产配置关联按钮操作 */
     handleDeleteBuildConfig(row) {
       const buildConfigIds = row.id;
-      this.$modal.confirm('是否确认删除生产配置关联ID为"' + buildConfigIds + '"的数据项？').then(function () {
-        return delSaleModelBuildConfig(this.form.id, [buildConfigIds]);
-      }.bind(this)).then(() => {
-        this.getListBuildConfig(this.form.id);
+      const saleModelId = this.form.id;
+      this.$modal.confirm('是否确认删除生产配置关联ID为"' + buildConfigIds + '"的数据项？').then(() => {
+        return delSaleModelBuildConfig(saleModelId, [buildConfigIds]);
+      }).then(() => {
+        this.getListBuildConfig(saleModelId);
+        this.getListConfig(saleModelId);
         this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
+      }).catch(() => {});
     },
     /** 处理基础车型变化（用于新增生产配置关联） */
     handleBaseModelChangeForBuildConfig(baseModelCode) {
