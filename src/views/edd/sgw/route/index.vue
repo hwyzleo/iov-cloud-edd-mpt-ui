@@ -198,7 +198,7 @@ import {
 } from "@/api/edd/sgw/route";
 
 export default {
-  name: "TspSgwRoute",
+  name: "SgwRoute",
   dicts: [],
   data() {
     return {
@@ -267,8 +267,8 @@ export default {
     getList() {
       this.loading = true;
       listRoute(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.routeList = response.rows;
-          this.total = response.total;
+          this.routeList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -371,7 +371,7 @@ export default {
     handleExport() {
       this.download('tsp-sgw/route/export', {
         ...this.queryParams
-      }, `tsp_sgw_route_${new Date().getTime()}.xlsx`)
+      }, `sgw_route_${new Date().getTime()}.xlsx`)
     },
     /** 刷新路由 */
     handleRefresh() {
