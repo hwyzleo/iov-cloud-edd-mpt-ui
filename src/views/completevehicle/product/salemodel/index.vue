@@ -432,7 +432,7 @@
         
         <el-tab-pane label="价格图片维护" name="priceImageConfig">
           <el-row style="margin-bottom: 15px;">
-            <el-col :span="18">
+            <el-col :span="16">
               <el-alert
                 title="说明"
                 type="info"
@@ -441,10 +441,11 @@
                 <template slot="default">
                   配置项由生产配置自动生成。请维护每个配置项的价格和图片信息，用于用户选择配置时的展示和价格计算。
                   <span style="color: #E6A23C;">价格为0的项表示尚未维护，请在修改时补充。</span>
+                  <span style="color: #409EFF; margin-left: 10px;">可通过拖拽调整特征族和特征值的排序顺序。</span>
                 </template>
               </el-alert>
             </el-col>
-            <el-col :span="6" style="text-align: right;">
+            <el-col :span="8" style="text-align: right;">
               <el-button
                 type="primary"
                 size="mini"
@@ -455,50 +456,143 @@
               </el-button>
             </el-col>
           </el-row>
-          <el-table
-            v-loading="loadingConfig"
-            :data="configTreeData"
-            size="small"
-            border
-            style="width: 100%"
-            row-key="treeId"
-            :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
-          >
-            <el-table-column label="特征族/特征值代码" prop="code" width="150" show-overflow-tooltip/>
-            <el-table-column label="名称" prop="typeName" show-overflow-tooltip/>
-<el-table-column label="价格" prop="typePrice" width="100" align="right">
-               <template slot-scope="scope">
-                 <span>{{ scope.row.typePrice || 0 }}</span>
-               </template>
-             </el-table-column>
-             <el-table-column label="图片" align="center" width="80">
-               <template slot-scope="scope">
-                 <el-tag v-if="scope.row.typeImage && scope.row.typeImage.length > 0" size="mini" type="success">
-                   {{ scope.row.typeImage.length }}张
-                 </el-tag>
-                 <el-tag v-else size="mini" type="warning">待维护</el-tag>
-               </template>
-             </el-table-column>
-             <el-table-column label="状态" align="center" width="70">
-               <template slot-scope="scope">
-                 <el-tag v-if="scope.row.enable" size="mini" type="success">启用</el-tag>
-                 <el-tag v-else size="mini" type="info">禁用</el-tag>
-               </template>
-             </el-table-column>
-             <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
-               <template slot-scope="scope">
-                 <el-button
-                   size="mini"
-                   type="text"
-                   icon="el-icon-edit"
-                   @click="handleUpdateConfig(scope.row)"
-                   v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                   :disabled="!scope.row.enable"
-                 >维护
-                 </el-button>
-               </template>
-             </el-table-column>
-          </el-table>
+          
+          <div v-loading="loadingConfig" style="max-height: 500px; overflow-y: auto;">
+            <el-empty v-if="!configTreeData || configTreeData.length === 0" description="暂无配置数据" :image-size="80"/>
+            
+            <draggable 
+              v-else
+              v-model="configTreeData"
+              group="family"
+              handle=".drag-handle-family"
+              animation="200"
+              @end="handleFamilyDragEnd"
+            >
+              <transition-group type="transition" name="flip-list">
+                <el-card 
+                  v-for="(family, familyIndex) in configTreeData"
+                  :key="family.treeId"
+                  shadow="hover"
+                  style="margin-bottom: 15px;"
+                  :body-style="{ padding: '15px' }"
+                >
+                  <div slot="header" class="family-header">
+                    <el-row type="flex" align="middle">
+                      <el-col :span="1">
+                        <i class="el-icon-rank drag-handle-family" style="cursor: move; font-size: 16px; color: #909399;"></i>
+                      </el-col>
+                      <el-col :span="1">
+                        <el-button
+                          type="text"
+                          size="mini"
+                          :icon="family.expanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right'"
+                          @click="toggleFamilyExpand(family)"
+                          style="padding: 0;"
+                        ></el-button>
+                      </el-col>
+                      <el-col :span="5">
+                        <el-tag type="success" size="small" style="margin-right: 8px;">特征族</el-tag>
+                        <span style="font-weight: 500; font-size: 14px;">{{ family.code }}</span>
+                      </el-col>
+                      <el-col :span="8">
+                        <span style="color: #606266;">{{ family.typeName }}</span>
+                      </el-col>
+                      <el-col :span="3" style="text-align: right;">
+                        <span style="color: #67C23A; font-weight: 500;">￥{{ family.typePrice || 0 }}</span>
+                      </el-col>
+                      <el-col :span="2" style="text-align: center;">
+                        <el-tag v-if="family.typeImage && family.typeImage.length > 0" size="mini" type="success">
+                          {{ family.typeImage.length }}张
+                        </el-tag>
+                        <el-tag v-else size="mini" type="warning">待维护</el-tag>
+                      </el-col>
+                      <el-col :span="2" style="text-align: center;">
+                        <el-tag v-if="family.enable" size="mini" type="success">启用</el-tag>
+                        <el-tag v-else size="mini" type="info">禁用</el-tag>
+                      </el-col>
+                      <el-col :span="2" style="text-align: right;">
+                        <el-button
+                          size="mini"
+                          type="text"
+                          icon="el-icon-edit"
+                          @click="handleUpdateConfig(family)"
+                          v-hasPermi="['completeVehicle:product:saleModel:edit']"
+                          :disabled="!family.enable"
+                        >维护
+                        </el-button>
+                      </el-col>
+                    </el-row>
+                  </div>
+                  
+                  <div v-if="family.expanded && family.children && family.children.length > 0" style="margin-top: 10px;">
+                    <el-divider content-position="left">
+                      <span style="font-size: 12px; color: #909399;">特征值列表 (可拖拽排序)</span>
+                    </el-divider>
+                    
+                    <draggable 
+                      v-model="family.children"
+                      group="feature"
+                      handle=".drag-handle-feature"
+                      animation="200"
+                      @end="handleFeatureDragEnd(family)"
+                    >
+                      <transition-group type="transition" name="flip-list">
+                        <el-row 
+                          v-for="(feature, featureIndex) in family.children"
+                          :key="feature.treeId"
+                          type="flex"
+                          align="middle"
+                          style="padding: 8px 0; border-bottom: 1px solid #EBEEF5;"
+                          :style="{ 'background-color': featureIndex % 2 === 0 ? '#FAFAFA' : '#FFFFFF' }"
+                        >
+                          <el-col :span="1">
+                            <i class="el-icon-rank drag-handle-feature" style="cursor: move; font-size: 14px; color: #909399;"></i>
+                          </el-col>
+                          <el-col :span="6">
+                            <el-tag type="primary" size="small" style="margin-right: 8px;">特征值</el-tag>
+                            <span style="font-size: 13px;">{{ feature.code }}</span>
+                          </el-col>
+                          <el-col :span="8">
+                            <span style="color: #606266; font-size: 13px;">{{ feature.typeName }}</span>
+                          </el-col>
+                          <el-col :span="3" style="text-align: right;">
+                            <span style="color: #67C23A; font-size: 13px;">￥{{ feature.typePrice || 0 }}</span>
+                          </el-col>
+                          <el-col :span="2" style="text-align: center;">
+                            <el-tag v-if="feature.typeImage && feature.typeImage.length > 0" size="mini" type="success">
+                              {{ feature.typeImage.length }}张
+                            </el-tag>
+                            <el-tag v-else size="mini" type="warning">待维护</el-tag>
+                          </el-col>
+                          <el-col :span="2" style="text-align: center;">
+                            <el-tag v-if="feature.enable" size="mini" type="success">启用</el-tag>
+                            <el-tag v-else size="mini" type="info">禁用</el-tag>
+                          </el-col>
+                          <el-col :span="2" style="text-align: right;">
+                            <el-button
+                              size="mini"
+                              type="text"
+                              icon="el-icon-edit"
+                              @click="handleUpdateConfig(feature)"
+                              v-hasPermi="['completeVehicle:product:saleModel:edit']"
+                              :disabled="!feature.enable"
+                            >维护
+                            </el-button>
+                          </el-col>
+                        </el-row>
+                      </transition-group>
+                    </draggable>
+                  </div>
+                  
+                  <el-empty v-if="family.expanded && (!family.children || family.children.length === 0)" description="该特征族暂无特征值" :image-size="60" style="padding: 20px 0;"/>
+                  
+                  <div v-if="!family.expanded && family.children && family.children.length > 0" style="text-align: center; padding: 5px 0;">
+                    <span style="color: #909399; font-size: 12px;">共 {{ family.children.length }} 个特征值（点击展开查看）</span>
+                  </div>
+                </el-card>
+              </transition-group>
+            </draggable>
+          </div>
         </el-tab-pane>
       </el-tabs>
       <div slot="footer" class="dialog-footer">
@@ -600,12 +694,17 @@ import {
   updateSaleModelBuildConfig,
   delSaleModelBuildConfig,
   listBuildConfigByBaseModelCode,
-  syncSaleModelConfig
+  syncSaleModelConfig,
+  updateConfigSort
 } from "@/api/completevehicle/product/salemodel";
 import { listBaseModelByPlatformCodeAndSeriesCodeAndModelCode } from "@/api/completevehicle/product/basemodel";
+import draggable from 'vuedraggable';
 
 export default {
   name: "SaleModel",
+  components: {
+    draggable
+  },
   dicts: [],
   data() {
     return {
@@ -629,6 +728,8 @@ export default {
       saleModelList: [],
       // 销售车型配置表格数据（特征族列表）
       saleModelConfigFamilyList: [],
+      // 配置树形数据（用于拖拽排序）
+      configTreeData: [],
       // 生产配置关联表格数据
       buildConfigRelationList: [],
       // 聚合后的特征值范围
@@ -703,45 +804,6 @@ export default {
         ]
       }
     };
-},
-  computed: {
-    configTreeData() {
-      if (!this.saleModelConfigFamilyList || this.saleModelConfigFamilyList.length === 0) {
-        return [];
-      }
-      
-      console.log('saleModelConfigFamilyList:', this.saleModelConfigFamilyList);
-      
-      return this.saleModelConfigFamilyList.map(family => {
-        const children = (family.features || family.featureDetails || []).map(feature => ({
-          ...feature,
-          treeId: `value-${family.familyCode}-${feature.typeCode || feature.featureCode}`,
-          code: feature.typeCode || feature.featureCode,
-          typeName: feature.typeName || feature.featureName,
-          typePrice: feature.typePrice || feature.featurePrice,
-          typeImage: feature.typeImage || feature.featureImage || [],
-          typeDesc: feature.typeDesc || feature.featureDesc,
-          typeParam: feature.typeParam || feature.featureParam,
-          isFeatureValue: true
-        }));
-        
-        const familyNode = {
-          id: family.familyId || family.familyCode,
-          treeId: `family-${family.familyCode}`,
-          code: family.familyCode,
-          typeName: family.familyName,
-          typePrice: family.familyPrice,
-          typeImage: family.familyImage || [],
-          typeDesc: family.familyDesc,
-          typeParam: family.familyParam,
-          enable: family.enable,
-          sort: family.sort,
-          isFeatureValue: false,
-          children: children
-        };
-        return familyNode;
-      });
-    }
   },
   created() {
     this.queryParams.saleCode = this.$route.query.saleCode;
@@ -770,9 +832,50 @@ export default {
       this.loadingConfig = true;
       listSaleModelConfig(saleModelId).then(response => {
           this.saleModelConfigFamilyList = response.data || [];
+          this.buildConfigTreeData();
           this.loadingConfig = false;
         }
       );
+    },
+    /** 构建配置树形数据 */
+    buildConfigTreeData() {
+      if (!this.saleModelConfigFamilyList || this.saleModelConfigFamilyList.length === 0) {
+        this.configTreeData = [];
+        return;
+      }
+      
+      console.log('saleModelConfigFamilyList:', this.saleModelConfigFamilyList);
+      
+      this.configTreeData = this.saleModelConfigFamilyList.map(family => {
+        const children = (family.features || family.featureDetails || []).map(feature => ({
+          ...feature,
+          treeId: `value-${family.familyCode}-${feature.typeCode || feature.featureCode}`,
+          code: feature.typeCode || feature.featureCode,
+          typeName: feature.typeName || feature.featureName,
+          typePrice: feature.typePrice || feature.featurePrice,
+          typeImage: feature.typeImage || feature.featureImage || [],
+          typeDesc: feature.typeDesc || feature.featureDesc,
+          typeParam: feature.typeParam || feature.featureParam,
+          isFeatureValue: true
+        }));
+        
+        const familyNode = {
+          id: family.familyId || family.familyCode,
+          treeId: `family-${family.familyCode}`,
+          code: family.familyCode,
+          typeName: family.familyName,
+          typePrice: family.familyPrice,
+          typeImage: family.familyImage || [],
+          typeDesc: family.familyDesc,
+          typeParam: family.familyParam,
+          enable: family.enable,
+          sort: family.sort,
+          isFeatureValue: false,
+          expanded: false,
+          children: children
+        };
+        return familyNode;
+      });
     },
     /** 查询销售车型生产配置关联列表 */
     getListBuildConfig(saleModelId) {
@@ -818,6 +921,7 @@ export default {
       this.buildConfigRelationList = [];
       this.aggregatedFeatureCodeRanges = [];
       this.saleModelConfigFamilyList = [];
+      this.configTreeData = [];
       this.activeBuildConfigTab = 'buildConfigList';
     },
     /** 取消按钮（新增生产配置关联） */
@@ -1165,7 +1269,98 @@ export default {
         this.getListBuildConfig(this.form.id);
         this.activeBuildConfigTab = 'buildConfigList';
       });
+    },
+    /** 特征族拖拽结束 */
+    handleFamilyDragEnd(event) {
+      console.log('特征族拖拽结束', event);
+      this.saveConfigSort();
+    },
+    /** 特征值拖拽结束 */
+    handleFeatureDragEnd(family) {
+      console.log('特征值拖拽结束', family);
+      this.saveConfigSort();
+    },
+    /** 保存配置排序 */
+    saveConfigSort() {
+      const dto = {
+        families: []
+      };
+      
+      this.configTreeData.forEach((family, familyIndex) => {
+        const familyItem = {
+          familyId: family.id,
+          sort: familyIndex,
+          features: []
+        };
+        
+        if (family.children && family.children.length > 0) {
+          family.children.forEach((feature, featureIndex) => {
+            familyItem.features.push({
+              featureId: feature.id,
+              sort: featureIndex
+            });
+          });
+        }
+        
+        dto.families.push(familyItem);
+      });
+      
+      console.log('排序数据:', dto);
+      
+      updateConfigSort(this.form.id, dto).then(response => {
+        this.$modal.msgSuccess("排序更新成功");
+      }).catch(error => {
+        console.error('排序更新失败:', error);
+        this.$modal.msgError("排序更新失败");
+        this.getListConfig(this.form.id);
+      });
+    },
+    /** 切换特征族展开状态 */
+    toggleFamilyExpand(family) {
+      family.expanded = !family.expanded;
     }
   }
 };
 </script>
+
+<style scoped>
+.family-header {
+  padding: 0;
+}
+
+.flip-list-move {
+  transition: transform 0.5s;
+}
+
+.no-move {
+  transition: transform 0s;
+}
+
+.drag-handle-family,
+.drag-handle-feature {
+  cursor: move;
+  transition: color 0.3s;
+}
+
+.drag-handle-family:hover,
+.drag-handle-feature:hover {
+  color: #409EFF;
+}
+
+.ghost {
+  opacity: 0.5;
+  background: #C8EBFB;
+}
+
+.el-card {
+  transition: all 0.5s;
+}
+
+.el-divider__text {
+  background-color: #FFF;
+}
+
+.el-button--text.el-button--mini {
+  font-size: 14px;
+}
+</style>

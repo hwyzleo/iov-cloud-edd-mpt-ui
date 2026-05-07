@@ -152,3 +152,12 @@ export function syncSaleModelConfig(saleModelId) {
     method: 'post'
   })
 }
+
+// 更新销售车型配置排序
+export function updateConfigSort(saleModelId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/config/sort',
+    method: 'put',
+    data: data
+  })
+}
