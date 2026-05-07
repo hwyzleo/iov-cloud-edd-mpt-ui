@@ -330,54 +330,7 @@
     <!-- 生产配置关联管理对话框 -->
     <el-dialog :title="title" :visible.sync="openBuildConfig" width="900px" append-to-body>
       <el-tabs v-model="activeBuildConfigTab" type="card">
-        <el-tab-pane label="特征值范围" name="featureRanges">
-          <el-alert
-            title="说明"
-            type="info"
-            :closable="false"
-            style="margin-bottom: 15px;"
-          >
-            <template slot="default">
-              根据关联的生产配置聚合计算出的特征值可选范围。用户选择销售车型配置时，只能选择这些范围内的特征值。
-            </template>
-          </el-alert>
-          <el-form :model="form" label-width="100px" size="small">
-            <el-form-item label="销售代码">
-              <el-input v-model="form.saleCode" :disabled="true"/>
-            </el-form-item>
-            <el-form-item label="车型名称">
-              <el-input v-model="form.modelName" :disabled="true"/>
-            </el-form-item>
-          </el-form>
-          <div v-if="aggregatedFeatureCodeRanges && aggregatedFeatureCodeRanges.length > 0" style="margin-top: 10px;">
-            <el-collapse accordion>
-              <el-collapse-item
-                v-for="(range, index) in aggregatedFeatureCodeRanges"
-                :key="index"
-              >
-                <template slot="title">
-                  <span style="font-weight: 500;">{{ range.familyName }}</span>
-                  <el-tag size="mini" type="success" style="margin-left: 10px;">
-                    {{ (range.featureDetails && range.featureDetails.length) || 0 }}个可选
-                  </el-tag>
-                </template>
-                <div style="padding: 10px 0;">
-                  <el-tag
-                    v-for="(detail, i) in range.featureDetails"
-                    :key="i"
-                    size="small"
-                    style="margin: 3px;"
-                  >
-                    {{ detail.featureName }}
-                  </el-tag>
-                </div>
-              </el-collapse-item>
-            </el-collapse>
-          </div>
-          <el-empty v-else description="暂无关联的生产配置，请先在配置列表中关联生产配置" :image-size="80"/>
-        </el-tab-pane>
-        
-        <el-tab-pane label="配置列表" name="buildConfigList">
+        <el-tab-pane label="生产配置关联" name="buildConfigList">
           <el-row :gutter="10" class="mb8">
             <el-col :span="1.5">
               <el-button
@@ -430,7 +383,7 @@
           </el-table>
         </el-tab-pane>
         
-        <el-tab-pane label="价格图片维护" name="priceImageConfig">
+        <el-tab-pane label="基础车型维护" name="baseModelList">
           <el-row style="margin-bottom: 15px;">
             <el-col :span="16">
               <el-alert
@@ -439,7 +392,77 @@
                 :closable="false"
               >
                 <template slot="default">
-                  配置项由生产配置自动生成。请维护每个配置项的价格和图片信息，用于用户选择配置时的展示和价格计算。
+                  基础车型由关联的生产配置自动提取。请维护每个基础车型的名称、图片、价格等信息，用于销售车型展示。
+                  <span style="color: #E6A23C;">价格为空或为0的项表示尚未维护，请在修改时补充。</span>
+                </template>
+              </el-alert>
+            </el-col>
+            <el-col :span="8" style="text-align: right;">
+              <el-button
+                type="primary"
+                size="mini"
+                icon="el-icon-refresh"
+                @click="handleSyncBaseModels"
+                v-hasPermi="['completeVehicle:product:saleModel:edit']"
+              >同步基础车型
+              </el-button>
+            </el-col>
+          </el-row>
+          
+          <el-table
+            v-loading="loadingBaseModel"
+            :data="baseModelRelationList"
+            size="small"
+            border
+            style="width: 100%"
+          >
+            <el-table-column label="基础车型代码" prop="baseModelCode" width="120" show-overflow-tooltip/>
+            <el-table-column label="名称" prop="baseModelName" show-overflow-tooltip/>
+            <el-table-column label="价格" align="center" width="100">
+              <template slot-scope="scope">
+                <span style="color: #67C23A;">￥{{ scope.row.baseModelPrice || 0 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="图片" align="center" width="80">
+              <template slot-scope="scope">
+                <el-tag v-if="scope.row.baseModelImage && scope.row.baseModelImage.length > 0" size="mini" type="success">
+                  {{ scope.row.baseModelImage.length }}张
+                </el-tag>
+                <el-tag v-else size="mini" type="warning">待维护</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" align="center" width="70">
+              <template slot-scope="scope">
+                <el-tag v-if="scope.row.enable" type="success" size="mini">启用</el-tag>
+                <el-tag v-else type="info" size="mini">禁用</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="排序" prop="sort" align="center" width="60"/>
+            <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
+              <template slot-scope="scope">
+                <el-button
+                  size="mini"
+                  type="text"
+                  icon="el-icon-edit"
+                  @click="handleUpdateBaseModel(scope.row)"
+                  v-hasPermi="['completeVehicle:product:saleModel:edit']"
+                >维护
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        
+        <el-tab-pane label="特征族维护" name="priceImageConfig">
+          <el-row style="margin-bottom: 15px;">
+            <el-col :span="16">
+              <el-alert
+                title="说明"
+                type="info"
+                :closable="false"
+              >
+                <template slot="default">
+                  特征族和特征值由生产配置自动生成。请维护价格和图片信息，用于用户选择配置时的展示和价格计算。
                   <span style="color: #E6A23C;">价格为0的项表示尚未维护，请在修改时补充。</span>
                   <span style="color: #409EFF; margin-left: 10px;">可通过拖拽调整特征族和特征值的排序顺序。</span>
                 </template>
@@ -674,6 +697,65 @@
         <el-button @click="cancelEditBuildConfig">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 基础车型维护对话框 -->
+    <el-dialog :title="titleBaseModel" :visible.sync="openBaseModel" width="600px" append-to-body>
+      <el-form ref="formBaseModel" :model="formBaseModel" label-width="120px">
+        <el-form-item label="基础车型代码">
+          <el-input v-model="formBaseModel.baseModelCode" :disabled="true"/>
+        </el-form-item>
+        <el-form-item label="名称">
+          <el-input v-model="formBaseModel.baseModelName" placeholder="请输入名称"/>
+        </el-form-item>
+        <el-form-item label="价格">
+          <el-input-number v-model="formBaseModel.baseModelPrice" :precision="2" :min="0" controls-position="right"/>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="formBaseModel.baseModelDesc" type="textarea" placeholder="请输入描述"/>
+        </el-form-item>
+        <el-form-item label="参数">
+          <el-input v-model="formBaseModel.baseModelParam" type="textarea" placeholder="请输入参数"/>
+        </el-form-item>
+        <el-form-item label="是否启用">
+          <el-radio-group v-model="formBaseModel.enable">
+            <el-radio :label="true">是</el-radio>
+            <el-radio :label="false">否</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="formBaseModel.sort" controls-position="right" :min="0"/>
+        </el-form-item>
+        <el-form-item
+          v-for="(image, index) in formBaseModel.baseModelImage"
+          :label="'图片 ' + (index + 1)"
+          :key="index"
+        >
+          <el-row>
+            <el-input v-model="formBaseModel.baseModelImage[index]" placeholder="请输入图片URL">
+              <el-button slot="append" icon="el-icon-delete" @click="removeBaseModelImage(index)"></el-button>
+            </el-input>
+          </el-row>
+          <el-row v-if="formBaseModel.baseModelImage[index]">
+            <el-image
+              :src="formBaseModel.baseModelImage[index]"
+              style="width: 100%; max-height: 200px;"
+              fit="contain"
+            >
+              <div slot="error" class="image-slot">
+                <i class="el-icon-picture-outline"></i>
+              </div>
+            </el-image>
+          </el-row>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-plus" @click="addBaseModelImage">添加图片</el-button>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitBaseModel">确 定</el-button>
+        <el-button @click="cancelBaseModel">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -695,7 +777,10 @@ import {
   delSaleModelBuildConfig,
   listBuildConfigByBaseModelCode,
   syncSaleModelConfig,
-  updateConfigSort
+  updateConfigSort,
+  listSaleModelBaseModel,
+  updateSaleModelBaseModel,
+  syncSaleModelBaseModel
 } from "@/api/completevehicle/product/salemodel";
 import { listBaseModelByPlatformCodeAndSeriesCodeAndModelCode } from "@/api/completevehicle/product/basemodel";
 import draggable from 'vuedraggable';
@@ -714,6 +799,8 @@ export default {
       loadingConfig: true,
       // 遮罩层（生产配置关联）
       loadingBuildConfig: true,
+      // 遮罩层（基础车型）
+      loadingBaseModel: true,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -734,6 +821,8 @@ export default {
       buildConfigRelationList: [],
       // 聚合后的特征值范围
       aggregatedFeatureCodeRanges: [],
+      // 基础车型关联表格数据
+      baseModelRelationList: [],
       // 基础车型列表
       baseModelList: [],
       // 生产配置选项列表（用于新增关联）
@@ -744,6 +833,8 @@ export default {
       title2: "",
       // 生产配置关联弹出层标题
       titleBuildConfig: "",
+      // 基础车型维护弹出层标题
+      titleBaseModel: "",
       // 是否显示弹出层
       open: false,
       // 是否显示弹出层（图片维护）
@@ -758,6 +849,8 @@ export default {
       openAddBuildConfig: false,
       // 是否显示弹出层（修改生产配置关联）
       openEditBuildConfig: false,
+      // 是否显示弹出层（基础车型维护）
+      openBaseModel: false,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -773,6 +866,8 @@ export default {
       formBuildConfig: {},
       // 修改生产配置关联表单参数
       formEditBuildConfig: {},
+      // 基础车型维护表单参数
+      formBaseModel: {},
       // 销售车型表单校验
       rules: {
         saleCode: [
@@ -895,9 +990,23 @@ export default {
           console.error('查询聚合特征值范围失败:', error);
           this.aggregatedFeatureCodeRanges = [];
         });
+        
+        // 查询基础车型关联列表
+        this.getListBaseModel(saleModelId);
       }).catch(error => {
         console.error('查询生产配置关联列表失败:', error);
         this.loadingBuildConfig = false;
+      });
+    },
+    /** 查询销售车型基础车型关联列表 */
+    getListBaseModel(saleModelId) {
+      this.loadingBaseModel = true;
+      listSaleModelBaseModel(saleModelId).then(response => {
+        this.baseModelRelationList = response.data || [];
+        this.loadingBaseModel = false;
+      }).catch(error => {
+        console.error('查询基础车型关联列表失败:', error);
+        this.loadingBaseModel = false;
       });
     },
     /** 取消按钮 */
@@ -922,6 +1031,7 @@ export default {
       this.aggregatedFeatureCodeRanges = [];
       this.saleModelConfigFamilyList = [];
       this.configTreeData = [];
+      this.baseModelRelationList = [];
       this.activeBuildConfigTab = 'buildConfigList';
     },
     /** 取消按钮（新增生产配置关联） */
@@ -933,6 +1043,11 @@ export default {
     cancelEditBuildConfig() {
       this.openEditBuildConfig = false;
       this.resetEditBuildConfig();
+    },
+    /** 取消按钮（基础车型维护） */
+    cancelBaseModel() {
+      this.openBaseModel = false;
+      this.resetBaseModel();
     },
     /** 表单重置 */
     reset() {
@@ -989,6 +1104,21 @@ export default {
         sort: 0
       };
       this.resetForm("formEditBuildConfig");
+    },
+    /** 基础车型维护表单重置 */
+    resetBaseModel() {
+      this.formBaseModel = {
+        id: undefined,
+        baseModelCode: undefined,
+        baseModelName: undefined,
+        baseModelImage: [],
+        baseModelPrice: 0,
+        baseModelDesc: '',
+        baseModelParam: '',
+        enable: true,
+        sort: 0
+      };
+      this.resetForm("formBaseModel");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -1318,6 +1448,53 @@ export default {
     /** 切换特征族展开状态 */
     toggleFamilyExpand(family) {
       family.expanded = !family.expanded;
+    },
+    /** 同步基础车型按钮操作 */
+    handleSyncBaseModels() {
+      this.$confirm('是否确认重新同步基础车型？这将根据关联的生产配置重新提取基础车型信息', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        syncSaleModelBaseModel(this.form.id).then(response => {
+          this.$modal.msgSuccess("同步成功");
+          this.getListBaseModel(this.form.id);
+        });
+      }).catch(() => {});
+    },
+    /** 基础车型维护按钮操作 */
+    handleUpdateBaseModel(row) {
+      this.resetBaseModel();
+      this.formBaseModel = {
+        id: row.id,
+        baseModelCode: row.baseModelCode,
+        baseModelName: row.baseModelName,
+        baseModelImage: row.baseModelImage || [],
+        baseModelPrice: row.baseModelPrice || 0,
+        baseModelDesc: row.baseModelDesc || '',
+        baseModelParam: row.baseModelParam || '',
+        enable: row.enable,
+        sort: row.sort
+      };
+      this.openBaseModel = true;
+      this.titleBaseModel = "维护基础车型";
+    },
+    /** 添加基础车型图片 */
+    addBaseModelImage() {
+      this.formBaseModel.baseModelImage.push('');
+    },
+    /** 删除基础车型图片 */
+    removeBaseModelImage(index) {
+      this.formBaseModel.baseModelImage.splice(index, 1);
+    },
+    /** 提交基础车型维护 */
+    submitBaseModel() {
+      updateSaleModelBaseModel(this.form.id, this.formBaseModel).then(response => {
+        this.$modal.msgSuccess("维护成功");
+        this.openBaseModel = false;
+        this.getListBaseModel(this.form.id);
+        this.activeBuildConfigTab = 'baseModelList';
+      });
     }
   }
 };

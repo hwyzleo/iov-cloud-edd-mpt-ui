@@ -161,3 +161,28 @@ export function updateConfigSort(saleModelId, data) {
     data: data
   })
 }
+
+// 查询销售车型基础车型关联列表
+export function listSaleModelBaseModel(saleModelId) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/baseModel',
+    method: 'get'
+  })
+}
+
+// 修改销售车型基础车型关联
+export function updateSaleModelBaseModel(saleModelId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/baseModel',
+    method: 'put',
+    data: data
+  })
+}
+
+// 手动同步销售车型基础车型
+export function syncSaleModelBaseModel(saleModelId) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/syncBaseModels',
+    method: 'post'
+  })
+}
