@@ -642,12 +642,14 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="生产配置" prop="buildConfigCode">
+        <el-form-item label="生产配置" prop="buildConfigCodes">
           <el-select
-            v-model="formBuildConfig.buildConfigCode"
+            v-model="formBuildConfig.buildConfigCodes"
             placeholder="请选择生产配置"
             filterable
             clearable
+            multiple
+            style="width: 100%"
           >
             <el-option
               v-for="item in buildConfigOptions"
@@ -894,8 +896,8 @@ export default {
       },
       // 生产配置关联表单校验
       rulesBuildConfig: {
-        buildConfigCode: [
-          {required: true, message: "生产配置不能为空", trigger: "change"}
+        buildConfigCodes: [
+          {required: true, message: "生产配置不能为空", trigger: "change", type: "array"}
         ]
       }
     };
@@ -1087,7 +1089,7 @@ export default {
     resetBuildConfig() {
       this.formBuildConfig = {
         baseModelCode: undefined,
-        buildConfigCode: undefined,
+        buildConfigCodes: [],
         enable: true,
         sort: 0
       };
@@ -1363,13 +1365,13 @@ export default {
     handleBaseModelChangeForBuildConfig(baseModelCode) {
       if (baseModelCode) {
         this.buildConfigOptions = [];
-        this.formBuildConfig.buildConfigCode = null;
+        this.formBuildConfig.buildConfigCodes = [];
         listBuildConfigByBaseModelCode(baseModelCode).then(response => {
           this.buildConfigOptions = response.data;
         });
       } else {
         this.buildConfigOptions = [];
-        this.formBuildConfig.buildConfigCode = null;
+        this.formBuildConfig.buildConfigCodes = [];
       }
     },
     /** 提交生产配置关联 */
