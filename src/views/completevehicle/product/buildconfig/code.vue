@@ -63,8 +63,8 @@
     </el-row>
 
     <el-alert
-      title="生产配置代码"
-      :description="buildConfigCode"
+      :title="'生产配置代码：' + buildConfigCode"
+      :description="'生产配置名称：' + buildConfigName"
       type="info"
       :closable="false"
       show-icon
@@ -231,6 +231,7 @@ export default {
   data() {
     return {
       buildConfigCode: this.$route.query.code,
+      buildConfigName: this.$route.query.name,
       loading: true,
       ids: [],
       single: true,

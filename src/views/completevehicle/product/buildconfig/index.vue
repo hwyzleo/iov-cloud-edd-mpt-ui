@@ -128,7 +128,7 @@
       <el-table-column label="车系代码" prop="seriesCode" width="80" align="center"/>
       <el-table-column label="车型代码" prop="modelCode" width="80" align="center"/>
       <el-table-column label="基础车型代码" prop="baseModelCode" width="110" align="center"/>
-      <el-table-column label="生产配置代码" prop="code" width="180"/>
+      <el-table-column label="生产配置代码" prop="code" width="190"/>
       <el-table-column label="生产配置名称" prop="name"/>
       <el-table-column label="是否启用" align="center" width="80">
         <template slot-scope="scope">
@@ -140,11 +140,6 @@
         </template>
       </el-table-column>
       <el-table-column label="排序" prop="sort" align="center" width="60"/>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="140">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="操作" align="center" width="160" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -545,7 +540,7 @@ export default {
     handleFeatureCode(row) {
       this.$router.push({
         path: "/completeVehicle/product/buildConfigFeatureCode",
-        query: { code: row.code }
+        query: { code: row.code, name: row.name }
       });
     }
   }
