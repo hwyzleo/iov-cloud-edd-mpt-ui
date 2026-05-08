@@ -351,7 +351,7 @@
             border
             style="width: 100%"
           >
-            <el-table-column label="生产配置代码" prop="buildConfigCode" width="120" show-overflow-tooltip/>
+            <el-table-column label="生产配置代码" prop="buildConfigCode" width="160" show-overflow-tooltip/>
             <el-table-column label="生产配置名称" prop="buildConfigName" show-overflow-tooltip/>
             <el-table-column label="状态" align="center" width="70">
               <template slot-scope="scope">
@@ -359,7 +359,6 @@
                 <el-tag v-else type="info" size="mini">禁用</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="排序" prop="sort" align="center" width="60"/>
             <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
               <template slot-scope="scope">
                 <el-button
@@ -381,8 +380,15 @@
               </template>
             </el-table-column>
           </el-table>
+          <pagination
+            v-show="buildConfigTotal > 0"
+            :total="buildConfigTotal"
+            :page.sync="buildConfigPageNum"
+            :limit.sync="buildConfigPageSize"
+            @pagination="getListBuildConfig(form.id)"
+          />
         </el-tab-pane>
-        
+
         <el-tab-pane label="基础车型维护" name="baseModelList">
           <el-row style="margin-bottom: 15px;">
             <el-col :span="16">
@@ -408,7 +414,7 @@
               </el-button>
             </el-col>
           </el-row>
-          
+
           <el-table
             v-loading="loadingBaseModel"
             :data="baseModelRelationList"
@@ -437,7 +443,6 @@
                 <el-tag v-else type="info" size="mini">禁用</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="排序" prop="sort" align="center" width="60"/>
             <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
               <template slot-scope="scope">
                 <el-button
@@ -452,7 +457,7 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        
+
         <el-tab-pane label="特征族维护" name="priceImageConfig">
           <el-row style="margin-bottom: 15px;">
             <el-col :span="16">
@@ -479,11 +484,11 @@
               </el-button>
             </el-col>
           </el-row>
-          
+
           <div v-loading="loadingConfig" style="max-height: 500px; overflow-y: auto;">
             <el-empty v-if="!configTreeData || configTreeData.length === 0" description="暂无配置数据" :image-size="80"/>
-            
-            <draggable 
+
+            <draggable
               v-else
               v-model="configTreeData"
               group="family"
@@ -492,7 +497,7 @@
               @end="handleFamilyDragEnd"
             >
               <transition-group type="transition" name="flip-list">
-                <el-card 
+                <el-card
                   v-for="(family, familyIndex) in configTreeData"
                   :key="family.treeId"
                   shadow="hover"
@@ -546,13 +551,13 @@
                       </el-col>
                     </el-row>
                   </div>
-                  
+
                   <div v-if="family.expanded && family.children && family.children.length > 0" style="margin-top: 10px;">
                     <el-divider content-position="left">
                       <span style="font-size: 12px; color: #909399;">特征值列表 (可拖拽排序)</span>
                     </el-divider>
-                    
-                    <draggable 
+
+                    <draggable
                       v-model="family.children"
                       group="feature"
                       handle=".drag-handle-feature"
@@ -560,7 +565,7 @@
                       @end="handleFeatureDragEnd(family)"
                     >
                       <transition-group type="transition" name="flip-list">
-                        <el-row 
+                        <el-row
                           v-for="(feature, featureIndex) in family.children"
                           :key="feature.treeId"
                           type="flex"
@@ -606,12 +611,8 @@
                       </transition-group>
                     </draggable>
                   </div>
-                  
+
                   <el-empty v-if="family.expanded && (!family.children || family.children.length === 0)" description="该特征族暂无特征值" :image-size="60" style="padding: 20px 0;"/>
-                  
-                  <div v-if="!family.expanded && family.children && family.children.length > 0" style="text-align: center; padding: 5px 0;">
-                    <span style="color: #909399; font-size: 12px;">共 {{ family.children.length }} 个特征值（点击展开查看）</span>
-                  </div>
                 </el-card>
               </transition-group>
             </draggable>
@@ -821,6 +822,12 @@ export default {
       configTreeData: [],
       // 生产配置关联表格数据
       buildConfigRelationList: [],
+      // 生产配置关联分页总数
+      buildConfigTotal: 0,
+      // 生产配置关联分页页码
+      buildConfigPageNum: 1,
+      // 生产配置关联分页每页条数
+      buildConfigPageSize: 10,
       // 聚合后的特征值范围
       aggregatedFeatureCodeRanges: [],
       // 基础车型关联表格数据
@@ -940,9 +947,9 @@ export default {
         this.configTreeData = [];
         return;
       }
-      
+
       console.log('saleModelConfigFamilyList:', this.saleModelConfigFamilyList);
-      
+
       this.configTreeData = this.saleModelConfigFamilyList.map(family => {
         const children = (family.features || family.featureDetails || []).map(feature => ({
           ...feature,
@@ -955,7 +962,7 @@ export default {
           typeParam: feature.typeParam || feature.featureParam,
           isFeatureValue: true
         }));
-        
+
         const familyNode = {
           id: family.familyId || family.familyCode,
           treeId: `family-${family.familyCode}`,
@@ -978,11 +985,16 @@ export default {
     getListBuildConfig(saleModelId) {
       this.loadingBuildConfig = true;
       console.log('查询生产配置关联列表，saleModelId:', saleModelId);
-      listSaleModelBuildConfig(saleModelId).then(response => {
+      const query = {
+        pageNum: this.buildConfigPageNum,
+        pageSize: this.buildConfigPageSize
+      };
+      listSaleModelBuildConfig(saleModelId, query).then(response => {
         console.log('生产配置关联列表返回数据:', response);
-        this.buildConfigRelationList = response.data || [];
+        this.buildConfigRelationList = response.data.items || [];
+        this.buildConfigTotal = response.data.total || 0;
         this.loadingBuildConfig = false;
-        
+
         // 查询聚合后的特征值范围
         console.log('查询聚合特征值范围，saleModelId:', saleModelId);
         getSaleModelFeatureCodeRanges(saleModelId).then(response => {
@@ -992,7 +1004,7 @@ export default {
           console.error('查询聚合特征值范围失败:', error);
           this.aggregatedFeatureCodeRanges = [];
         });
-        
+
         // 查询基础车型关联列表
         this.getListBaseModel(saleModelId);
       }).catch(error => {
@@ -1319,6 +1331,7 @@ export default {
     /** 生产配置关联管理按钮操作 */
     handleBuildConfig(row) {
       this.reset();
+      this.buildConfigPageNum = 1;
       getSaleModel(row.id).then(response => {
         this.form = response.data;
         this.getListBuildConfig(row.id);
@@ -1417,14 +1430,14 @@ export default {
       const dto = {
         families: []
       };
-      
+
       this.configTreeData.forEach((family, familyIndex) => {
         const familyItem = {
           familyId: family.id,
           sort: familyIndex,
           features: []
         };
-        
+
         if (family.children && family.children.length > 0) {
           family.children.forEach((feature, featureIndex) => {
             familyItem.features.push({
@@ -1433,12 +1446,12 @@ export default {
             });
           });
         }
-        
+
         dto.families.push(familyItem);
       });
-      
+
       console.log('排序数据:', dto);
-      
+
       updateConfigSort(this.form.id, dto).then(response => {
         this.$modal.msgSuccess("排序更新成功");
       }).catch(error => {

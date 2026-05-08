@@ -94,11 +94,12 @@ export function delSaleModelConfig(saleModelId, saleModelConfigId) {
   })
 }
 
-// 查询销售车型生产配置关联列表
-export function listSaleModelBuildConfig(saleModelId) {
+// 查询销售车型生产配置关联列表（分页）
+export function listSaleModelBuildConfig(saleModelId, query) {
   return request({
     url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
-    method: 'get'
+    method: 'get',
+    params: query
   })
 }
 
