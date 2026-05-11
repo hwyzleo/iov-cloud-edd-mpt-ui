@@ -22,6 +22,14 @@ export function delOrder(orderNo) {
   })
 }
 
+export function physicalDeleteOrder(orderId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/order/v1/physical/' + orderId,
+    method: 'delete',
+    data: data
+  })
+}
+
 export function auditPass(orderId, operatorId) {
   return request({
     url: '/otd-vso/api/mpt/order/v1/' + orderId + '/audit/pass',

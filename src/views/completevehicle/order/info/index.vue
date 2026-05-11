@@ -240,6 +240,7 @@ import {
   listOrder,
   getOrder,
   delOrder,
+  physicalDeleteOrder,
   auditPass,
   auditReject,
   lockOrder,
@@ -395,7 +396,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       this.$modal.confirm('是否确认删除车辆销售订单号为"' + row.orderNo + '"的数据项？').then(function () {
-        return delOrder(row.orderNo);
+        return physicalDeleteOrder(row.id, {});
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
