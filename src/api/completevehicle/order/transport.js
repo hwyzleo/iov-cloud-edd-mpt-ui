@@ -1,21 +1,19 @@
 import request from '@/utils/request'
 
-// 查询运输相关车辆销售订单列表
 export function listTransportOrder(query) {
   return request({
-    url: '/otd-vso/mpt/vehicleSaleOrder/listTransport',
+    url: '/otd-vso/api/mpt/order/v1/listTransport',
     method: 'get',
     params: query
   })
 }
 
-// 申请发运
-export function applyTransport(orderNum) {
+export function applyTransport(orderNo) {
   const data = {
-    orderNum: orderNum
+    orderNo: orderNo
   }
   return request({
-    url: '/otd-vso/mpt/vehicleSaleOrder/action/applyTransport',
+    url: '/otd-vso/api/mpt/order/v1/action/applyTransport',
     method: 'post',
     data: data
   })

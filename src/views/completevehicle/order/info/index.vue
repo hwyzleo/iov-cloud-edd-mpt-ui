@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="订单号" prop="orderNum">
+      <el-form-item label="订单号" prop="orderNo">
         <el-input
-          v-model="queryParams.orderNum"
+          v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
           style="width: 150px"
@@ -82,7 +82,7 @@
 
     <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNum" fixed="left" width="160"/>
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="160"/>
       <el-table-column label="下单用户" width="120">
         <template slot-scope="scope">
           <el-link
@@ -239,9 +239,11 @@
 import {
   listOrder,
   getOrder,
-  addOrder,
-  updateOrder,
   delOrder,
+  auditPass,
+  auditReject,
+  lockOrder,
+  closeOrder
 } from "@/api/completevehicle/order/info";
 
 export default {
@@ -278,7 +280,7 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        orderNum: [
+        orderNo: [
           {required: true, message: "订单号不能为空", trigger: "blur"}
         ]
       }
@@ -331,7 +333,7 @@ export default {
     /** 表单重置 */
     reset() {
       this.form = {
-        orderNum: undefined
+        orderNo: undefined
       };
       this.resetForm("form");
     },
@@ -392,8 +394,8 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      this.$modal.confirm('是否确认删除车辆销售订单号为"' + row.orderNum + '"的数据项？').then(function () {
-        return delOrder(row.orderNum);
+      this.$modal.confirm('是否确认删除车辆销售订单号为"' + row.orderNo + '"的数据项？').then(function () {
+        return delOrder(row.orderNo);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

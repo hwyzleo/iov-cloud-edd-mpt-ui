@@ -1,15 +1,13 @@
 import request from '@/utils/request'
 
-// 查询可改配车辆销售订单列表
 export function listModelConfigChangeableOrder(query) {
   return request({
-    url: '/otd-vso/mpt/vehicleSaleOrder/listModelConfigChangeable',
+    url: '/otd-vso/api/mpt/order/v1/listModelConfigChangeable',
     method: 'get',
     params: query
   })
 }
 
-// 查询销售车型详细
 export function getSaleModel(saleModelId) {
   return request({
     url: '/otd-vso/mpt/saleModel/' + saleModelId,
@@ -17,7 +15,6 @@ export function getSaleModel(saleModelId) {
   })
 }
 
-// 查询销售车型配置列表
 export function listSaleModelConfig(saleModelId) {
   return request({
     url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config',
@@ -25,7 +22,6 @@ export function listSaleModelConfig(saleModelId) {
   })
 }
 
-// 查询销售车型配置详细
 export function getSaleModelConfig(saleModelId, saleModelConfigId) {
   return request({
     url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config/' + saleModelConfigId,
@@ -33,7 +29,6 @@ export function getSaleModelConfig(saleModelId, saleModelConfigId) {
   })
 }
 
-// 修改销售车型
 export function updateSaleModel(data) {
   return request({
     url: '/otd-vso/mpt/saleModel',
@@ -42,7 +37,6 @@ export function updateSaleModel(data) {
   })
 }
 
-// 修改销售车型图片集
 export function updateSaleModelImages(data) {
   return request({
     url: '/otd-vso/mpt/saleModel/images',
@@ -51,7 +45,6 @@ export function updateSaleModelImages(data) {
   })
 }
 
-// 修改销售车型配置
 export function updateSaleModelConfig(saleModelId, data) {
   return request({
     url: '/otd-vso/mpt/saleModel/' + saleModelId + '/config',

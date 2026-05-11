@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="订单号" prop="orderNum">
+      <el-form-item label="订单号" prop="orderNo">
         <el-input
-          v-model="queryParams.orderNum"
+          v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
           style="width: 150px"
@@ -48,7 +48,7 @@
 
     <el-table v-loading="loading" :data="orderChangeConfigList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNum" fixed="left" width="150"/>
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="150"/>
       <el-table-column label="订单状态" align="center" width="150">
         <template slot-scope="scope">
           <el-tooltip :content="parseTime(scope.row.orderStateTime)" placement="top">

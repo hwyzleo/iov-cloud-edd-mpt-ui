@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="订单号" prop="orderNum">
+      <el-form-item label="订单号" prop="orderNo">
         <el-input
-          v-model="queryParams.orderNum"
+          v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
           style="width: 150px"
@@ -33,7 +33,7 @@
 
     <el-table v-loading="loading" :data="assignVehicleOrderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNum" fixed="left" width="150"/>
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="150"/>
       <el-table-column label="订单状态" align="center" width="150">
         <template slot-scope="scope">
           <el-tooltip :content="parseTime(scope.row.orderStateTime)" placement="top">
@@ -160,7 +160,7 @@ export default {
       // 表单参数
       form: {
         vin: undefined,
-        orderNum: undefined
+        orderNo: undefined
       },
       // 表单校验
       rules: {}
@@ -220,7 +220,7 @@ export default {
     },
     /** 分配车辆操作 */
     handleAssign(row) {
-      this.form.orderNum = row.orderNum;
+      this.form.orderNo = row.orderNo;
       this.queryVehicleParams.modelConfigCode = row.modelConfigCode;
       listAssignableVehicle(this.addDateRange(this.queryVehicleParams, this.dateRange)).then(response => {
         this.assignableVehicleList = response.rows;
@@ -231,9 +231,9 @@ export default {
     },
     /** 绑定车辆操作 */
     handleBinding(row) {
-      const orderNum = this.form.orderNum;
-      this.$modal.confirm('是否确认绑定车辆"' + row.vin + '"到订单"' + orderNum + '"？').then(function () {
-        return bindingVehicle(row.vin, orderNum);
+      const orderNo = this.form.orderNo;
+      this.$modal.confirm('是否确认绑定车辆"' + row.vin + '"到订单"' + orderNo + '"？').then(function () {
+        return bindingVehicle(row.vin, orderNo);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("绑定成功");

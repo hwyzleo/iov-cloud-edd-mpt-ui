@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="订单号" prop="orderNum">
+      <el-form-item label="订单号" prop="orderNo">
         <el-input
-          v-model="queryParams.orderNum"
+          v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
           style="width: 150px"
@@ -33,7 +33,7 @@
 
     <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNum" fixed="left" width="160"/>
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="160"/>
       <el-table-column label="订单状态" align="center" width="150">
         <template slot-scope="scope">
           <el-tooltip :content="parseTime(scope.row.orderStateTime)" placement="top">
@@ -142,7 +142,7 @@ export default {
       // 表单参数
       form: {
         vin: undefined,
-        orderNum: undefined
+        orderNo: undefined
       },
       // 表单校验
       rules: {}
@@ -202,8 +202,8 @@ export default {
     },
     /** 申请发运操作 */
     handleApply(row) {
-      this.$modal.confirm('是否确认申请发运车辆销售订单为"' + row.orderNum + '"且车辆为"' + row.deliveryVin + '"的数据项？').then(function () {
-        return applyTransport(row.orderNum);
+      this.$modal.confirm('是否确认申请发运车辆销售订单为"' + row.orderNo + '"且车辆为"' + row.deliveryVin + '"的数据项？').then(function () {
+        return applyTransport(row.orderNo);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("操作成功");

@@ -1,22 +1,20 @@
 import request from '@/utils/request'
 
-// 查询可配车车辆销售订单列表
 export function listAssignableOrder(query) {
   return request({
-    url: '/otd-vso/mpt/vehicleSaleOrder/listAssignable',
+    url: '/otd-vso/api/mpt/order/v1/listAssignable',
     method: 'get',
     params: query
   })
 }
 
-// 绑定车辆到订单
-export function bindingVehicle(vin, orderNum) {
+export function bindingVehicle(vin, orderNo) {
   const data = {
     vin: vin,
-    orderNum: orderNum
+    orderNo: orderNo
   }
   return request({
-    url: '/otd-vso/mpt/vehicleSaleOrder/action/assignVehicle',
+    url: '/otd-vso/api/mpt/order/v1/action/assignVehicle',
     method: 'post',
     data: data
   })
