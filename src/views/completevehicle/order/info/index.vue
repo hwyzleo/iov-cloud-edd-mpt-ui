@@ -294,8 +294,8 @@ export default {
     getList() {
       this.loading = true;
       listOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.orderList = response.rows;
-          this.total = response.total;
+          this.orderList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

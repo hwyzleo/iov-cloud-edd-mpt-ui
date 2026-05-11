@@ -174,8 +174,8 @@ export default {
     getList() {
       this.loading = true;
       listAssignableOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.assignVehicleOrderList = response.rows;
-          this.total = response.total;
+          this.assignVehicleOrderList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -223,7 +223,7 @@ export default {
       this.form.orderNo = row.orderNo;
       this.queryVehicleParams.modelConfigCode = row.modelConfigCode;
       listAssignableVehicle(this.addDateRange(this.queryVehicleParams, this.dateRange)).then(response => {
-        this.assignableVehicleList = response.rows;
+        this.assignableVehicleList = response.data.items;
         this.open = true;
         this.loadingVehicle = false;
       });

@@ -425,8 +425,8 @@ export default {
     getList() {
       this.loading = true;
       listModelConfigChangeableOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.orderChangeConfigList = response.rows;
-          this.total = response.total;
+          this.orderChangeConfigList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -460,7 +460,7 @@ export default {
     getListConfig(saleModelId) {
       this.loadingConfig = true;
       listSaleModelConfig(saleModelId).then(response => {
-          this.saleModelConfigList = response.rows;
+          this.saleModelConfigList = response.data.items;
           this.loadingConfig = false;
         }
       );
@@ -581,7 +581,7 @@ export default {
         this.form = response.data;
       });
       listSaleModelConfig(row.id).then(response => {
-        this.saleModelConfigList = response.rows;
+        this.saleModelConfigList = response.data.items;
         this.loadingConfig = false;
         this.openConfigList = true;
       });

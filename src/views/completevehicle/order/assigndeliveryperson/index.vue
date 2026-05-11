@@ -170,8 +170,8 @@ export default {
     getList() {
       this.loading = true;
       listOrderWithoutDeliveryPerson(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.orderWithoutDeliveryPersonList = response.rows;
-          this.total = response.total;
+          this.orderWithoutDeliveryPersonList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -220,7 +220,7 @@ export default {
       this.queryDealershipStaffParams.dealershipCode = row.deliveryCenter;
       this.loadingDeliveryCenterStaff = true;
       listDeliveryCenterStaff(this.queryDealershipStaffParams).then(response => {
-        this.deliveryCenterStaffList = response.rows;
+        this.deliveryCenterStaffList = response.data.items;
         this.open = true;
         this.loadingDeliveryCenterStaff = false;
       });
