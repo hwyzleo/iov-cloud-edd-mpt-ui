@@ -9,6 +9,14 @@ export function listBrand(query) {
   })
 }
 
+// 查询所有车辆品牌列表
+export function listAllBrand() {
+  return request({
+    url: '/edd-vmd/api/mpt/brand/v1/listAll',
+    method: 'get'
+  })
+}
+
 // 查询车辆品牌详细
 export function getBrand(brandId) {
   return request({

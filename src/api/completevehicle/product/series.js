@@ -9,13 +9,13 @@ export function listSeries(query) {
   })
 }
 
-// 查询车型平台下车系列表
-export function listSeriesByPlatformCode(platformCode) {
+// 查询品牌下车系列表
+export function listSeriesByBrandCode(brandCode) {
   const params = {
-    platformCode: platformCode
+    brandCode: brandCode
   }
   return request({
-    url: '/edd-vmd/api/mpt/series/v1/listByPlatformCode',
+    url: '/edd-vmd/api/mpt/series/v1/listByBrandCode',
     method: 'get',
     params: params
   })

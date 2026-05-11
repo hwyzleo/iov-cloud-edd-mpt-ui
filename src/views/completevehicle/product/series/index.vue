@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="平台代码" prop="platformCode">
+      <el-form-item label="品牌代码" prop="brandCode">
         <el-input
-          v-model="queryParams.platformCode"
-          placeholder="请输入平台代码"
+          v-model="queryParams.brandCode"
+          placeholder="请输入品牌代码"
           clearable
           style="width: 140px"
           @keyup.enter.native="handleQuery"
@@ -97,7 +97,7 @@
 
     <el-table v-loading="loading" :data="seriesList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="平台代码" prop="platformCode" width="80" align="center"/>
+      <el-table-column label="品牌代码" prop="brandCode" width="80" align="center"/>
       <el-table-column label="车系代码" prop="code" width="80" align="center"/>
       <el-table-column label="车系名称" prop="name" width="150"/>
       <el-table-column label="车系英文名称" prop="nameEn" width="200"/>
@@ -150,18 +150,18 @@
     <!-- 添加或修改车系配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="平台代码" prop="platformCode">
+        <el-form-item label="品牌" prop="brandCode">
           <el-select
-            v-model="form.platformCode"
-            placeholder="车辆平台"
+            v-model="form.brandCode"
+            placeholder="品牌"
             clearable
             :disabled="form.id !== undefined"
           >
             <el-option
-              v-for="platform in platformList"
-              :key="platform.code"
-              :label="platform.name"
-              :value="platform.code"
+              v-for="brand in brandList"
+              :key="brand.code"
+              :label="brand.name"
+              :value="brand.code"
             />
           </el-select>
         </el-form-item>
@@ -210,8 +210,8 @@ import {
   delSeries
 } from "@/api/completevehicle/product/series";
 import {
-  listAllPlatform
-} from "@/api/completevehicle/product/platform";
+  listAllBrand
+} from "@/api/completevehicle/product/brand";
 
 export default {
   name: "Series",
@@ -232,8 +232,8 @@ export default {
       total: 0,
       // 车系表格数据
       seriesList: [],
-      // 车辆平台列表
-      platformList: [],
+      // 品牌列表
+      brandList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -249,8 +249,8 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        platformCode: [
-          {required: true, message: "车辆平台代码不能为空", trigger: "blur"}
+        brandCode: [
+          {required: true, message: "品牌代码不能为空", trigger: "blur"}
         ],
         code: [
           {required: true, message: "车系代码不能为空", trigger: "blur"}
@@ -286,7 +286,7 @@ export default {
     /** 表单重置 */
     reset() {
       this.form = {
-        platformCode: undefined,
+        brandCode: undefined,
         code: undefined,
         name: undefined,
         nameEn: undefined,
@@ -315,8 +315,8 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
-      listAllPlatform().then(response => {
-        this.platformList = response.data;
+      listAllBrand().then(response => {
+        this.brandList = response.data;
         this.open = true;
       });
       this.title = "添加车系";
@@ -326,11 +326,11 @@ export default {
       };
     },
     /** 修改按钮操作 */
-    handleUpdate(row) {
+handleUpdate(row) {
       this.reset();
       const seriesId = row.id || this.ids
-      listAllPlatform().then(response => {
-        this.platformList = response;
+      listAllBrand().then(response => {
+        this.brandList = response.data;
       });
       getSeries(seriesId).then(response => {
         this.form = response.data;

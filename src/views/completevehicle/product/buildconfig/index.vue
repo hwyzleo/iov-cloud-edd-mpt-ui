@@ -183,13 +183,30 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="130px">
         <el-row>
           <el-col :span="12">
+            <el-form-item label="品牌" prop="brandCode">
+              <el-select
+                v-model="form.brandCode"
+                placeholder="品牌"
+                clearable
+                :disabled="form.id !== undefined"
+                @change="handleBrandChange"
+              >
+                <el-option
+                  v-for="brand in brandList"
+                  :key="brand.code"
+                  :label="brand.name"
+                  :value="brand.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="车辆平台" prop="platformCode">
               <el-select
                 v-model="form.platformCode"
                 placeholder="车辆平台"
                 clearable
                 :disabled="form.id !== undefined"
-                @change="handlePlatformChange"
               >
                 <el-option
                   v-for="platform in platformList"
@@ -313,7 +330,8 @@ import {
   updateBuildConfig
 } from "@/api/completevehicle/product/buildconfig";
 import {listAllPlatform} from "@/api/completevehicle/product/platform";
-import {listSeriesByPlatformCode} from "@/api/completevehicle/product/series";
+import {listAllBrand} from "@/api/completevehicle/product/brand";
+import {listSeriesByBrandCode} from "@/api/completevehicle/product/series";
 import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
 import {listBaseModelByPlatformCodeAndSeriesCodeAndModelCode} from "@/api/completevehicle/product/basemodel";
 
@@ -336,6 +354,8 @@ export default {
       total: 0,
       // 表格数据
       list: [],
+      // 品牌列表
+      brandList: [],
       // 车辆平台列表
       platformList: [],
       // 车系列表
@@ -359,6 +379,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
+        brandCode: [
+          {required: true, message: "品牌代码不能为空", trigger: "blur"}
+        ],
         platformCode: [
           {required: true, message: "车辆平台代码不能为空", trigger: "blur"}
         ],
@@ -406,6 +429,7 @@ export default {
     /** 表单重置 */
     reset() {
       this.form = {
+        brandCode: undefined,
         platformCode: undefined,
         seriesCode: undefined,
         modelCode: undefined,
@@ -434,10 +458,10 @@ export default {
       this.single = selection.length != 1
       this.multiple = !selection.length
     },
-    /** 车辆平台下拉选择操作 */
-    handlePlatformChange(value) {
+    /** 品牌下拉选择操作 */
+    handleBrandChange(value) {
       if (value !== undefined && value !== null && value !== "") {
-        listSeriesByPlatformCode(value).then(response => {
+        listSeriesByBrandCode(value).then(response => {
           this.seriesList = response.data;
         });
       }
@@ -467,6 +491,9 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
+      listAllBrand().then(response => {
+        this.brandList = response.data;
+      });
       listAllPlatform().then(response => {
         this.platformList = response.data;
         this.open = true;
@@ -481,12 +508,15 @@ export default {
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
+      listAllBrand().then(response => {
+        this.brandList = response.data;
+      });
       listAllPlatform().then(response => {
         this.platformList = response.data;
       });
       getBuildConfig(id).then(response => {
         this.form = response.data;
-        listSeriesByPlatformCode(this.form.platformCode).then(response => {
+        listSeriesByBrandCode(this.form.brandCode).then(response => {
           this.seriesList = response.data;
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
