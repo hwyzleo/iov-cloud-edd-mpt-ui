@@ -36,7 +36,7 @@ pipeline {
                script {
                    sh '''
                        echo '============================== 构建镜像 =============================='
-                       docker build --no-cache -t ${IMAGE_NAME} -f ../DockerfileVue .
+                       docker build --network appnet --no-cache -t ${IMAGE_NAME} -f ../DockerfileVue .
                    '''
                }
            }
@@ -64,7 +64,7 @@ pipeline {
                           docker rm ${PROJECT_NAME}
                       fi
                       docker pull ${IMAGE_NAME}
-                      docker run -d --name ${PROJECT_NAME} --memory 100m --memory-reservation 50m ${IMAGE_NAME}
+                      docker run -d --name ${PROJECT_NAME} --network appnet --memory 100m --memory-reservation 50m ${IMAGE_NAME}
                       sleep 10
                       docker logs ${PROJECT_NAME}
                   '''
