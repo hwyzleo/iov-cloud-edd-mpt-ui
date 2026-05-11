@@ -155,7 +155,6 @@
             v-model="form.brandCode"
             placeholder="品牌"
             clearable
-            :disabled="form.id !== undefined"
           >
             <el-option
               v-for="brand in brandList"
