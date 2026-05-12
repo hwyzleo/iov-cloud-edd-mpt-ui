@@ -6,7 +6,7 @@ pipeline {
         IMAGE_NAME   = "${env.REGISTRY_URL}/${PROJECT_NAME}:${env.BUILD_NUMBER}"
 
         // 核心：限制 Node 构建时的内存占用，防止服务器崩溃（根据你服务器配置，1024或2048）
-        NODE_OPTIONS = "--max-old-space-size=2048"
+        NODE_OPTIONS = "--max-old-space-size=4096"
 
         // 禁用 npm 审计和资金提示，减少日志和内存消耗
         NPM_CONFIG_AUDIT = "false"
