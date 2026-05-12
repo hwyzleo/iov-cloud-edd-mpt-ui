@@ -1,109 +1,80 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    PROJECT_NAME = "${env.JOB_NAME}"
-    IMAGE_NAME   = "${env.REGISTRY_URL}/${PROJECT_NAME}:${env.BUILD_NUMBER}"
-
-    // 可选：国内更稳（按你实际情况保留/删除）
-    // NPM_CONFIG_REGISTRY = "https://registry.npmmirror.com"
-
-    // 关闭 audit/fund，减少时间与输出（省资源）
-    NPM_CONFIG_AUDIT = "false"
-    NPM_CONFIG_FUND  = "false"
-  }
-
-  stages {
-
-    stage('安装依赖 + 构建项目(临时容器)') {
-      steps {
-        sh '''
-          set -e
-
-          echo '============================== 安装依赖 + 构建项目(临时容器) =============================='
-          echo "WORKSPACE=$WORKSPACE"
-
-          # 用临时 Node 容器执行：npm ci + build
-          # -v "$WORKSPACE:/work"：源码/产物都落回 Jenkins workspace
-          # -v "$HOME/.npm:/root/.npm"：复用 npm cache，极大节省时间/IO（HOME 在 Jenkins 容器内通常是 /var/jenkins_home）
-          docker run --rm \
-            --network appnet \
-            --memory 3g \
-            --memory-swap 4g \
-            -e NODE_OPTIONS="--max-old-space-size=2048" \
-            -e NPM_CONFIG_AUDIT="$NPM_CONFIG_AUDIT" \
-            -e NPM_CONFIG_FUND="$NPM_CONFIG_FUND" \
-            ${NPM_CONFIG_REGISTRY:+-e NPM_CONFIG_REGISTRY="$NPM_CONFIG_REGISTRY"} \
-            -v "$WORKSPACE:/work" \
-            -v "$HOME/.npm:/root/.npm" \
-            -w /work \
-            node:16-bullseye bash -lc '
-              set -e
-              node -v
-              npm -v
-
-              echo "[info] npm cache dir: $(npm config get cache)"
-
-              # 心跳：避免 Jenkins durable-task 误判脚本“没触碰日志文件”
-              ( while sleep 30; do echo "[heartbeat] $(date)"; done ) &
-              HB_PID=$!
-
-              # 建议用 ci：更快更可复现；老 Vue 依赖链加 legacy-peer-deps 更稳
-              if [ -f package-lock.json ]; then
-                npm ci --legacy-peer-deps
-              else
-                npm install --legacy-peer-deps
-              fi
-
-              npm run build:prod
-
-              kill $HB_PID || true
-            '
-        '''
-      }
+    environment {
+        PROJECT_NAME = "${env.JOB_NAME}"
+        IMAGE_NAME = "${env.REGISTRY_URL}/${PROJECT_NAME}:${env.BUILD_NUMBER}"
+        // 限制 Node.js 内存，防止撑爆 Jenkins 宿主机
+        NODE_OPTIONS = "--max-old-space-size=2048"
     }
 
-    stage('构建镜像') {
-      steps {
-        sh '''
-          set -e
-          echo '============================== 构建镜像 =============================='
-
-          # 强烈建议去掉 --no-cache（非常费 CPU/IO/磁盘）
-          docker build --network appnet -t ${IMAGE_NAME} -f ../DockerfileVue .
-        '''
-      }
+    tools {
+        nodejs 'NodeJS'
     }
 
-    stage('上传镜像') {
-      steps {
-        sh '''
-          set -e
-          echo '============================== 上传镜像 =============================='
-          docker push ${IMAGE_NAME}
-        '''
-      }
+    stages {
+        stage('环境清理') {
+            steps {
+                // 清理之前的构建残留，释放磁盘空间
+                sh 'npm cache clean --force'
+            }
+        }
+
+        stage('安装依赖') {
+            steps {
+                sh '''
+                    echo '============================== 安装依赖 =============================='
+                    # 使用 --legacy-peer-deps 减少依赖冲突计算，节省 CPU
+                    # 使用 --no-audit 减少网络开销
+                    npm install --legacy-peer-deps --no-audit --no-fund
+                '''
+            }
+        }
+
+        stage('构建项目') {
+            steps {
+                sh '''
+                    echo '============================== 构建项目 =============================='
+                    npm run build:prod
+                '''
+            }
+        }
+
+        stage('构建镜像') {
+            steps {
+                sh '''
+                    echo '============================== 构建镜像 =============================='
+                    # 去掉 --no-cache！缓存是你的好朋友，能极大减轻服务器 IO 压力
+                    docker build --network appnet -t ${IMAGE_NAME} -f ../DockerfileVue .
+                '''
+            }
+        }
+
+        stage('上传镜像') {
+            steps {
+                sh "docker push ${IMAGE_NAME}"
+            }
+        }
+
+        stage('运行镜像') {
+            steps {
+                sh '''
+                    echo '============================== 运行镜像 =============================='
+                    docker stop ${PROJECT_NAME} || true
+                    docker rm ${PROJECT_NAME} || true
+                    docker pull ${IMAGE_NAME}
+                    docker run -d --name ${PROJECT_NAME} --network appnet --memory 128m --memory-reservation 64m ${IMAGE_NAME}
+                    sleep 5
+                    docker logs ${PROJECT_NAME}
+                '''
+            }
+        }
     }
 
-    stage('运行镜像') {
-      steps {
-        sh '''
-          set -e
-          echo '============================== 运行镜像 =============================='
-
-          if [ -n "$(docker ps -q -f name=${PROJECT_NAME})" ]; then
-            docker stop ${PROJECT_NAME}
-          fi
-          if [ -n "$(docker ps -aq -f name=${PROJECT_NAME})" ]; then
-            docker rm ${PROJECT_NAME}
-          fi
-
-          docker pull ${IMAGE_NAME}
-          docker run -d --name ${PROJECT_NAME} --network appnet --memory 100m --memory-reservation 50m ${IMAGE_NAME}
-          sleep 10
-          docker logs ${PROJECT_NAME}
-        '''
-      }
+    post {
+        always {
+            // 构建完成后清理工作空间，防止硬盘爆满
+            cleanWs()
+        }
     }
-  }
 }
