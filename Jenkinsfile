@@ -18,14 +18,6 @@ pipeline {
     }
 
     stages {
-        stage('清理与准备') {
-            steps {
-                echo '============================== 清理旧依赖 =============================='
-                // 彻底删除 node_modules 解决 "Cannot find module" 问题
-                sh 'rm -rf node_modules'
-            }
-        }
-
         stage('安装依赖') {
             steps {
                 sh '''
