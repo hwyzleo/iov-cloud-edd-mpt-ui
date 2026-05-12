@@ -59,23 +59,34 @@ pipeline {
         stage('运行镜像') {
             steps {
                 sh '''
-                    echo '============================== 运行镜像 =============================='
-                    # 停止并删除旧容器，使用 || true 防止因为容器不存在而报错
                     docker stop ${PROJECT_NAME} || true
                     docker rm ${PROJECT_NAME} || true
-
                     docker pull ${IMAGE_NAME}
 
-                    # 限制运行时的内存，保证系统稳定
                     docker run -d \
                         --name ${PROJECT_NAME} \
                         --network appnet \
-                        --memory 128m \
-                        --memory-reservation 64m \
+                        --memory 512m \
+                        --memory-reservation 128m \
                         ${IMAGE_NAME}
 
-                    sleep 5
-                    docker logs --tail 50 ${PROJECT_NAME}
+                    echo "正在等待服务就绪..."
+                    # 循环检查，最多等待 30 秒
+                    COUNT=0
+                    while [ $COUNT -lt 6 ]; do
+                        # 假设容器在 appnet 网络中，如果你在 Jenkins 宿主机访问，可能需要映射端口并 curl localhost
+                        if docker exec ${PROJECT_NAME} curl -s http://localhost > /dev/null; then
+                            echo "服务健康检查通过！"
+                            exit 0
+                        fi
+                        echo "等待中..."
+                        sleep 5
+                        let COUNT=COUNT+1
+                    done
+
+                    echo "服务健康检查失败，容器可能已退出或配置错误！"
+                    docker logs ${PROJECT_NAME}
+                    exit 1
                 '''
             }
         }
