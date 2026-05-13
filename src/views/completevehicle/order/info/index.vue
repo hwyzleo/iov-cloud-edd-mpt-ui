@@ -123,7 +123,7 @@
           <span>{{ scope.row.regionName || scope.row.regionCode }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="生产配置" align="center" width="180">
+      <el-table-column label="生产配置" align="center" width="200">
         <template slot-scope="scope">
           <el-link
             type="primary"
@@ -386,7 +386,7 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      this.$modal.confirm('是否确认删除车辆销售订单号为"' + row.orderNo + '"的数据项？').then(function () {
+      this.$modal.confirm('是否确认删除车辆销售订单号为"' + (row.orderNo || row.smallOrderNo) + '"的数据项？').then(function () {
         return physicalDeleteOrder(row.orderId, {});
       }).then(() => {
         this.getList();
@@ -396,7 +396,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('otd-vso/mpt/vehicleSaleOrder/export', {
+      this.download('otd-vso/mpt/vso/v1/export', {
         ...this.queryParams
       }, `vehicle_sale_order_${new Date().getTime()}.xlsx`)
     }
