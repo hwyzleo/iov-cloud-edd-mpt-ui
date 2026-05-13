@@ -82,19 +82,19 @@
 
     <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNo" fixed="left" width="160"/>
-      <el-table-column label="下单用户" width="120">
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="160">
         <template slot-scope="scope">
-          <el-link
-            type="primary"
-            @click="openAccountTab(scope.row.orderPersonId)"
-          >{{ scope.row.orderPersonPhone }}
-          </el-link>
+          <span>{{ scope.row.orderNo || scope.row.smallOrderNo }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="下单时间" align="center" prop="orderTime" width="140">
+      <el-table-column label="订单类型" align="center" width="120">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.orderTime, "{y}-{m}-{d} {h}:{i}") }}</span>
+          <span>{{ scope.row.orderTypeName || scope.row.orderType }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="订单来源" align="center" width="120">
+        <template slot-scope="scope">
+          <span>{{ scope.row.orderSourceName || scope.row.orderSource }}</span>
         </template>
       </el-table-column>
       <el-table-column label="订单状态" align="center" width="150">
@@ -104,35 +104,26 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="意向金支付时间" align="center" prop="earnestMoneyTime" width="140">
+      <el-table-column label="品牌" align="center" width="120">
         <template slot-scope="scope">
-          <el-tooltip :content="String(scope.row.earnestMoneyAmount)" placement="top">
-            <span>{{ parseTime(scope.row.earnestMoneyTime, "{y}-{m}-{d} {h}:{i}") }}</span>
-          </el-tooltip>
+          <span>{{ scope.row.brandName || scope.row.brandCode }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="定金支付时间" align="center" prop="downPaymentTime" width="140">
-        <template slot-scope="scope">
-          <el-tooltip :content="String(scope.row.downPaymentAmount)" placement="top">
-            <span>{{ parseTime(scope.row.downPaymentTime, "{y}-{m}-{d} {h}:{i}") }}</span>
-          </el-tooltip>
-        </template>
-      </el-table-column>
-      <el-table-column label="锁单时间" align="center" prop="lockTime" width="140">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lockTime, "{y}-{m}-{d} {h}:{i}") }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="销售代码" align="center" width="100">
+      <el-table-column label="销售车型" align="center" width="150">
         <template slot-scope="scope">
           <el-link
             type="primary"
-            @click="openSaleModelTab(scope.row.saleCode)"
-          >{{ scope.row.saleCode }}
+            @click="openSaleModelTab(scope.row.saleModel)"
+          >{{ scope.row.saleModelName || scope.row.saleModel }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="生产配置代码" align="center" width="180">
+      <el-table-column label="归属区域" align="center" width="120">
+        <template slot-scope="scope">
+          <span>{{ scope.row.regionName || scope.row.regionCode }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="生产配置" align="center" width="180">
         <template slot-scope="scope">
           <el-link
             type="primary"
