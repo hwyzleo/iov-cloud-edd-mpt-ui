@@ -11,8 +11,8 @@
       </el-form-item>
       <el-form-item label="状态" prop="enable">
         <el-select v-model="queryParams.enable" placeholder="部门状态" clearable>
-          <el-option label="正常" value="true" />
-          <el-option label="停用" value="false" />
+          <el-option label="正常" :value="true" />
+          <el-option label="停用" :value="false" />
         </el-select>
       </el-form-item>
       <el-form-item>
