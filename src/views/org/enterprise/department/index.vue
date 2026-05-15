@@ -97,9 +97,15 @@
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
-          <el-col :span="24" v-if="form.parentId !== 0">
+          <el-col :span="24">
             <el-form-item label="上级部门" prop="parentId">
-              <treeselect v-model="form.parentId" :options="deptOptions" :normalizer="normalizer" placeholder="选择上级部门" />
+              <treeselect 
+                v-model="form.parentId" 
+                :options="deptOptions" 
+                :normalizer="normalizer" 
+                placeholder="选择上级部门（不选则为顶级部门）"
+                :show-count="true"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -179,9 +185,6 @@ export default {
       },
       form: {},
       rules: {
-        parentId: [
-          { required: true, message: "上级部门不能为空", trigger: "blur" }
-        ],
         name: [
           { required: true, message: "部门名称不能为空", trigger: "blur" }
         ],
@@ -235,7 +238,7 @@ export default {
     reset() {
       this.form = {
         id: undefined,
-        parentId: undefined,
+        parentId: 0,
         name: undefined,
         code: undefined,
         sort: undefined,
@@ -257,11 +260,16 @@ export default {
       this.reset();
       if (row != undefined) {
         this.form.parentId = row.id;
+      } else {
+        this.form.parentId = 0;
       }
       this.open = true;
       this.title = "添加部门";
       deptTreeSelect().then(response => {
-        this.deptOptions = response.data || [];
+        this.deptOptions = [{ id: 0, name: '顶级部门', children: [] }];
+        if (response.data && response.data.length > 0) {
+          this.deptOptions = this.deptOptions.concat(response.data);
+        }
       });
     },
     toggleExpandAll() {
@@ -279,7 +287,10 @@ export default {
         this.title = "修改部门";
       });
       listDeptExcludeChild(row.id).then(response => {
-        this.deptOptions = response.data || [];
+        this.deptOptions = [{ id: 0, name: '顶级部门', children: [] }];
+        if (response.data && response.data.length > 0) {
+          this.deptOptions = this.deptOptions.concat(response.data);
+        }
       });
     },
     submitForm: function() {
