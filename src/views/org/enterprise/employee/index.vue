@@ -334,8 +334,6 @@ export default {
     },
     handleAdd() {
       this.reset();
-      this.getDeptOptions();
-      this.getPositionOptions();
       this.open = true;
       this.title = "添加员工";
     },
@@ -346,8 +344,6 @@ export default {
         this.form = response.data;
         this.form.departmentIds = response.data.departmentIds || [];
         this.form.positionIds = response.data.positionIds || [];
-        this.getDeptOptions();
-        this.getPositionOptions();
         this.open = true;
         this.title = "修改员工";
       });
