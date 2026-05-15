@@ -23,17 +23,27 @@
 
 ```
 src/views/org/
-├── department/          # 部门管理
-│   └── index.vue
-├── position/            # 岗位管理  
-│   └── index.vue
-├── employee/            # 员工管理
-│   └── index.vue
+├── dealership/          # 门店管理
+│   ├── info/
+│   ├── org/
+│   └── staff/
+├── enterprise/          # 企业管理
+│   ├── department/      # 部门管理
+│   │   └── index.vue
+│   ├── position/        # 岗位管理  
+│   │   └── index.vue
+│   ├── employee/        # 员工管理
+│   │   └── index.vue
 
 src/api/org/
-├── department.js        # 部门API
-├── position.js          # 岗位API
-├── employee.js          # 员工API
+├── dealership/          # 门店API
+│   ├── info.js
+│   ├── org.js
+│   └── staff.js
+├── enterprise/          # 企业API
+│   ├── department.js    # 部门API
+│   ├── position.js      # 岗位API
+│   ├── employee.js      # 员工API
 ```
 
 ## API接口设计
@@ -232,27 +242,42 @@ src/api/org/
 {
   path: '/org',
   component: Layout,
-  redirect: '/org/department',
+  redirect: '/org/dealership',
   name: 'Org',
   meta: { title: '企业管理', icon: 'tree' },
   children: [
     {
-      path: 'department',
-      component: () => import('@/views/org/department/index'),
-      name: 'Department',
-      meta: { title: '部门管理', icon: 'tree' }
+      path: 'dealership',
+      name: 'Dealership',
+      meta: { title: '门店管理', icon: 'tree' },
+      children: [
+        // 门店子页面...
+      ]
     },
     {
-      path: 'position',
-      component: () => import('@/views/org/position/index'),
-      name: 'Position',
-      meta: { title: '岗位管理', icon: 'post' }
-    },
-    {
-      path: 'employee',
-      component: () => import('@/views/org/employee/index'),
-      name: 'Employee',
-      meta: { title: '员工管理', icon: 'peoples' }
+      path: 'enterprise',
+      name: 'Enterprise',
+      meta: { title: '企业管理', icon: 'tree' },
+      children: [
+        {
+          path: 'department',
+          component: () => import('@/views/org/enterprise/department/index'),
+          name: 'Department',
+          meta: { title: '部门管理', icon: 'tree' }
+        },
+        {
+          path: 'position',
+          component: () => import('@/views/org/enterprise/position/index'),
+          name: 'Position',
+          meta: { title: '岗位管理', icon: 'post' }
+        },
+        {
+          path: 'employee',
+          component: () => import('@/views/org/enterprise/employee/index'),
+          name: 'Employee',
+          meta: { title: '员工管理', icon: 'peoples' }
+        }
+      ]
     }
   ]
 }
