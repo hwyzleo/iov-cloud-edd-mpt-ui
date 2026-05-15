@@ -4,7 +4,7 @@ import {parseStrEmpty} from "@/utils/ruoyi";
 // 查询门店员工列表
 export function listDealershipStaff(query) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff/list',
+    url: '/edd-org/api/mpt/dealershipStaff/v1/list',
     method: 'get',
     params: query
   })
@@ -13,7 +13,7 @@ export function listDealershipStaff(query) {
 // 查询员工
 export function searchUserList(key) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff/searchUser',
+    url: '/edd-org/api/mpt/dealershipStaff/v1/searchUser',
     method: 'get',
     params: {'key': key}
   })
@@ -22,7 +22,7 @@ export function searchUserList(key) {
 // 查询门店
 export function searchDealershipList(key) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff/searchDealership',
+    url: '/edd-org/api/mpt/dealershipStaff/v1/searchDealership',
     method: 'get',
     params: {'key': key}
   })
@@ -31,7 +31,7 @@ export function searchDealershipList(key) {
 // 查询门店员工详细
 export function getDealershipStaff(dealershipStaffId) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff/' + dealershipStaffId,
+    url: '/edd-org/api/mpt/dealershipStaff/v1/' + dealershipStaffId,
     method: 'get'
   })
 }
@@ -39,7 +39,7 @@ export function getDealershipStaff(dealershipStaffId) {
 // 新增门店员工
 export function addDealershipStaff(data) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff',
+    url: '/edd-org/api/mpt/dealershipStaff/v1',
     method: 'post',
     data: data
   })
@@ -48,7 +48,7 @@ export function addDealershipStaff(data) {
 // 修改门店员工
 export function updateDealershipStaff(data) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff',
+    url: '/edd-org/api/mpt/dealershipStaff/v1',
     method: 'put',
     data: data
   })
@@ -57,7 +57,7 @@ export function updateDealershipStaff(data) {
 // 删除门店员工
 export function delDealershipStaff(dealershipStaffId) {
   return request({
-    url: '/edd-org/mpt/dealershipStaff/' + dealershipStaffId,
+    url: '/edd-org/api/mpt/dealershipStaff/v1/' + dealershipStaffId,
     method: 'delete'
   })
 }
@@ -122,7 +122,7 @@ export function updateAuthRole(data) {
 // 查询组织下拉树结构
 export function orgTreeSelect(query) {
   return request({
-    url: '/edd-org/mpt/dealership/orgTree',
+    url: '/edd-org/api/mpt/dealership/v1/orgTree',
     method: 'get',
     params: query
   })

@@ -114,6 +114,8 @@
       <el-table-column label="手机号" align="center" prop="phone" width="120" />
       <el-table-column label="邮箱" align="center" prop="email" :show-overflow-tooltip="true" />
       <el-table-column label="EIAM账号" align="center" prop="eiamAccount" :show-overflow-tooltip="true" />
+      <el-table-column label="所属部门" align="center" prop="departmentNames" :show-overflow-tooltip="true" />
+      <el-table-column label="岗位" align="center" prop="positionNames" :show-overflow-tooltip="true" />
       <el-table-column label="状态" align="center" prop="enable">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.enable" type="success">正常</el-tag>
@@ -177,6 +179,38 @@
         <el-form-item label="EIAM账号" prop="eiamAccount">
           <el-input v-model="form.eiamAccount" placeholder="请输入EIAM账号" />
         </el-form-item>
+        <el-form-item label="所属部门" prop="departmentIds">
+          <el-select
+            v-model="form.departmentIds"
+            multiple
+            collapse-tags
+            placeholder="请选择所属部门"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in deptOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="岗位" prop="positionIds">
+          <el-select
+            v-model="form.positionIds"
+            multiple
+            collapse-tags
+            placeholder="请选择岗位"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in positionOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="form.sort" controls-position="right" :min="0" />
         </el-form-item>
@@ -194,6 +228,8 @@
 
 <script>
 import { listEmployee, getEmployee, delEmployee, addEmployee, updateEmployee } from "@/api/org/enterprise/employee";
+import { getDeptTree } from "@/api/org/enterprise/department";
+import { listPosition } from "@/api/org/enterprise/position";
 
 export default {
   name: "OrgEmployee",
@@ -209,6 +245,8 @@ export default {
       title: "",
       open: false,
       dateRange: [],
+      deptOptions: [],
+      positionOptions: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -246,6 +284,8 @@ export default {
   },
   created() {
     this.getList();
+    this.getDeptOptions();
+    this.getPositionOptions();
   },
   methods: {
     getList() {
@@ -272,7 +312,9 @@ export default {
         email: undefined,
         eiamAccount: undefined,
         sort: 0,
-        enable: true
+        enable: true,
+        departmentIds: [],
+        positionIds: []
       };
       this.resetForm("form");
     },
@@ -292,6 +334,8 @@ export default {
     },
     handleAdd() {
       this.reset();
+      this.getDeptOptions();
+      this.getPositionOptions();
       this.open = true;
       this.title = "添加员工";
     },
@@ -300,6 +344,10 @@ export default {
       const id = row.id || this.ids
       getEmployee(id).then(response => {
         this.form = response.data;
+        this.form.departmentIds = response.data.departmentIds || [];
+        this.form.positionIds = response.data.positionIds || [];
+        this.getDeptOptions();
+        this.getPositionOptions();
         this.open = true;
         this.title = "修改员工";
       });
@@ -331,6 +379,26 @@ export default {
         this.getList();
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
+    },
+    getDeptOptions() {
+      getDeptTree().then(response => {
+        this.deptOptions = this.flattenDeptTree(response.data || []);
+      });
+    },
+    flattenDeptTree(tree) {
+      let result = [];
+      for (let node of tree) {
+        result.push({ id: node.id, name: node.name });
+        if (node.children && node.children.length > 0) {
+          result = result.concat(this.flattenDeptTree(node.children));
+        }
+      }
+      return result;
+    },
+    getPositionOptions() {
+      listPosition({ pageNum: 1, pageSize: 1000 }).then(response => {
+        this.positionOptions = response.data.items || [];
+      });
     }
   }
 };

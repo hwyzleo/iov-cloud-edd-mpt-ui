@@ -52,21 +52,16 @@
       :default-expand-all="isExpandAll"
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
-      <el-table-column prop="name" label="部门名称" width="260"></el-table-column>
+      <el-table-column prop="name" label="部门名称"></el-table-column>
       <el-table-column prop="code" label="部门编码" width="150"></el-table-column>
-      <el-table-column prop="sort" label="排序" width="200"></el-table-column>
-      <el-table-column prop="enable" label="状态" width="100">
+      <el-table-column prop="sort" label="排序" width="100" align="center"></el-table-column>
+      <el-table-column prop="enable" label="状态" width="100" align="center">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.enable" type="success">正常</el-tag>
           <el-tag v-else type="danger">停用</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="200">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -99,10 +94,10 @@
         <el-row>
           <el-col :span="24">
             <el-form-item label="上级部门" prop="parentId">
-              <treeselect 
-                v-model="form.parentId" 
-                :options="deptOptions" 
-                :normalizer="normalizer" 
+              <treeselect
+                v-model="form.parentId"
+                :options="deptOptions"
+                :normalizer="normalizer"
                 placeholder="选择上级部门（不选则为顶级部门）"
                 :show-count="true"
               />
@@ -265,7 +260,7 @@ export default {
       }
       this.open = true;
       this.title = "添加部门";
-      deptTreeSelect().then(response => {
+      getDeptTree().then(response => {
         this.deptOptions = [{ id: 0, name: '顶级部门', children: [] }];
         if (response.data && response.data.length > 0) {
           this.deptOptions = this.deptOptions.concat(response.data);
