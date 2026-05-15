@@ -6,10 +6,15 @@
         <pane size="16">
           <el-col>
             <div class="head-container">
-              <el-input v-model="orgKey" placeholder="请输入组织名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
+              <el-input v-model="orgKey" placeholder="请输入组织名称" clearable size="small"
+                        prefix-icon="el-icon-search" style="margin-bottom: 20px"
+              />
             </div>
             <div class="head-container">
-              <el-tree :data="orgOptions" :props="defaultProps" :expand-on-click-node="false" :filter-node-method="filterNode" ref="tree" node-key="id" default-expand-all highlight-current @node-click="handleNodeClick" />
+              <el-tree :data="orgOptions" :props="defaultProps" :expand-on-click-node="false"
+                       :filter-node-method="filterNode" ref="tree" node-key="id" default-expand-all highlight-current
+                       @node-click="handleNodeClick"
+              />
             </div>
           </el-col>
         </pane>
@@ -112,7 +117,9 @@
                   <span>{{ parseTime(scope.row.createTime) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" align="center" width="150" fixed="right" class-name="small-padding fixed-width">
+              <el-table-column label="操作" align="center" width="150" fixed="right"
+                               class-name="small-padding fixed-width"
+              >
                 <template slot-scope="scope">
                   <el-button
                     size="mini"
@@ -147,7 +154,7 @@
     </el-row>
 
     <!-- 添加或修改门店配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -185,12 +192,62 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="大区" prop="regionCode">
+            <el-form-item label="经营类型" prop="storeFormat">
               <el-select
-                v-model="form.regionCode"
-                placeholder="大区"
+                v-model="form.storeFormat"
+                placeholder="请选择经营类型"
                 clearable
-                @change="getAreaList"
+              >
+                <el-option label="直营" :value="1"/>
+                <el-option label="授权" :value="2"/>
+                <el-option label="经销" :value="3"/>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="服务类型" prop="serviceType">
+              <el-select
+                v-model="form.serviceType"
+                placeholder="请选择服务类型"
+                clearable
+                multiple
+              >
+                <el-option label="销售" value="S"/>
+                <el-option label="交付" value="D"/>
+                <el-option label="售后" value="A"/>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="组织" prop="orgCode">
+              <el-input v-if="orgReadOnly" v-model="form.orgName" disabled/>
+              <el-select
+                v-else
+                v-model="form.orgCode"
+                placeholder="请选择组织"
+                clearable
+                @change="handleOrgChange"
+              >
+                <el-option
+                  v-for="org in orgList"
+                  :key="org.id"
+                  :label="org.label"
+                  :value="org.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="大区" prop="regionCode">
+              <el-input v-if="regionReadOnly" v-model="form.regionName" disabled/>
+              <el-select
+                v-else
+                v-model="form.regionCode"
+                placeholder="请选择大区"
+                clearable
+                @change="handleRegionChange"
               >
                 <el-option
                   v-for="region in regionList"
@@ -201,12 +258,17 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12">
             <el-form-item label="小区" prop="areaCode">
+              <el-input v-if="areaReadOnly" v-model="form.areaName" disabled/>
               <el-select
+                v-else
                 v-model="form.areaCode"
-                placeholder="小区"
+                placeholder="请选择小区"
                 clearable
+                @change="handleAreaChange"
               >
                 <el-option
                   v-for="area in areaList"
@@ -217,10 +279,12 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort">
+              <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
+            </el-form-item>
+          </el-col>
         </el-row>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
         </el-form-item>
@@ -241,14 +305,14 @@ import {
   updateDealership,
   delDealership,
   orgTreeSelect
-} from "@/api/org/dealership/info";
-import Treeselect from "@riophae/vue-treeselect";
-import "@riophae/vue-treeselect/dist/vue-treeselect.css";
-import {Pane, Splitpanes} from "splitpanes";
-import "splitpanes/dist/splitpanes.css";
+} from '@/api/org/dealership/info'
+import Treeselect from '@riophae/vue-treeselect'
+import '@riophae/vue-treeselect/dist/vue-treeselect.css'
+import { Pane, Splitpanes } from 'splitpanes'
+import 'splitpanes/dist/splitpanes.css'
 
 export default {
-  name: "Dealership",
+  name: 'Dealership',
   dicts: [],
   components: { Treeselect, Splitpanes, Pane },
   data() {
@@ -267,14 +331,27 @@ export default {
       total: 0,
       // 表格数据
       dealershipList: [],
+      // 组织列表
+      orgList: [],
       // 大区列表
       regionList: [],
       // 小区列表
       areaList: [],
+      // 组织是否只读
+      orgReadOnly: false,
+      // 大区是否只读
+      regionReadOnly: false,
+      // 小区是否只读
+      areaReadOnly: false,
       // 弹出层标题
-      title: "",
+      title: '',
       // 组织树选项
       orgOptions: undefined,
+      // 当前选中节点信息
+      currentNode: {
+        data: null,
+        node: null
+      },
       // 是否显示弹出层
       open: false,
       // 组织关键词
@@ -286,90 +363,183 @@ export default {
         pageNum: 1,
         pageSize: 10
       },
-      // 查询参数
-      queryOrgParams: {
-      },
       // 表单参数
       form: {},
       defaultProps: {
-        children: "children",
-        label: "label"
+        children: 'children',
+        label: 'label'
       },
       // 表单校验
       rules: {
         code: [
-          {required: true, message: "门店代码不能为空", trigger: "blur"}
+          { required: true, message: '门店代码不能为空', trigger: 'blur' }
         ],
         name: [
-          {required: true, message: "门店全称不能为空", trigger: "blur"}
+          { required: true, message: '门店全称不能为空', trigger: 'blur' }
+        ],
+        orgCode: [
+          { required: true, message: '组织不能为空', trigger: 'change' }
+        ],
+        regionCode: [
+          { required: true, message: '大区不能为空', trigger: 'change' }
+        ],
+        areaCode: [
+          { required: true, message: '小区不能为空', trigger: 'change' }
         ],
         sort: [
-          {required: true, message: "排序不能为空", trigger: "blur"}
+          { required: true, message: '排序不能为空', trigger: 'blur' }
         ]
-      },
-    };
+      }
+    }
   },
   created() {
-    this.getList();
-    this.getOrgTree();
+    this.getList()
+    this.getOrgTree()
   },
   methods: {
     /** 查询门店列表 */
     getList() {
-      this.loading = true;
+      this.loading = true
       listDealership(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.dealershipList = response.rows;
-          this.total = response.total;
-          this.loading = false;
+          this.dealershipList = response.data.items
+          this.total = response.data.total
+          this.loading = false
         }
-      );
+      )
     },
     /** 查询组织下拉树结构 */
     getOrgTree() {
-      orgTreeSelect(this.queryOrgParams).then(response => {
-        this.orgOptions = response.data;
-      });
+      orgTreeSelect().then(response => {
+        this.orgOptions = response.data
+      })
     },
-    // 查询大区列表
-    getRegionList() {
-      this.queryOrgParams.orgType = 'REGION';
-      orgTreeSelect(this.queryOrgParams).then(response => {
-        this.regionList = response.data;
-      });
+    // 组织选择变化
+    handleOrgChange(orgId) {
+      this.form.regionCode = undefined
+      this.form.regionName = undefined
+      this.form.areaCode = undefined
+      this.form.areaName = undefined
+      this.regionList = []
+      this.areaList = []
+      if (orgId && this.orgList.length > 0) {
+        const selectedOrg = this.orgList.find(o => o.id === orgId)
+        if (selectedOrg) {
+          this.form.orgName = selectedOrg.label
+          if (selectedOrg.children) {
+            this.regionList = selectedOrg.children
+          }
+        }
+      }
+      this.$nextTick(() => {
+        this.$refs.form.validateField('orgCode')
+      })
     },
-    // 查询小区列表
-    getAreaList(regionCode) {
-      this.queryOrgParams.orgType = 'AREA';
-      this.queryOrgParams.regionCode = regionCode;
-      orgTreeSelect(this.queryOrgParams).then(response => {
-        this.areaList = response.data;
-      });
+    // 大区选择变化
+    handleRegionChange(regionId) {
+      this.form.areaCode = undefined
+      this.form.areaName = undefined
+      this.areaList = []
+      if (regionId && this.regionList.length > 0) {
+        const selectedRegion = this.regionList.find(r => r.id === regionId)
+        if (selectedRegion) {
+          this.form.regionName = selectedRegion.label
+          if (selectedRegion.children && selectedRegion.children.length > 0) {
+            this.areaList = selectedRegion.children
+          } else {
+            const orgInfo = this.findOrgInfoFromTree(this.form.orgCode, regionId, undefined)
+            this.areaList = orgInfo.areaList || []
+          }
+        }
+      }
+      this.$nextTick(() => {
+        this.$refs.form.validateField('regionCode')
+      })
+    },
+    // 小区选择变化
+    handleAreaChange(areaId) {
+      if (areaId && this.areaList.length > 0) {
+        const selectedArea = this.areaList.find(a => a.id === areaId)
+        if (selectedArea) {
+          this.form.areaName = selectedArea.label
+        }
+      }
+      this.$nextTick(() => {
+        this.$refs.form.validateField('areaCode')
+      })
     },
     // 筛选节点
     filterNode(value, data) {
-      if (!value) return true;
-      return data.label.indexOf(value) !== -1;
+      if (!value) return true
+      return data.label.indexOf(value) !== -1
+    },
+// 根据orgCode、regionCode和areaCode从树中查找组织信息
+    findOrgInfoFromTree(orgCode, regionCode, areaCode) {
+      let result = {
+        orgCode: undefined,
+        orgName: undefined,
+        regionName: undefined,
+        areaName: undefined,
+        regionList: [],
+        areaList: []
+      }
+      if (!this.orgOptions) return result
+
+      for (const org of this.orgOptions) {
+        if (orgCode && org.id !== orgCode) continue
+
+        result.orgCode = org.id
+        result.orgName = org.label
+
+        if (org.children) {
+          result.regionList = org.children
+          if (regionCode) {
+            for (const region of org.children) {
+              if (region.id === regionCode) {
+                result.regionName = region.label
+                if (region.children) {
+                  result.areaList = region.children
+                  if (areaCode) {
+                    for (const area of region.children) {
+                      if (area.id === areaCode) {
+                        result.areaName = area.label
+                        break
+                      }
+                    }
+                  }
+                }
+                return result
+              }
+            }
+          }
+        }
+        if (orgCode) return result
+      }
+      return result
     },
     // 节点单击事件
-    handleNodeClick(data) {
+    handleNodeClick(data, node) {
+      this.currentNode = {
+        data: data,
+        node: node
+      }
       this.queryParams = {
         pageNum: 1,
         pageSize: 10,
         regionCode: undefined,
         areaCode: undefined
-      };
-      if(data.type === 'REGION') {
-        this.queryParams.regionCode = data.id;
       }
-      if(data.type === 'AREA') {
-        this.queryParams.areaCode = data.id;
+      if (data.type === 'REGION') {
+        this.queryParams.regionCode = data.id
       }
-      this.handleQuery();
+      if (data.type === 'AREA') {
+        this.queryParams.areaCode = data.id
+      }
+      this.handleQuery()
     },
     /** 取消按钮 */
     cancel() {
-      this.open = false;
-      this.reset();
+      this.open = false
+      this.reset()
     },
     /** 表单重置 */
     reset() {
@@ -380,26 +550,34 @@ export default {
         engName: undefined,
         formerName: undefined,
         address: undefined,
+        storeFormat: undefined,
+        serviceType: undefined,
+        orgCode: undefined,
+        orgName: undefined,
+        regionCode: undefined,
+        regionName: undefined,
+        areaCode: undefined,
+        areaName: undefined,
         sort: 99
-      };
-      this.resetForm("form");
+      }
+      this.resetForm('form')
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNum = 1;
-      this.getList();
+      this.queryParams.pageNum = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRange = [];
+      this.dateRange = []
       this.queryParams = {
         pageNum: 1,
         pageSize: 10,
         regionCode: undefined,
         areaCode: undefined
-      };
-      this.resetForm("queryForm");
-      this.handleQuery();
+      }
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
     /** 多选框选中数据 */
     handleSelectionChange(selection) {
@@ -409,56 +587,106 @@ export default {
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加门店";
-      this.form = {};
-      this.getRegionList();
+      this.reset()
+      this.open = true
+      this.title = '添加门店'
+      this.orgReadOnly = false
+      this.regionReadOnly = false
+      this.areaReadOnly = false
+      this.orgList = this.orgOptions || []
+      if (this.currentNode.data) {
+        const nodeType = this.currentNode.data.type
+        const node = this.currentNode.node
+        if (nodeType === 'ORG') {
+          this.$set(this.form, 'orgCode', this.currentNode.data.id)
+          this.$set(this.form, 'orgName', this.currentNode.data.label)
+          this.orgReadOnly = true
+          this.regionList = this.currentNode.data.children || []
+          this.areaList = []
+        } else if (nodeType === 'REGION') {
+          this.$set(this.form, 'orgCode', node.parent ? node.parent.data.id : undefined)
+          this.$set(this.form, 'orgName', node.parent ? node.parent.data.label : undefined)
+          this.$set(this.form, 'regionCode', this.currentNode.data.id)
+          this.$set(this.form, 'regionName', this.currentNode.data.label)
+          this.orgReadOnly = true
+          this.regionReadOnly = true
+          this.regionList = []
+          this.areaList = this.currentNode.data.children || []
+        } else if (nodeType === 'AREA') {
+          this.$set(this.form, 'orgCode', node.parent && node.parent.parent ? node.parent.parent.data.id : undefined)
+          this.$set(this.form, 'orgName', node.parent && node.parent.parent ? node.parent.parent.data.label : undefined)
+          this.$set(this.form, 'regionCode', node.parent ? node.parent.data.id : undefined)
+          this.$set(this.form, 'regionName', node.parent ? node.parent.data.label : undefined)
+          this.$set(this.form, 'areaCode', this.currentNode.data.id)
+          this.$set(this.form, 'areaName', this.currentNode.data.label)
+          this.orgReadOnly = true
+          this.regionReadOnly = true
+          this.areaReadOnly = true
+          this.regionList = []
+          this.areaList = []
+        }
+      } else {
+        this.regionList = []
+        this.areaList = []
+      }
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
+      this.reset()
+      this.orgReadOnly = true
+      this.regionReadOnly = true
+      this.areaReadOnly = true
+      this.orgList = this.orgOptions || []
       const dealershipId = row.id || this.ids
       getDealership(dealershipId).then(response => {
-        this.form = response.data;
-        this.open = true;
-      });
-      this.getRegionList();
-      if(row.regionCode !== undefined) {
-        this.getAreaList(row.regionCode);
-      }
-      this.title = "修改门店";
+        this.form = response.data
+        if (this.form.serviceType && typeof this.form.serviceType === 'string') {
+          this.form.serviceType = this.form.serviceType.split(',')
+        }
+        const orgInfo = this.findOrgInfoFromTree(this.form.orgCode, this.form.regionCode, this.form.areaCode)
+        this.form.orgName = orgInfo.orgName
+        this.form.regionName = orgInfo.regionName
+        this.form.areaName = orgInfo.areaName
+        this.regionList = orgInfo.regionList
+        this.areaList = orgInfo.areaList
+        this.open = true
+      })
+      this.title = '修改门店'
     },
     /** 提交按钮 */
-    submitForm: function () {
-      this.$refs["form"].validate(valid => {
+    submitForm: function() {
+      this.$refs['form'].validate(valid => {
         if (valid) {
+          const submitData = { ...this.form }
+          if (submitData.serviceType && Array.isArray(submitData.serviceType)) {
+            submitData.serviceType = submitData.serviceType.join(',')
+          }
           if (this.form.id !== undefined) {
-            updateDealership(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
+            updateDealership(submitData).then(response => {
+              this.$modal.msgSuccess('修改成功')
+              this.open = false
+              this.getList()
+            })
           } else {
-            addDealership(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
+            addDealership(submitData).then(response => {
+              this.$modal.msgSuccess('新增成功')
+              this.open = false
+              this.getList()
+            })
           }
         }
-      });
+      })
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const dealershipIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除门店ID为"' + dealershipIds + '"的数据项？').then(function () {
-        return delDealership(dealershipIds);
+      const dealershipIds = row.id || this.ids
+      this.$modal.confirm('是否确认删除门店ID为"' + dealershipIds + '"的数据项？').then(function() {
+        return delDealership(dealershipIds)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
+        this.getList()
+        this.$modal.msgSuccess('删除成功')
       }).catch(() => {
-      });
+      })
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -467,5 +695,5 @@ export default {
       }, `dealership_${new Date().getTime()}.xlsx`)
     }
   }
-};
+}
 </script>
