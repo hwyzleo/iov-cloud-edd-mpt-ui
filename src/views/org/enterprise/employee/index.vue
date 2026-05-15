@@ -25,7 +25,7 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="EIAM账号" prop="eiamAccount">
+      <el-form-item label="EIAM账号" prop="eiamAccount" label-width="120">
         <el-input
           v-model="queryParams.eiamAccount"
           placeholder="请输入EIAM账号"
