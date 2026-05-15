@@ -177,8 +177,10 @@ export default {
     getList() {
       this.loading = true;
       listPosition(this.queryParams).then(response => {
-        this.positionList = response.data.rows;
-        this.total = response.data.total;
+        this.positionList = response.data.items || [];
+        this.total = response.data.total || 0;
+        this.loading = false;
+      }).catch(() => {
         this.loading = false;
       });
     },

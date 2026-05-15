@@ -156,7 +156,7 @@
 </template>
 
 <script>
-import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/org/enterprise/department";
+import { getDeptTree, getDept, delDept, addDept, updateDept, listDeptExcludeChild, deptTreeSelect } from "@/api/org/enterprise/department";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
@@ -211,8 +211,10 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      listDept(this.queryParams).then(response => {
-        this.deptList = this.handleTree(response.data, "id");
+      getDeptTree(this.queryParams).then(response => {
+        this.deptList = response.data || [];
+        this.loading = false;
+      }).catch(() => {
         this.loading = false;
       });
     },
@@ -258,8 +260,8 @@ export default {
       }
       this.open = true;
       this.title = "添加部门";
-      listDept().then(response => {
-        this.deptOptions = this.handleTree(response.data, "id");
+      deptTreeSelect().then(response => {
+        this.deptOptions = response.data || [];
       });
     },
     toggleExpandAll() {
@@ -277,7 +279,7 @@ export default {
         this.title = "修改部门";
       });
       listDeptExcludeChild(row.id).then(response => {
-        this.deptOptions = this.handleTree(response.data, "id");
+        this.deptOptions = response.data || [];
       });
     },
     submitForm: function() {

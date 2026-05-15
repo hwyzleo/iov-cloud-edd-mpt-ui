@@ -251,8 +251,10 @@ export default {
     getList() {
       this.loading = true;
       listEmployee(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-        this.employeeList = response.data.rows;
-        this.total = response.data.total;
+        this.employeeList = response.data.items || [];
+        this.total = response.data.total || 0;
+        this.loading = false;
+      }).catch(() => {
         this.loading = false;
       });
     },
