@@ -156,7 +156,7 @@
 </template>
 
 <script>
-import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/org/department";
+import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/org/enterprise/department";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 

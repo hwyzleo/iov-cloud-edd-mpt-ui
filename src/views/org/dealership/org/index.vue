@@ -220,7 +220,7 @@ export default {
     getList() {
       this.loading = true;
       listOrg(this.queryParams).then(response => {
-        this.orgList = this.handleTree(response.rows);
+        this.orgList = this.handleTree(response.data.items);
         this.loading = false;
       });
     },
@@ -273,7 +273,7 @@ export default {
       this.open = true;
       this.title = "添加组织";
       listOrg().then(response => {
-        this.orgOptions = this.handleTree(response.rows);
+        this.orgOptions = this.handleTree(response.data.items);
       });
     },
     /** 展开/折叠操作 */
@@ -293,7 +293,7 @@ export default {
         this.title = "修改组织";
       });
       listOrgExcludeChild(row.id).then(response => {
-        this.orgOptions = this.handleTree(response.rows);
+        this.orgOptions = this.handleTree(response.data.items);
       });
     },
     /** 提交按钮 */

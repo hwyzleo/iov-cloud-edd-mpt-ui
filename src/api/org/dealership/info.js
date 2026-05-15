@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询门店列表
 export function listDealership(query) {
   return request({
-    url: '/dms-org/mpt/dealership/list',
+    url: '/edd-org/mpt/dealership/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listDealership(query) {
 // 查询门店详细
 export function getDealership(dealershipId) {
   return request({
-    url: '/dms-org/mpt/dealership/' + dealershipId,
+    url: '/edd-org/mpt/dealership/' + dealershipId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getDealership(dealershipId) {
 // 新增门店
 export function addDealership(data) {
   return request({
-    url: '/dms-org/mpt/dealership',
+    url: '/edd-org/mpt/dealership',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addDealership(data) {
 // 修改门店
 export function updateDealership(data) {
   return request({
-    url: '/dms-org/mpt/dealership',
+    url: '/edd-org/mpt/dealership',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateDealership(data) {
 // 删除门店
 export function delDealership(dealershipIds) {
   return request({
-    url: '/dms-org/mpt/dealership/' + dealershipIds,
+    url: '/edd-org/mpt/dealership/' + dealershipIds,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function delDealership(dealershipIds) {
 // 查询组织下拉树结构
 export function orgTreeSelect(query) {
   return request({
-    url: '/dms-org/mpt/dealership/orgTree',
+    url: '/edd-org/mpt/dealership/orgTree',
     method: 'get',
     params: query
   })

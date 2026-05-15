@@ -462,7 +462,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('dms-org/dealership/export', {
+      this.download('edd-org/dealership/export', {
         ...this.queryParams
       }, `dealership_${new Date().getTime()}.xlsx`)
     }
