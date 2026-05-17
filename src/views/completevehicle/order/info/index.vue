@@ -118,9 +118,9 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="归属区域" align="center" width="120">
+      <el-table-column label="上牌城市" align="center" width="120">
         <template slot-scope="scope">
-          <span>{{ scope.row.regionName || scope.row.regionCode }}</span>
+          <span>{{ scope.row.licenseCity }}</span>
         </template>
       </el-table-column>
       <el-table-column label="生产配置" align="center" width="200">
