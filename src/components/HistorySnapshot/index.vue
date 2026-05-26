@@ -139,7 +139,7 @@ export default {
         const map = { FUEL: '燃油', BEV: '纯电', PHEV: '插混', EREV: '增程' }
         return map[value] || value
       }
-      if (field.type === 'seriesType') {
+      if (field.type === 'carLineType') {
         const map = { SEDAN: '轿车', SUV: 'SUV', MPV: 'MPV', PICKUP: '皮卡', COMMERCIAL: '商用车' }
         return map[value] || value
       }

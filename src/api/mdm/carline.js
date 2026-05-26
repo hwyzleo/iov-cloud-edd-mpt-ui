@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询车系列表
 export function listSeries(query) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/list',
+    url: '/edd-mdm/api/mpt/carLine/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listSeries(query) {
 // 查询车系详细
 export function getSeries(code) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/' + code,
+    url: '/edd-mdm/api/mpt/carLine/v1/' + code,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getSeries(code) {
 // 新增车系
 export function addSeries(data) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/create',
+    url: '/edd-mdm/api/mpt/carLine/v1/create',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addSeries(data) {
 // 修改车系
 export function updateSeries(code, data) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/' + code,
+    url: '/edd-mdm/api/mpt/carLine/v1/' + code,
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateSeries(code, data) {
 // 删除车系
 export function delSeries(code, modifyBy) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/' + code,
+    url: '/edd-mdm/api/mpt/carLine/v1/' + code,
     method: 'delete',
     params: { modifyBy }
   })
@@ -47,7 +47,7 @@ export function delSeries(code, modifyBy) {
 // 停用车系
 export function deactivateSeries(code, modifyBy) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/' + code + '/deactivate',
+    url: '/edd-mdm/api/mpt/carLine/v1/' + code + '/deactivate',
     method: 'post',
     params: { modifyBy }
   })
@@ -56,7 +56,7 @@ export function deactivateSeries(code, modifyBy) {
 // 查询车系历史版本
 export function listSeriesHistory(code) {
   return request({
-    url: '/edd-mdm/api/mpt/series/v1/' + code + '/history',
+    url: '/edd-mdm/api/mpt/carLine/v1/' + code + '/history',
     method: 'get'
   })
 }

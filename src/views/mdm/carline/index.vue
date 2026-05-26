@@ -92,7 +92,7 @@
       <el-table-column label="本地化名称" prop="nameLocal"/>
       <el-table-column label="车系类型" align="center" width="100">
         <template slot-scope="scope">
-          <el-tag>{{ scope.row.seriesType }}</el-tag>
+          <el-tag>{{ scope.row.carLineType }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="生命周期" align="center" width="120">
@@ -186,8 +186,8 @@
         <el-form-item label="本地化名称">
           <el-input v-model="form.nameLocal" placeholder="请输入本地化名称"/>
         </el-form-item>
-        <el-form-item label="车系类型" prop="seriesType">
-          <el-select v-model="form.seriesType" placeholder="请选择车系类型">
+        <el-form-item label="车系类型" prop="carLineType">
+          <el-select v-model="form.carLineType" placeholder="请选择车系类型">
             <el-option label="轿车" value="SEDAN"/>
             <el-option label="SUV" value="SUV"/>
             <el-option label="MPV" value="MPV"/>
@@ -238,7 +238,7 @@
         <el-form-item label="车系名称">{{ data.name }}</el-form-item>
         <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
         <el-form-item label="品牌代码">{{ data.brandCode }}</el-form-item>
-        <el-form-item label="车系类型">{{ data.seriesType }}</el-form-item>
+        <el-form-item label="车系类型">{{ data.carLineType }}</el-form-item>
         <el-form-item label="生命周期状态">{{ data.lifecycleStatus === 'IN_DEVELOPMENT' ? '开发中' : data.lifecycleStatus === 'ON_SALE' ? '在售' : '已停产' }}</el-form-item>
         <el-form-item label="目标市场">{{ data.targetMarket === 'DOMESTIC' ? '国内' : data.targetMarket === 'OVERSEAS' ? '海外' : '全球' }}</el-form-item>
         <el-form-item label="版本">{{ data.version }}</el-form-item>
@@ -259,7 +259,7 @@ import {
   delSeries,
   deactivateSeries,
   listSeriesHistory
-} from "@/api/mdm/series";
+} from "@/api/mdm/carline";
 import { listBrand } from "@/api/mdm/brand";
 import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
@@ -298,7 +298,7 @@ export default {
         { prop: 'name', label: '车系名称' },
         { prop: 'nameLocal', label: '本地化名称' },
         { prop: 'brandCode', label: '品牌代码' },
-        { prop: 'seriesType', label: '车系类型', type: 'seriesType' },
+        { prop: 'carLineType', label: '车系类型', type: 'carLineType' },
         { prop: 'lifecycleStatus', label: '生命周期状态', type: 'lifecycleStatus' },
         { prop: 'targetMarket', label: '目标市场', type: 'targetMarket' },
         { prop: 'version', label: '版本' },
@@ -317,7 +317,7 @@ export default {
         name: [
           { required: true, message: "车系名称不能为空", trigger: "blur" }
         ],
-        seriesType: [
+        carLineType: [
           { required: true, message: "车系类型不能为空", trigger: "change" }
         ]
       }
@@ -351,7 +351,7 @@ export default {
         name: undefined,
         nameLocal: undefined,
         brandCode: undefined,
-        seriesType: undefined,
+        carLineType: undefined,
         lifecycleStatus: undefined,
         targetMarket: undefined,
         effectiveFrom: undefined,
@@ -439,9 +439,9 @@ export default {
       }).catch(() => {});
     },
     handleExport() {
-      this.download('edd-mdm/api/mpt/series/v1/export', {
+      this.download('edd-mdm/api/mpt/carLine/v1/export', {
         ...this.queryParams
-      }, `series_${new Date().getTime()}.xlsx`);
+      }, `carline_${new Date().getTime()}.xlsx`);
     },
     handleHistory(row) {
       this.historyCode = row.code;
