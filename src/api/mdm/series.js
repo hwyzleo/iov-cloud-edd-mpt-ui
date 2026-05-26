@@ -52,3 +52,11 @@ export function deactivateSeries(code, modifyBy) {
     params: { modifyBy }
   })
 }
+
+// 查询车系历史版本
+export function listSeriesHistory(code) {
+  return request({
+    url: '/edd-mdm/api/mpt/series/v1/' + code + '/history',
+    method: 'get'
+  })
+}
