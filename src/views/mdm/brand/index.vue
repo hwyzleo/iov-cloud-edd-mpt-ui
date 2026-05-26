@@ -119,6 +119,13 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['mdm:brand:remove']"
           >删除</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-time"
+            @click="handleHistory(scope.row)"
+            v-hasPermi="['mdm:brand:query']"
+          >查看历史</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -172,6 +179,27 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <history-snapshot
+      v-model="historyVisible"
+      :loading="historyLoading"
+      :history-list="historyList"
+      :fields="historyFields"
+    >
+      <template #detail-fields="{ data }">
+        <el-form-item label="品牌代码">{{ data.code }}</el-form-item>
+        <el-form-item label="品牌名称">{{ data.name }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
+        <el-form-item label="描述">{{ data.description }}</el-form-item>
+        <el-form-item label="Logo URL">{{ data.logo }}</el-form-item>
+        <el-form-item label="国家">{{ data.country }}</el-form-item>
+        <el-form-item label="创立年份">{{ data.foundedYear }}</el-form-item>
+        <el-form-item label="版本">{{ data.version }}</el-form-item>
+        <el-form-item label="状态">{{ data.status === 'ACTIVE' ? '启用' : data.status === 'INACTIVE' ? '停用' : data.status }}</el-form-item>
+        <el-form-item label="生效开始时间">{{ parseTime(data.effectiveFrom) }}</el-form-item>
+        <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
+      </template>
+    </history-snapshot>
   </div>
 </template>
 
@@ -182,11 +210,16 @@ import {
   addBrand,
   updateBrand,
   delBrand,
-  deactivateBrand
+  deactivateBrand,
+  listBrandHistory
 } from "@/api/mdm/brand";
+import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
 export default {
   name: "MdmBrand",
+  components: {
+    HistorySnapshot
+  },
   dicts: [],
   data() {
     return {
@@ -207,6 +240,23 @@ export default {
         includeInactive: false
       },
       form: {},
+      historyVisible: false,
+      historyLoading: false,
+      historyList: [],
+      historyFields: [
+        { prop: 'code', label: '品牌代码' },
+        { prop: 'name', label: '品牌名称' },
+        { prop: 'nameLocal', label: '本地化名称' },
+        { prop: 'description', label: '描述' },
+        { prop: 'logo', label: 'Logo URL' },
+        { prop: 'country', label: '国家' },
+        { prop: 'foundedYear', label: '创立年份' },
+        { prop: 'version', label: '版本' },
+        { prop: 'status', label: '状态', type: 'status' },
+        { prop: 'effectiveFrom', label: '生效开始时间', type: 'date' },
+        { prop: 'effectiveTo', label: '生效结束时间', type: 'date' }
+      ],
+      historyCode: '',
       rules: {
         code: [
           { required: true, message: "品牌代码不能为空", trigger: "blur" }
@@ -330,6 +380,18 @@ export default {
       this.download('edd-mdm/api/mpt/brand/v1/export', {
         ...this.queryParams
       }, `brand_${new Date().getTime()}.xlsx`);
+    },
+    handleHistory(row) {
+      this.historyCode = row.code;
+      this.historyVisible = true;
+      this.loadHistory();
+    },
+    loadHistory() {
+      this.historyLoading = true;
+      listBrandHistory(this.historyCode).then(response => {
+        this.historyList = response.data.rows;
+        this.historyLoading = false;
+      });
     }
   }
 };

@@ -52,3 +52,11 @@ export function deactivatePlatform(code, modifyBy) {
     params: { modifyBy }
   })
 }
+
+// 查询平台历史版本
+export function listPlatformHistory(code) {
+  return request({
+    url: '/edd-mdm/api/mpt/platform/v1/' + code + '/history',
+    method: 'get'
+  })
+}

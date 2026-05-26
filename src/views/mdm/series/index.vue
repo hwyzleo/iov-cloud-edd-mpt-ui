@@ -145,6 +145,13 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['mdm:series:remove']"
           >删除</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-time"
+            @click="handleHistory(scope.row)"
+            v-hasPermi="['mdm:series:query']"
+          >查看历史</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -219,6 +226,27 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <history-snapshot
+      v-model="historyVisible"
+      :loading="historyLoading"
+      :history-list="historyList"
+      :fields="historyFields"
+    >
+      <template #detail-fields="{ data }">
+        <el-form-item label="车系代码">{{ data.code }}</el-form-item>
+        <el-form-item label="车系名称">{{ data.name }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
+        <el-form-item label="品牌代码">{{ data.brandCode }}</el-form-item>
+        <el-form-item label="车系类型">{{ data.seriesType }}</el-form-item>
+        <el-form-item label="生命周期状态">{{ data.lifecycleStatus === 'IN_DEVELOPMENT' ? '开发中' : data.lifecycleStatus === 'ON_SALE' ? '在售' : '已停产' }}</el-form-item>
+        <el-form-item label="目标市场">{{ data.targetMarket === 'DOMESTIC' ? '国内' : data.targetMarket === 'OVERSEAS' ? '海外' : '全球' }}</el-form-item>
+        <el-form-item label="版本">{{ data.version }}</el-form-item>
+        <el-form-item label="状态">{{ data.status === 'ACTIVE' ? '启用' : data.status === 'INACTIVE' ? '停用' : data.status }}</el-form-item>
+        <el-form-item label="生效开始时间">{{ parseTime(data.effectiveFrom) }}</el-form-item>
+        <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
+      </template>
+    </history-snapshot>
   </div>
 </template>
 
@@ -229,12 +257,17 @@ import {
   addSeries,
   updateSeries,
   delSeries,
-  deactivateSeries
+  deactivateSeries,
+  listSeriesHistory
 } from "@/api/mdm/series";
 import { listBrand } from "@/api/mdm/brand";
+import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
 export default {
   name: "MdmSeries",
+  components: {
+    HistorySnapshot
+  },
   dicts: [],
   data() {
     return {
@@ -257,6 +290,23 @@ export default {
         includeInactive: false
       },
       form: {},
+      historyVisible: false,
+      historyLoading: false,
+      historyList: [],
+      historyFields: [
+        { prop: 'code', label: '车系代码' },
+        { prop: 'name', label: '车系名称' },
+        { prop: 'nameLocal', label: '本地化名称' },
+        { prop: 'brandCode', label: '品牌代码' },
+        { prop: 'seriesType', label: '车系类型', type: 'seriesType' },
+        { prop: 'lifecycleStatus', label: '生命周期状态', type: 'lifecycleStatus' },
+        { prop: 'targetMarket', label: '目标市场', type: 'targetMarket' },
+        { prop: 'version', label: '版本' },
+        { prop: 'status', label: '状态', type: 'status' },
+        { prop: 'effectiveFrom', label: '生效开始时间', type: 'date' },
+        { prop: 'effectiveTo', label: '生效结束时间', type: 'date' }
+      ],
+      historyCode: '',
       rules: {
         brandCode: [
           { required: true, message: "品牌不能为空", trigger: "change" }
@@ -392,6 +442,18 @@ export default {
       this.download('edd-mdm/api/mpt/series/v1/export', {
         ...this.queryParams
       }, `series_${new Date().getTime()}.xlsx`);
+    },
+    handleHistory(row) {
+      this.historyCode = row.code;
+      this.historyVisible = true;
+      this.loadHistory();
+    },
+    loadHistory() {
+      this.historyLoading = true;
+      listSeriesHistory(this.historyCode).then(response => {
+        this.historyList = response.data.rows;
+        this.historyLoading = false;
+      });
     }
   }
 };

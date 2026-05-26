@@ -125,6 +125,13 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['mdm:platform:remove']"
           >删除</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-time"
+            @click="handleHistory(scope.row)"
+            v-hasPermi="['mdm:platform:query']"
+          >查看历史</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -177,6 +184,25 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <history-snapshot
+      v-model="historyVisible"
+      :loading="historyLoading"
+      :history-list="historyList"
+      :fields="historyFields"
+    >
+      <template #detail-fields="{ data }">
+        <el-form-item label="平台代码">{{ data.code }}</el-form-item>
+        <el-form-item label="平台名称">{{ data.name }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
+        <el-form-item label="平台类型">{{ data.platformType === 'FUEL' ? '燃油' : data.platformType === 'BEV' ? '纯电' : data.platformType === 'PHEV' ? '插混' : '增程' }}</el-form-item>
+        <el-form-item label="EE架构">{{ data.architecture }}</el-form-item>
+        <el-form-item label="版本">{{ data.version }}</el-form-item>
+        <el-form-item label="状态">{{ data.status === 'ACTIVE' ? '启用' : data.status === 'INACTIVE' ? '停用' : data.status }}</el-form-item>
+        <el-form-item label="生效开始时间">{{ parseTime(data.effectiveFrom) }}</el-form-item>
+        <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
+      </template>
+    </history-snapshot>
   </div>
 </template>
 
@@ -187,11 +213,16 @@ import {
   addPlatform,
   updatePlatform,
   delPlatform,
-  deactivatePlatform
+  deactivatePlatform,
+  listPlatformHistory
 } from "@/api/mdm/platform";
+import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
 export default {
   name: "MdmPlatform",
+  components: {
+    HistorySnapshot
+  },
   dicts: [],
   data() {
     return {
@@ -206,6 +237,21 @@ export default {
       title: "",
       open: false,
       effectiveDateRange: [],
+      historyVisible: false,
+      historyLoading: false,
+      historyList: [],
+      historyFields: [
+        { prop: "code", label: "平台代码" },
+        { prop: "name", label: "平台名称" },
+        { prop: "nameLocal", label: "本地化名称" },
+        { prop: "platformType", label: "平台类型", type: "platformType" },
+        { prop: "architecture", label: "EE架构" },
+        { prop: "version", label: "版本" },
+        { prop: "status", label: "状态", type: "status" },
+        { prop: "effectiveFrom", label: "生效开始时间", type: "date" },
+        { prop: "effectiveTo", label: "生效结束时间", type: "date" }
+      ],
+      historyCode: "",
       queryParams: {
         page: 1,
         size: 10,
@@ -336,6 +382,18 @@ export default {
       this.download('edd-mdm/api/mpt/platform/v1/export', {
         ...this.queryParams
       }, `platform_${new Date().getTime()}.xlsx`);
+    },
+    handleHistory(row) {
+      this.historyCode = row.code;
+      this.historyVisible = true;
+      this.loadHistory();
+    },
+    loadHistory() {
+      this.historyLoading = true;
+      listPlatformHistory(this.historyCode).then(response => {
+        this.historyList = response.data.rows;
+        this.historyLoading = false;
+      });
     }
   }
 };

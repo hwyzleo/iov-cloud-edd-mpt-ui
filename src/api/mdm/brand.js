@@ -52,3 +52,11 @@ export function deactivateBrand(code, modifyBy) {
     params: { modifyBy }
   })
 }
+
+// 查询品牌历史版本
+export function listBrandHistory(code) {
+  return request({
+    url: '/edd-mdm/api/mpt/brand/v1/' + code + '/history',
+    method: 'get'
+  })
+}
