@@ -129,8 +129,8 @@
     <!-- 添加或修改配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="配置代码" prop="code">
-          <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入配置代码"/>
+        <el-form-item v-if="form.id !== undefined" label="配置代码">
+          <el-input v-model="form.code" disabled/>
         </el-form-item>
         <el-form-item label="配置名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入配置名称"/>
@@ -139,7 +139,7 @@
           <el-input v-model="form.nameLocal" placeholder="请输入本地化名称"/>
         </el-form-item>
         <el-form-item label="版本" prop="variantCode">
-          <el-select v-model="form.variantCode" placeholder="请选择版本" clearable filterable style="width: 100%">
+          <el-select v-model="form.variantCode" placeholder="请选择版本" clearable filterable style="width: 100%" :disabled="form.id !== undefined">
             <el-option
               v-for="item in variantOptions"
               :key="item.code"
@@ -334,9 +334,6 @@ export default {
         optionCodeCode: undefined
       },
       rules: {
-        code: [
-          { required: true, message: "配置代码不能为空", trigger: "blur" }
-        ],
         name: [
           { required: true, message: "配置名称不能为空", trigger: "blur" }
         ],
