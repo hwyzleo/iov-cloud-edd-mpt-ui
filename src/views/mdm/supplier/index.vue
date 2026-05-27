@@ -97,7 +97,7 @@
       <el-table-column label="状态" align="center" width="100">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
-            {{ scope.row.status === 'ACTIVE' ? '启用' : scope.row.status === 'INACTIVE' ? '停用' : scope.row.status === 'DEPRECATED' ? '废弃' : '草稿' }}
+            {{ scope.row.status === "ACTIVE" ? "启用" : scope.row.status === "INACTIVE" ? "停用" : scope.row.status === "DEPRECATED" ? "废弃" : "草稿" }}
           </el-tag>
         </template>
       </el-table-column>
@@ -118,7 +118,7 @@
           >修改</el-button>
           <el-button
             v-if="scope.row.status === 'ACTIVE'"
-            v-hasPermi="['mdm:supplier:edit']"
+            v-hasPermi="['mdm:supplier:remove']"
             size="mini"
             type="text"
             icon="el-icon-close"
@@ -256,7 +256,7 @@
         <el-form-item label="合作开始日期">{{ data.cooperationStartDate }}</el-form-item>
         <el-form-item label="描述">{{ data.description }}</el-form-item>
         <el-form-item label="版本">{{ data.version }}</el-form-item>
-        <el-form-item label="状态">{{ data.status === 'ACTIVE' ? '启用' : data.status === 'INACTIVE' ? '停用' : data.status }}</el-form-item>
+        <el-form-item label="状态">{{ data.status === "ACTIVE" ? "启用" : data.status === "INACTIVE" ? "停用" : data.status }}</el-form-item>
         <el-form-item label="生效开始时间">{{ parseTime(data.effectiveFrom) }}</el-form-item>
         <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
       </template>
