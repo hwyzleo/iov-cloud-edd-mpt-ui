@@ -21,11 +21,12 @@
       </el-form-item>
       <el-form-item label="供应商类型" prop="supplierType">
         <el-select v-model="queryParams.supplierType" placeholder="请选择供应商类型" clearable style="width: 150px">
-          <el-option label="原材料供应商" value="RAW_MATERIAL" />
-          <el-option label="零部件供应商" value="COMPONENT" />
-          <el-option label="服务供应商" value="SERVICE" />
-          <el-option label="设备供应商" value="EQUIPMENT" />
-          <el-option label="其他" value="OTHER" />
+          <el-option
+            v-for="item in supplierTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="包含停用">
@@ -168,11 +169,12 @@
         </el-form-item>
         <el-form-item label="供应商类型" prop="supplierType">
           <el-select v-model="form.supplierType" placeholder="请选择供应商类型" style="width: 100%">
-            <el-option label="原材料供应商" value="RAW_MATERIAL" />
-            <el-option label="零部件供应商" value="COMPONENT" />
-            <el-option label="服务供应商" value="SERVICE" />
-            <el-option label="设备供应商" value="EQUIPMENT" />
-            <el-option label="其他" value="OTHER" />
+            <el-option
+              v-for="item in supplierTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="国家" prop="country">
@@ -276,6 +278,22 @@ import {
 } from '@/api/mdm/supplier'
 import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
+const SUPPLIER_TYPE_OPTIONS = [
+  { label: '原材料供应商', value: 'RAW_MATERIAL' },
+  { label: '零部件供应商', value: 'COMPONENT' },
+  { label: '服务供应商', value: 'SERVICE' },
+  { label: '设备供应商', value: 'EQUIPMENT' },
+  { label: '其他', value: 'OTHER' }
+]
+
+const SUPPLIER_TYPE_MAP = {
+  'RAW_MATERIAL': '原材料供应商',
+  'COMPONENT': '零部件供应商',
+  'SERVICE': '服务供应商',
+  'EQUIPMENT': '设备供应商',
+  'OTHER': '其他'
+}
+
 export default {
   name: 'MdmSupplier',
   components: {
@@ -284,6 +302,7 @@ export default {
   dicts: [],
   data() {
     return {
+      supplierTypeOptions: SUPPLIER_TYPE_OPTIONS,
       loading: true,
       ids: [],
       codes: [],
@@ -351,14 +370,7 @@ export default {
       })
     },
     getSupplierTypeLabel(type) {
-      const typeMap = {
-        'RAW_MATERIAL': '原材料供应商',
-        'COMPONENT': '零部件供应商',
-        'SERVICE': '服务供应商',
-        'EQUIPMENT': '设备供应商',
-        'OTHER': '其他'
-      }
-      return typeMap[type] || type
+      return SUPPLIER_TYPE_MAP[type] || type
     },
     cancel() {
       this.open = false
