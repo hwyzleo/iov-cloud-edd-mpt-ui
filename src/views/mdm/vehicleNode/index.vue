@@ -88,8 +88,8 @@
     <el-table v-loading="loading" :data="vehicleNodeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="节点编码" prop="nodeCode" width="120" />
-      <el-table-column label="节点名称" prop="nodeName" min-width="120" />
-      <el-table-column label="英文名称" prop="nodeNameEn" min-width="120" />
+      <el-table-column label="节点名称" prop="name" min-width="120" />
+      <el-table-column label="本地化名称" prop="nameLocal" min-width="120" />
       <el-table-column label="节点类型" prop="nodeType" width="120" align="center">
         <template slot-scope="scope">
           <el-tag>{{ nodeTypeMap[scope.row.nodeType] || scope.row.nodeType }}</el-tag>
@@ -173,11 +173,11 @@
         <el-form-item label="节点编码" prop="nodeCode">
           <el-input v-model="form.nodeCode" :readonly="form.nodeCode !== undefined && form.id !== undefined" placeholder="请输入节点编码" />
         </el-form-item>
-        <el-form-item label="节点名称" prop="nodeName">
-          <el-input v-model="form.nodeName" placeholder="请输入节点名称" />
+        <el-form-item label="节点名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入节点名称" />
         </el-form-item>
-        <el-form-item label="英文名称" prop="nodeNameEn">
-          <el-input v-model="form.nodeNameEn" placeholder="请输入英文名称" />
+        <el-form-item label="本地化名称" prop="nameLocal">
+          <el-input v-model="form.nameLocal" placeholder="请输入本地化名称" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
@@ -235,8 +235,8 @@
     >
       <template #detail-fields="{ data }">
         <el-form-item label="节点编码">{{ data.nodeCode }}</el-form-item>
-        <el-form-item label="节点名称">{{ data.nodeName }}</el-form-item>
-        <el-form-item label="英文名称">{{ data.nodeNameEn }}</el-form-item>
+        <el-form-item label="节点名称">{{ data.name }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
         <el-form-item label="描述">{{ data.description }}</el-form-item>
         <el-form-item label="节点类型">{{ nodeTypeMap[data.nodeType] || data.nodeType }}</el-form-item>
         <el-form-item label="功能域">{{ functionalDomainMap[data.functionalDomain] || data.functionalDomain }}</el-form-item>
@@ -367,8 +367,8 @@ export default {
       historyList: [],
       historyFields: [
         { prop: 'nodeCode', label: '节点编码' },
-        { prop: 'nodeName', label: '节点名称' },
-        { prop: 'nodeNameEn', label: '英文名称' },
+        { prop: 'name', label: '节点名称' },
+        { prop: 'nameLocal', label: '本地化名称' },
         { prop: 'description', label: '描述' },
         { prop: 'nodeType', label: '节点类型', type: 'nodeType' },
         { prop: 'functionalDomain', label: '功能域', type: 'functionalDomain' },
@@ -387,7 +387,7 @@ export default {
         nodeCode: [
           { required: true, message: "节点编码不能为空", trigger: "blur" }
         ],
-        nodeName: [
+        name: [
           { required: true, message: "节点名称不能为空", trigger: "blur" }
         ],
         nodeType: [
@@ -419,8 +419,8 @@ export default {
       this.form = {
         id: undefined,
         nodeCode: undefined,
-        nodeName: undefined,
-        nodeNameEn: undefined,
+        name: undefined,
+        nameLocal: undefined,
         description: undefined,
         nodeType: undefined,
         functionalDomain: undefined,
@@ -531,7 +531,7 @@ export default {
     loadHistory() {
       this.historyLoading = true;
       listVehicleNodeHistory(this.historyNodeCode).then(response => {
-        this.historyList = response.data.rows;
+        this.historyList = response.data;
         this.historyLoading = false;
       });
     }
