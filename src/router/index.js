@@ -161,6 +161,25 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/otd',
+    component: Layout,
+    children: [
+      {
+        path: 'salemodel',
+        component: () => import('@/views/otd/salemodel/index.vue'),
+        name: 'SaleModel',
+        meta: { title: '销售车型管理', icon: 'sale-model' }
+      },
+      {
+        path: 'salespolicy/:saleModelCode',
+        component: () => import('@/views/otd/salespolicy/index.vue'),
+        name: 'SalesPolicy',
+        meta: { title: '销售策略管理', icon: 'sale-policy', activeMenu: '/otd/salemodel' },
+        hidden: true
+      }
+    ]
   }
 ]
 
