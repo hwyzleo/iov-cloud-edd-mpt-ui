@@ -9,6 +9,14 @@ export function listSupplier(query) {
   })
 }
 
+// 查询所有ACTIVE供应商
+export function listAllSupplier() {
+  return request({
+    url: '/edd-mdm/api/mpt/supplier/v1/listAll',
+    method: 'get'
+  })
+}
+
 // 查询供应商详细
 export function getSupplier(code) {
   return request({

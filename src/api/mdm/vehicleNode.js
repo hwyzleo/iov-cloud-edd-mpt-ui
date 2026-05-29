@@ -9,6 +9,14 @@ export function listVehicleNode(query) {
   })
 }
 
+// 查询所有ACTIVE车载节点
+export function listAllVehicleNode() {
+  return request({
+    url: '/edd-mdm/api/mpt/vehicleNode/v1/listAll',
+    method: 'get'
+  })
+}
+
 // 查询车载节点详细
 export function getVehicleNode(nodeCode) {
   return request({
