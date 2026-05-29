@@ -48,14 +48,9 @@ export default {
   },
   methods: {
     getSaleModelInfo() {
-      // 根据saleModelCode获取销售车型信息
-      // 这里需要调用后端API获取销售车型详情
-      // 暂时使用模拟数据
-      this.saleModelInfo = {
-        saleModelCode: this.saleModelCode,
-        name: '销售车型名称',
-        variantCode: 'VARIANT001'
-      }
+      getSaleModel(this.saleModelCode).then(response => {
+        this.saleModelInfo = response.data
+      })
     },
     goBack() {
       this.$router.push({ path: '/otd/salemodel' })
