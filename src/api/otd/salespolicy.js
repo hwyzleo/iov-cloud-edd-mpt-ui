@@ -8,6 +8,14 @@ export function getConfigPolicy(saleModelCode) {
   })
 }
 
+// 获取可用的Configuration列表（MDM投影 + 白名单状态）
+export function getAvailableConfigPolicies(saleModelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/configPolicy/available',
+    method: 'get'
+  })
+}
+
 // 创建Configuration白名单
 export function createConfigPolicy(saleModelCode, data) {
   return request({

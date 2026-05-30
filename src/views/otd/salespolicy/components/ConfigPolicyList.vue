@@ -1,125 +1,82 @@
 <template>
   <div>
+    <el-alert
+      title="说明"
+      type="info"
+      :closable="false"
+      style="margin-bottom: 15px;"
+    >
+      <template slot="default">
+        展示该 Variant 下 MDM 全部 Configuration。勾选即加入白名单，取消勾选即移除。
+        <span style="color: #E6A23C;">空白名单视为 ALL 全开（该 Variant 下全部 Configuration 都可售）。</span>
+      </template>
+    </el-alert>
+
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
           type="primary"
           plain
-          icon="el-icon-plus"
+          icon="el-icon-refresh"
           size="mini"
-          @click="handleAdd"
+          @click="getList"
           v-hasPermi="['otd:saleModel:edit']"
-        >添加Configuration
+        >刷新
         </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
           type="success"
           plain
-          icon="el-icon-upload2"
+          icon="el-icon-check"
           size="mini"
-          @click="handleImport"
+          :disabled="!hasChanges"
+          @click="handleSubmit"
           v-hasPermi="['otd:saleModel:edit']"
-        >批量导入
+        >保存修改
         </el-button>
       </el-col>
     </el-row>
 
-    <el-table v-loading="loading" :data="configPolicyList" size="small" border style="width: 100%">
+    <el-table
+      v-loading="loading"
+      :data="configList"
+      size="small"
+      border
+      style="width: 100%"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" align="center" :selectable="isSelectable"/>
       <el-table-column label="配置代码" prop="configurationCode" width="160" show-overflow-tooltip/>
-      <el-table-column label="配置名称" prop="configurationName" show-overflow-tooltip/>
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="指导价" align="center" width="120">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 'active'" type="success" size="mini">启用</el-tag>
-          <el-tag v-else type="info" size="mini">禁用</el-tag>
+          <span style="color: #67C23A;">￥{{ scope.row.guidePrice || 0 }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="影响订单数" align="center" width="100">
+      <el-table-column label="OptionCodes" prop="optionCodes" show-overflow-tooltip>
         <template slot-scope="scope">
-          <span>{{ scope.row.affectedOrderCount || 0 }}</span>
+          <span>{{ scope.row.optionCodes ? scope.row.optionCodes.join(', ') : '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
+      <el-table-column label="白名单状态" align="center" width="120">
         <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['otd:saleModel:edit']"
-          >删除
-          </el-button>
+          <el-tag v-if="scope.row.inWhitelist" type="success" size="mini">已加入</el-tag>
+          <el-tag v-else type="info" size="mini">未加入</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="启用状态" align="center" width="100">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.policyStatus === 'active'" type="success" size="mini">启用</el-tag>
+          <el-tag v-else-if="scope.row.inWhitelist" type="danger" size="mini">禁用</el-tag>
+          <span v-else>-</span>
         </template>
       </el-table-column>
     </el-table>
-
-    <!-- 添加Configuration对话框 -->
-    <el-dialog title="添加Configuration" :visible.sync="openAdd" width="500px" append-to-body>
-      <el-form ref="addForm" :model="addForm" :rules="addRules" label-width="100px">
-        <el-form-item label="Configuration" prop="configurationCodes">
-          <el-select
-            v-model="addForm.configurationCodes"
-            multiple
-            filterable
-            remote
-            reserve-keyword
-            placeholder="请输入Configuration代码"
-            :remote-method="searchConfiguration"
-            :loading="searchLoading"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in configurationOptions"
-              :key="item.configurationCode"
-              :label="item.configurationCode + ' - ' + item.configurationName"
-              :value="item.configurationCode"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="addForm.status">
-            <el-radio label="active">启用</el-radio>
-            <el-radio label="inactive">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitAdd">确 定</el-button>
-        <el-button @click="openAdd = false">取 消</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 导入对话框 -->
-    <el-dialog title="批量导入Configuration白名单" :visible.sync="openImport" width="500px" append-to-body>
-      <el-form label-width="100px">
-        <el-form-item label="上传文件">
-          <el-upload
-            ref="upload"
-            :limit="1"
-            accept=".csv"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :on-exceed="handleExceed"
-            :file-list="fileList"
-          >
-            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传csv文件，且不超过500行</div>
-          </el-upload>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="text" @click="downloadTemplate">下载模板</el-button>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitImport">确 定</el-button>
-        <el-button @click="openImport = false">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getConfigPolicy, createConfigPolicy, deleteConfigPolicy, importConfigPolicy } from '@/api/otd/salespolicy'
+import { getAvailableConfigPolicies, createConfigPolicy, deleteConfigPolicy } from '@/api/otd/salespolicy'
 
 export default {
   name: 'ConfigPolicyList',
@@ -132,21 +89,10 @@ export default {
   data() {
     return {
       loading: false,
-      configPolicyList: [],
-      openAdd: false,
-      openImport: false,
-      searchLoading: false,
-      configurationOptions: [],
-      addForm: {
-        configurationCodes: [],
-        status: 'active'
-      },
-      addRules: {
-        configurationCodes: [
-          { required: true, message: '请选择Configuration', trigger: 'change', type: 'array' }
-        ]
-      },
-      fileList: []
+      configList: [],
+      selectedConfigs: [],
+      originalWhitelist: [],
+      hasChanges: false
     }
   },
   created() {
@@ -155,83 +101,54 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      getConfigPolicy(this.saleModelCode).then(response => {
-        this.configPolicyList = response.data || []
+      getAvailableConfigPolicies(this.saleModelCode).then(response => {
+        this.configList = response.data || []
+        // 记录原始白名单状态
+        this.originalWhitelist = this.configList
+          .filter(item => item.inWhitelist)
+          .map(item => item.configurationCode)
+        this.hasChanges = false
         this.loading = false
       })
     },
-    handleAdd() {
-      this.addForm = {
-        configurationCodes: [],
-        status: 'active'
+    isSelectable(row) {
+      return true
+    },
+    handleSelectionChange(selection) {
+      this.selectedConfigs = selection.map(item => item.configurationCode)
+      // 检查是否有变更
+      const currentWhitelist = selection
+        .filter(item => item.inWhitelist)
+        .map(item => item.configurationCode)
+      this.hasChanges = JSON.stringify(this.selectedConfigs.sort()) !== JSON.stringify(this.originalWhitelist.sort())
+    },
+    handleSubmit() {
+      // 找出需要添加的（选中的但不在原白名单中的）
+      const toAdd = this.selectedConfigs.filter(code => !this.originalWhitelist.includes(code))
+      // 找出需要删除的（在原白名单中但未选中的）
+      const toRemove = this.originalWhitelist.filter(code => !this.selectedConfigs.includes(code))
+
+      const promises = []
+      if (toAdd.length > 0) {
+        promises.push(createConfigPolicy(this.saleModelCode, { configurationCodes: toAdd, status: 'active' }))
       }
-      this.configurationOptions = []
-      this.openAdd = true
-    },
-    searchConfiguration(query) {
-      if (query) {
-        this.searchLoading = true
-        // 调用后端API搜索Configuration
-        // 这里需要根据实际情况实现
-        setTimeout(() => {
-          this.searchLoading = false
-        }, 500)
+      if (toRemove.length > 0) {
+        toRemove.forEach(code => {
+          promises.push(deleteConfigPolicy(this.saleModelCode, code))
+        })
       }
-    },
-    submitAdd() {
-      this.$refs['addForm'].validate(valid => {
-        if (valid) {
-          createConfigPolicy(this.saleModelCode, this.addForm).then(response => {
-            this.$modal.msgSuccess('添加成功')
-            this.openAdd = false
-            this.getList()
-          })
-        }
-      })
-    },
-    handleDelete(row) {
-      this.$confirm('是否确认删除Configuration"' + row.configurationCode + '"？', '警告', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        return deleteConfigPolicy(this.saleModelCode, row.configurationCode)
-      }).then(() => {
-        this.getList()
-        this.$modal.msgSuccess('删除成功')
-      }).catch(() => {})
-    },
-    handleImport() {
-      this.fileList = []
-      this.openImport = true
-    },
-    handleFileChange(file) {
-      this.fileList = [file]
-    },
-    handleExceed() {
-      this.$modal.msgWarning('只能上传一个文件')
-    },
-    submitImport() {
-      if (this.fileList.length === 0) {
-        this.$modal.msgWarning('请选择文件')
+
+      if (promises.length === 0) {
+        this.$modal.msgInfo('没有变更需要保存')
         return
       }
-      importConfigPolicy(this.saleModelCode, this.fileList[0].raw).then(response => {
-        this.$modal.msgSuccess('导入成功')
-        this.openImport = false
+
+      Promise.all(promises).then(() => {
+        this.$modal.msgSuccess('保存成功')
         this.getList()
+      }).catch(() => {
+        this.$modal.msgError('保存失败')
       })
-    },
-    downloadTemplate() {
-      // 下载导入模板
-      const csvContent = 'configurationCode,status\nCONFIG001,active\nCONFIG002,active'
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'config_policy_template.csv'
-      link.click()
-      window.URL.revokeObjectURL(url)
     }
   }
 }
