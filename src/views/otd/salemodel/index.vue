@@ -198,7 +198,7 @@
       :open.sync="openForm"
       :title="formTitle"
       :formData="form"
-      @success="getList"
+      @success="handleFormSuccess"
     />
   </div>
 </template>
@@ -265,6 +265,10 @@ export default {
       this.form = {}
       this.formTitle = '添加销售车型'
       this.openForm = true
+    },
+    handleFormSuccess() {
+      this.openForm = false
+      this.getList()
     },
     handleUpdate(row) {
       const id = row.id || this.ids
