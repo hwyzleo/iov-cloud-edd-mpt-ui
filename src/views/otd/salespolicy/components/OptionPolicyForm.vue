@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+  <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body @close="handleClose">
     <el-form ref="form" :model="form" :rules="rules" label-width="120px">
       <el-form-item label="选项代码" prop="optionCode">
         <el-input v-model="form.optionCode" :readonly="form.id !== undefined" placeholder="请输入选项代码"/>
@@ -74,6 +74,7 @@ export default {
   },
   data() {
     return {
+      dialogVisible: false,
       form: {
         id: undefined,
         optionCode: undefined,
@@ -103,6 +104,12 @@ export default {
     }
   },
   watch: {
+    open: {
+      handler(val) {
+        this.dialogVisible = val
+      },
+      immediate: true
+    },
     formData: {
       handler(val) {
         if (val && Object.keys(val).length > 0) {
@@ -162,6 +169,9 @@ export default {
       })
     },
     cancel() {
+      this.$emit('update:open', false)
+    },
+    handleClose() {
       this.$emit('update:open', false)
     }
   }
