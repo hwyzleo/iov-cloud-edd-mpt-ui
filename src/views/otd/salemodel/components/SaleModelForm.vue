@@ -19,6 +19,20 @@
       <el-form-item label="定金价格" prop="downPaymentPrice">
         <el-input-number v-model="form.downPaymentPrice" :precision="2" :min="0" controls-position="right"/>
       </el-form-item>
+      <el-form-item label="启用意向金">
+        <el-switch
+          v-model="form.earnestMoney"
+          :active-value="true"
+          :inactive-value="false"
+        />
+      </el-form-item>
+      <el-form-item label="启用定金">
+        <el-switch
+          v-model="form.downPayment"
+          :active-value="true"
+          :inactive-value="false"
+        />
+      </el-form-item>
       <el-form-item label="图标">
         <el-input v-model="form.icon" placeholder="请输入图标URL"/>
       </el-form-item>
@@ -83,6 +97,8 @@ export default {
         basePrice: 0,
         earnestMoneyPrice: 0,
         downPaymentPrice: 0,
+        earnestMoney: true,
+        downPayment: true,
         icon: undefined,
         marketingCopy: undefined,
         sortWeight: 99,
@@ -140,6 +156,8 @@ export default {
         basePrice: 0,
         earnestMoneyPrice: 0,
         downPaymentPrice: 0,
+        earnestMoney: true,
+        downPayment: true,
         icon: undefined,
         marketingCopy: undefined,
         sortWeight: 99,

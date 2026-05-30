@@ -121,6 +121,26 @@
           <span>￥{{ scope.row.downPaymentPrice || 0 }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="启用意向金" align="center" width="100">
+        <template slot-scope="scope">
+          <el-switch
+            v-model="scope.row.earnestMoney"
+            :active-value="true"
+            :inactive-value="false"
+            disabled
+          />
+        </template>
+      </el-table-column>
+      <el-table-column label="启用定金" align="center" width="100">
+        <template slot-scope="scope">
+          <el-switch
+            v-model="scope.row.downPayment"
+            :active-value="true"
+            :inactive-value="false"
+            disabled
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="上下架状态" align="center" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.listingStatus === 'active'" type="success" size="mini">上架</el-tag>
