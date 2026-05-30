@@ -9,10 +9,18 @@ export function listSaleModel(query) {
   })
 }
 
-// 查询销售车型详细
+// 查询销售车型详细（按ID）
 export function getSaleModel(id) {
   return request({
     url: '/otd-vso/api/mpt/saleModel/v1/' + id,
+    method: 'get'
+  })
+}
+
+// 查询销售车型详细（按saleModelCode）
+export function getSaleModelByCode(saleModelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/code/' + saleModelCode,
     method: 'get'
   })
 }

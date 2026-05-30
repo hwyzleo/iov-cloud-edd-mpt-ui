@@ -255,7 +255,7 @@ export default {
       })
     },
     handleSalesPolicy(row) {
-      this.$router.push({ path: '/otd/salesPolicy/' + row.saleModelCode })
+      this.$router.push({ path: '/otd/saleConfig/salesPolicy/' + row.saleModelCode })
     },
     handleSyncMdm(row) {
       this.$confirm('是否确认同步MDM数据？这将强制刷新该variantCode的本地MDM投影', '警告', {

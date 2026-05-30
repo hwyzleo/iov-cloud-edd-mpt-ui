@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { getSaleModel } from '@/api/otd/salemodel'
+import { getSaleModelByCode } from '@/api/otd/salemodel'
 import ConfigPolicyList from './components/ConfigPolicyList.vue'
 import OptionPolicyList from './components/OptionPolicyList.vue'
 
@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     getSaleModelInfo() {
-      getSaleModel(this.saleModelCode).then(response => {
+      getSaleModelByCode(this.saleModelCode).then(response => {
         this.saleModelInfo = response.data
       })
     },
