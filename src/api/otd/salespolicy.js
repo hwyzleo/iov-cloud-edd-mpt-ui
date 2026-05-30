@@ -54,6 +54,14 @@ export function getOptionPolicy(saleModelCode, query) {
   })
 }
 
+// 获取可用的OptionCode列表（按OptionFamily分组）
+export function getAvailableOptionPolicies(saleModelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/optionPolicy/available',
+    method: 'get'
+  })
+}
+
 // 创建OptionCode销售策略
 export function createOptionPolicy(saleModelCode, data) {
   return request({
