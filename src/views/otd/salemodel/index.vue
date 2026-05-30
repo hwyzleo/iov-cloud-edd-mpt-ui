@@ -104,7 +104,7 @@
     <el-table v-loading="loading" :data="saleModelList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="销售代码" prop="saleModelCode" width="120"/>
-      <el-table-column label="销售车型名称" prop="name" show-overflow-tooltip/>
+      <el-table-column label="销售车型名称" prop="modelName" show-overflow-tooltip/>
       <el-table-column label="Variant代码" prop="variantCode" width="120"/>
       <el-table-column label="基础价格" align="center" width="100">
         <template slot-scope="scope">

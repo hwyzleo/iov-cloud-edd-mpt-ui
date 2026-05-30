@@ -8,7 +8,7 @@
 
       <el-descriptions :column="3" border size="small" style="margin-bottom: 20px;">
         <el-descriptions-item label="销售代码">{{ saleModelInfo.saleModelCode }}</el-descriptions-item>
-        <el-descriptions-item label="销售车型名称">{{ saleModelInfo.name }}</el-descriptions-item>
+        <el-descriptions-item label="销售车型名称">{{ saleModelInfo.modelName }}</el-descriptions-item>
         <el-descriptions-item label="Variant代码">{{ saleModelInfo.variantCode }}</el-descriptions-item>
       </el-descriptions>
 

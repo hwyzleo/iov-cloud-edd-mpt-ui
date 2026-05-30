@@ -4,8 +4,8 @@
       <el-form-item label="销售代码" prop="saleModelCode">
         <el-input v-model="form.saleModelCode" :readonly="form.id !== undefined" placeholder="请输入销售代码"/>
       </el-form-item>
-      <el-form-item label="销售车型名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入销售车型名称"/>
+      <el-form-item label="销售车型名称" prop="modelName">
+        <el-input v-model="form.modelName" placeholder="请输入销售车型名称"/>
       </el-form-item>
       <el-form-item label="Variant代码" prop="variantCode">
         <el-input v-model="form.variantCode" :readonly="form.id !== undefined" placeholder="请输入Variant代码"/>
@@ -104,7 +104,7 @@ export default {
       form: {
         id: undefined,
         saleModelCode: undefined,
-        name: undefined,
+        modelName: undefined,
         variantCode: undefined,
         basePrice: 0,
         earnestMoneyPrice: 0,
@@ -124,7 +124,7 @@ export default {
         saleModelCode: [
           { required: true, message: '销售代码不能为空', trigger: 'blur' }
         ],
-        name: [
+        modelName: [
           { required: true, message: '销售车型名称不能为空', trigger: 'blur' }
         ],
         variantCode: [
@@ -157,7 +157,7 @@ export default {
       this.form = {
         id: undefined,
         saleModelCode: undefined,
-        name: undefined,
+        modelName: undefined,
         variantCode: undefined,
         basePrice: 0,
         earnestMoneyPrice: 0,
