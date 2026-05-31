@@ -365,7 +365,7 @@ export default {
   data() {
     return {
       categoryOptions: [
-        { value: 'EXTERIOR', label: '外饰' },
+        { value: 'EXTERIOR', label: '外观' },
         { value: 'INTERIOR', label: '内饰' },
         { value: 'POWERTRAIN', label: '动力总成' },
         { value: 'INTELLIGENT', label: '智能化' },
