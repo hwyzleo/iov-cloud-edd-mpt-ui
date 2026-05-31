@@ -31,10 +31,36 @@
                   <el-tag type="success" size="small" style="margin-right: 8px;">OptionFamily</el-tag>
                   <span style="font-weight: 500; font-size: 14px;">{{ family.optionFamilyCode }}</span>
                 </el-col>
-                <el-col :span="16">
+                <el-col :span="12">
                   <span style="color: #606266;">{{ family.optionFamilyName }}</span>
                 </el-col>
+                <el-col :span="4" style="text-align: right;">
+                  <el-button
+                    size="mini"
+                    type="text"
+                    icon="el-icon-edit"
+                    @click.stop="handleEditFamilyMarketing(family)"
+                    v-hasPermi="['otd:saleModel:edit']"
+                  >编辑营销
+                  </el-button>
+                  <el-button
+                    v-if="hasFamilyMarketing(family.optionFamilyCode)"
+                    size="mini"
+                    type="text"
+                    icon="el-icon-delete"
+                    @click.stop="handleDeleteFamilyMarketing(family)"
+                    v-hasPermi="['otd:saleModel:edit']"
+                  >删除营销
+                  </el-button>
+                </el-col>
               </el-row>
+              <div v-if="hasFamilyMarketing(family.optionFamilyCode)" class="family-marketing-info">
+                <el-descriptions :column="3" size="mini" style="margin-top: 8px;">
+                  <el-descriptions-item label="营销标题">{{ getFamilyMarketingTitle(family.optionFamilyCode) || '-' }}</el-descriptions-item>
+                  <el-descriptions-item label="排序权重">{{ getFamilyMarketingSortWeight(family.optionFamilyCode) }}</el-descriptions-item>
+                  <el-descriptions-item label="生效时间">{{ getFamilyMarketingEffectiveFrom(family.optionFamilyCode) || '-' }}</el-descriptions-item>
+                </el-descriptions>
+              </div>
             </div>
 
             <el-table
@@ -168,17 +194,29 @@
       :saleModelCode="saleModelCode"
       @success="handleFormSuccess"
     />
+
+    <!-- OptionFamily 营销表单 -->
+    <OptionFamilyMarketingForm
+      :open.sync="openFamilyForm"
+      :title="familyFormTitle"
+      :formData="familyForm"
+      :saleModelCode="saleModelCode"
+      @success="handleFamilyFormSuccess"
+    />
   </div>
 </template>
 
 <script>
 import { getAvailableOptionPolicies, getOptionPolicy, deleteOptionPolicy } from '@/api/otd/salespolicy'
+import { getOptionFamilyPolicyList, deleteOptionFamilyPolicy } from '@/api/otd/optionFamilyPolicy'
 import OptionPolicyForm from './OptionPolicyForm.vue'
+import OptionFamilyMarketingForm from './OptionFamilyMarketingForm.vue'
 
 export default {
   name: 'OptionPolicyList',
   components: {
-    OptionPolicyForm
+    OptionPolicyForm,
+    OptionFamilyMarketingForm
   },
   props: {
     saleModelCode: {
@@ -202,12 +240,17 @@ export default {
       },
       openForm: false,
       formTitle: '',
-      form: {}
+      form: {},
+      familyMarketingList: [],
+      openFamilyForm: false,
+      familyFormTitle: '',
+      familyForm: {}
     }
   },
   created() {
     this.getAvailableList()
     this.getConfiguredList()
+    this.getFamilyMarketingList()
   },
   methods: {
     getAvailableList() {
@@ -270,6 +313,54 @@ export default {
       this.openForm = false
       this.getAvailableList()
       this.getConfiguredList()
+    },
+    getFamilyMarketingList() {
+      getOptionFamilyPolicyList(this.saleModelCode).then(response => {
+        this.familyMarketingList = response.data || []
+      })
+    },
+    hasFamilyMarketing(optionFamilyCode) {
+      return this.familyMarketingList.some(item => item.optionFamilyCode === optionFamilyCode)
+    },
+    getFamilyMarketingData(optionFamilyCode) {
+      return this.familyMarketingList.find(item => item.optionFamilyCode === optionFamilyCode) || {}
+    },
+    getFamilyMarketingTitle(optionFamilyCode) {
+      const data = this.getFamilyMarketingData(optionFamilyCode)
+      return data.marketingTitle
+    },
+    getFamilyMarketingSortWeight(optionFamilyCode) {
+      const data = this.getFamilyMarketingData(optionFamilyCode)
+      return data.sortWeight || 0
+    },
+    getFamilyMarketingEffectiveFrom(optionFamilyCode) {
+      const data = this.getFamilyMarketingData(optionFamilyCode)
+      return data.effectiveFrom
+    },
+    handleEditFamilyMarketing(family) {
+      const existingData = this.getFamilyMarketingData(family.optionFamilyCode)
+      this.familyForm = {
+        ...existingData,
+        optionFamilyCode: family.optionFamilyCode
+      }
+      this.familyFormTitle = this.hasFamilyMarketing(family.optionFamilyCode) ? '编辑OptionFamily营销' : '添加OptionFamily营销'
+      this.openFamilyForm = true
+    },
+    handleDeleteFamilyMarketing(family) {
+      this.$confirm('是否确认删除OptionFamily"' + family.optionFamilyCode + '"的营销信息？', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        return deleteOptionFamilyPolicy(this.saleModelCode, family.optionFamilyCode)
+      }).then(() => {
+        this.$modal.msgSuccess('删除成功')
+        this.getFamilyMarketingList()
+      }).catch(() => {})
+    },
+    handleFamilyFormSuccess() {
+      this.openFamilyForm = false
+      this.getFamilyMarketingList()
     }
   }
 }
@@ -278,5 +369,11 @@ export default {
 <style scoped>
 .family-header {
   padding: 0;
+}
+.family-marketing-info {
+  background-color: #f5f7fa;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 8px;
 }
 </style>

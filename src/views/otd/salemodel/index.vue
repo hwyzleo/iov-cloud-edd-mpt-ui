@@ -294,7 +294,7 @@ export default {
       }).catch(() => {})
     },
     handleDelete(row) {
-      const ids = row.id || this.ids
+      const ids = row.id ? [row.id] : this.ids
       this.$modal.confirm('是否确认删除销售车型ID为"' + ids + '"的数据项？').then(function() {
         return delSaleModel(ids)
       }).then(() => {
