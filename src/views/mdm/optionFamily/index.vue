@@ -2,6 +2,11 @@
   <div class="app-container">
     <!-- ========== 选项族（主表）查询表单 ========== -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
+      <el-form-item label="商品分类" prop="category">
+        <el-select v-model="queryParams.category" placeholder="请选择商品分类" clearable>
+          <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value"/>
+        </el-select>
+      </el-form-item>
       <el-form-item label="包含停用">
         <el-checkbox v-model="queryParams.includeInactive">包含停用数据</el-checkbox>
       </el-form-item>
@@ -52,6 +57,11 @@
       <el-table-column label="选项族代码" prop="code" width="160"/>
       <el-table-column label="选项族名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
+      <el-table-column label="商品分类" align="center" width="100">
+        <template slot-scope="scope">
+          {{ categoryLabel(scope.row.category) }}
+        </template>
+      </el-table-column>
       <el-table-column label="描述" prop="description" show-overflow-tooltip/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
@@ -127,6 +137,11 @@
         <el-form-item label="本地化名称">
           <el-input v-model="familyForm.nameLocal" placeholder="请输入本地化名称"/>
         </el-form-item>
+        <el-form-item label="商品分类" prop="category">
+          <el-select v-model="familyForm.category" placeholder="请选择商品分类">
+            <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="familyForm.description" type="textarea" placeholder="请输入描述"/>
         </el-form-item>
@@ -159,6 +174,7 @@
         <el-form-item label="选项族代码">{{ data.code }}</el-form-item>
         <el-form-item label="选项族名称">{{ data.name }}</el-form-item>
         <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
+        <el-form-item label="商品分类">{{ categoryLabel(data.category) }}</el-form-item>
         <el-form-item label="描述">{{ data.description }}</el-form-item>
         <el-form-item label="版本">{{ data.version }}</el-form-item>
         <el-form-item label="状态">{{ statusLabel(data.status) }}</el-form-item>
@@ -348,6 +364,16 @@ export default {
   dicts: [],
   data() {
     return {
+      categoryOptions: [
+        { value: 'EXTERIOR', label: '外饰' },
+        { value: 'INTERIOR', label: '内饰' },
+        { value: 'POWERTRAIN', label: '动力总成' },
+        { value: 'INTELLIGENT', label: '智能化' },
+        { value: 'COMFORT', label: '舒适便利' },
+        { value: 'SAFETY', label: '安全' },
+        { value: 'ACCESSORY', label: '选装附件' },
+        { value: 'OTHER', label: '其他' }
+      ],
       // ===== 选项族 主表 =====
       loading: true,
       ids: [],
@@ -368,7 +394,8 @@ export default {
       familyForm: {},
       familyRules: {
         code: [{ required: true, message: "选项族代码不能为空", trigger: "blur" }],
-        name: [{ required: true, message: "选项族名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "选项族名称不能为空", trigger: "blur" }],
+        category: [{ required: true, message: "请选择商品分类", trigger: "change" }]
       },
       // ===== 选项族 历史 =====
       familyHistoryVisible: false,
@@ -379,6 +406,7 @@ export default {
         { prop: 'code', label: '选项族代码' },
         { prop: 'name', label: '选项族名称' },
         { prop: 'nameLocal', label: '本地化名称' },
+        { prop: 'category', label: '商品分类', type: 'category' },
         { prop: 'description', label: '描述' },
         { prop: 'version', label: '版本' },
         { prop: 'status', label: '状态', type: 'status' },
@@ -431,6 +459,10 @@ export default {
   },
   methods: {
     // ====== 公共 ======
+    categoryLabel(category) {
+      const found = this.categoryOptions.find(item => item.value === category);
+      return found ? found.label : category;
+    },
     statusLabel(status) {
       switch (status) {
         case 'ACTIVE': return '启用';
@@ -471,6 +503,7 @@ export default {
     resetQuery() {
       this.resetForm("queryForm");
       this.queryParams.includeInactive = false;
+      this.queryParams.category = undefined;
       this.handleQuery();
     },
     cancelFamily() {
@@ -482,6 +515,7 @@ export default {
         code: undefined,
         name: undefined,
         nameLocal: undefined,
+        category: undefined,
         description: undefined,
         effectiveFrom: undefined,
         effectiveTo: undefined
