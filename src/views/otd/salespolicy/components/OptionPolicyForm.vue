@@ -1,8 +1,8 @@
 <template>
   <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body @close="handleClose">
     <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-      <el-form-item label="选项代码" prop="optionCode">
-        <el-input v-model="form.optionCode" :readonly="form.id !== undefined" placeholder="请输入选项代码"/>
+      <el-form-item label="选项值" prop="optionCode">
+        <el-input v-model="form.optionCode" :readonly="form.id !== undefined" placeholder="请输入选项值"/>
       </el-form-item>
       <el-form-item label="销售状态" prop="saleStatus">
         <el-select v-model="form.saleStatus" placeholder="请选择销售状态">
@@ -11,7 +11,7 @@
           <el-option label="即将上市" value="coming_soon"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="选项价格" prop="optionPrice">
+      <el-form-item label="选项值价格" prop="optionPrice">
         <el-input-number v-model="form.optionPrice" :precision="2" :min="0" controls-position="right"/>
       </el-form-item>
       <el-form-item label="可售区域">
@@ -70,6 +70,10 @@ export default {
     saleModelCode: {
       type: String,
       required: true
+    },
+    variantCode: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -92,13 +96,13 @@ export default {
       },
       rules: {
         optionCode: [
-          { required: true, message: '选项代码不能为空', trigger: 'blur' }
+          { required: true, message: '选项值不能为空', trigger: 'blur' }
         ],
         saleStatus: [
           { required: true, message: '销售状态不能为空', trigger: 'change' }
         ],
         optionPrice: [
-          { required: true, message: '选项价格不能为空', trigger: 'blur' }
+          { required: true, message: '选项值价格不能为空', trigger: 'blur' }
         ]
       }
     }
@@ -154,13 +158,18 @@ export default {
             }
           }
 
-          if (this.form.id !== undefined) {
-            updateOptionPolicy(this.saleModelCode, this.form.id, this.form).then(response => {
+          const submitData = {
+            ...this.form,
+            variantCode: this.variantCode
+          }
+
+          if (this.form.id != null) {
+            updateOptionPolicy(this.saleModelCode, this.form.id, submitData).then(response => {
               this.$modal.msgSuccess('修改成功')
               this.$emit('success')
             })
           } else {
-            createOptionPolicy(this.saleModelCode, this.form).then(response => {
+            createOptionPolicy(this.saleModelCode, submitData).then(response => {
               this.$modal.msgSuccess('新增成功')
               this.$emit('success')
             })

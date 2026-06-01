@@ -1,8 +1,21 @@
 <template>
   <div>
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="6">
+        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small">
+          <el-option
+            v-for="item in variantOptions"
+            :key="item.variantCode"
+            :label="item.variantCode + ' - ' + item.variantName"
+            :value="item.variantCode"
+          />
+        </el-select>
+      </el-col>
+    </el-row>
+
     <el-tabs v-model="activeView" type="border-card">
       <!-- 可用 OptionCode 列表（按 OptionFamily 分组） -->
-      <el-tab-pane label="可选 OptionCode" name="available">
+      <el-tab-pane label="可选选项值" name="available">
         <el-alert
           title="说明"
           type="info"
@@ -10,13 +23,13 @@
           style="margin-bottom: 15px;"
         >
           <template slot="default">
-            展示该 Variant 下 MDM 全部 OptionCode（按 OptionFamily 分组）。
-            <span style="color: #E6A23C;">点击 OptionCode 可添加或编辑销售策略。</span>
+            展示指定版本下 MDM 全部选项值（按选项族分组）。
+            <span style="color: #E6A23C;">点击选项值可添加或编辑销售策略。</span>
           </template>
         </el-alert>
 
         <div v-loading="loadingAvailable" style="max-height: 600px; overflow-y: auto;">
-          <el-empty v-if="!availableFamilies || availableFamilies.length === 0" description="暂无可用 OptionCode" :image-size="80"/>
+          <el-empty v-if="!availableFamilies || availableFamilies.length === 0" description="暂无可用选项值" :image-size="80"/>
 
           <el-card
             v-for="family in availableFamilies"
@@ -28,7 +41,7 @@
             <div slot="header" class="family-header">
               <el-row type="flex" align="middle">
                 <el-col :span="8">
-                  <el-tag type="success" size="small" style="margin-right: 8px;">OptionFamily</el-tag>
+                  <el-tag type="success" size="small" style="margin-right: 8px;">选项族</el-tag>
                   <span style="font-weight: 500; font-size: 14px;">{{ family.optionFamilyCode }}</span>
                 </el-col>
                 <el-col :span="12">
@@ -69,8 +82,8 @@
               border
               style="width: 100%"
             >
-              <el-table-column label="Option Code" prop="optionCode" width="160" show-overflow-tooltip/>
-              <el-table-column label="Option Name" prop="optionName" show-overflow-tooltip/>
+              <el-table-column label="选项值代码" prop="optionCode" width="160" show-overflow-tooltip/>
+              <el-table-column label="选项值名称" prop="optionName" show-overflow-tooltip/>
               <el-table-column label="策略状态" align="center" width="120">
                 <template slot-scope="scope">
                   <el-tag v-if="scope.row.inPolicy && scope.row.saleStatus === 'active'" type="success" size="mini">已上架</el-tag>
@@ -128,7 +141,7 @@
         </el-form>
 
         <el-table v-loading="loadingConfigured" :data="optionPolicyList" size="small" border style="width: 100%">
-          <el-table-column label="选项代码" prop="optionCode" width="160" show-overflow-tooltip/>
+          <el-table-column label="选项值代码" prop="optionCode" width="160" show-overflow-tooltip/>
           <el-table-column label="选项族代码" prop="optionFamilyCode" width="160" show-overflow-tooltip/>
           <el-table-column label="销售状态" align="center" width="120">
             <template slot-scope="scope">
@@ -137,7 +150,7 @@
               <el-tag v-else type="warning" size="mini">即将上市</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="选项价格" align="center" width="120">
+          <el-table-column label="选项值价格" align="center" width="120">
             <template slot-scope="scope">
               <span style="color: #67C23A;">￥{{ scope.row.optionPrice || 0 }}</span>
             </template>
@@ -192,6 +205,7 @@
       :title="formTitle"
       :formData="form"
       :saleModelCode="saleModelCode"
+      :variantCode="selectedVariantCode"
       @success="handleFormSuccess"
     />
 
@@ -207,7 +221,8 @@
 </template>
 
 <script>
-import { getAvailableOptionPolicies, getOptionPolicy, deleteOptionPolicy } from '@/api/otd/salespolicy'
+import { getAvailableOptionPolicies, getOptionPolicy, getOptionPolicyDetail, deleteOptionPolicy } from '@/api/otd/salespolicy'
+import { getVariantPolicy } from '@/api/otd/salespolicy'
 import { getOptionFamilyPolicyList, deleteOptionFamilyPolicy } from '@/api/otd/optionFamilyPolicy'
 import OptionPolicyForm from './OptionPolicyForm.vue'
 import OptionFamilyMarketingForm from './OptionFamilyMarketingForm.vue'
@@ -231,6 +246,8 @@ export default {
       loadingConfigured: false,
       availableFamilies: [],
       optionPolicyList: [],
+      variantOptions: [],
+      selectedVariantCode: '',
       total: 0,
       queryParams: {
         pageNum: 1,
@@ -248,21 +265,42 @@ export default {
     }
   },
   created() {
-    this.getAvailableList()
-    this.getConfiguredList()
-    this.getFamilyMarketingList()
+    this.getVariantOptions()
   },
   methods: {
+    getVariantOptions() {
+      getVariantPolicy(this.saleModelCode).then(response => {
+        this.variantOptions = response.data || []
+        if (this.variantOptions.length > 0) {
+          this.selectedVariantCode = this.variantOptions[0].variantCode
+          this.getAvailableList()
+          this.getConfiguredList()
+          this.getFamilyMarketingList()
+        }
+      })
+    },
+    handleVariantChange() {
+      this.getAvailableList()
+      this.getConfiguredList()
+    },
     getAvailableList() {
+      if (!this.selectedVariantCode) {
+        this.availableFamilies = []
+        return
+      }
       this.loadingAvailable = true
-      getAvailableOptionPolicies(this.saleModelCode).then(response => {
+      getAvailableOptionPolicies(this.saleModelCode, this.selectedVariantCode).then(response => {
         this.availableFamilies = response.data || []
         this.loadingAvailable = false
       })
     },
     getConfiguredList() {
+      if (!this.selectedVariantCode) {
+        this.optionPolicyList = []
+        return
+      }
       this.loadingConfigured = true
-      getOptionPolicy(this.saleModelCode, this.queryParams).then(response => {
+      getOptionPolicy(this.saleModelCode, { ...this.queryParams, variantCode: this.selectedVariantCode }).then(response => {
         this.optionPolicyList = response.data.items || []
         this.total = response.data.total || 0
         this.loadingConfigured = false
@@ -277,25 +315,96 @@ export default {
       this.handleQuery()
     },
     handleEditOption(family, option) {
+      this.formTitle = option.inPolicy ? '编辑销售策略' : '添加销售策略'
+      // 先设置基本信息
       this.form = {
+        id: option.id,
         optionCode: option.optionCode,
         optionFamilyCode: family.optionFamilyCode,
         saleStatus: option.saleStatus || 'active',
-        optionPrice: option.optionPrice || 0
-      }
-      if (option.inPolicy) {
-        // 如果已有策略，需要获取完整信息
-        // 这里简单处理，让用户在表单中修改
-        this.formTitle = '编辑销售策略'
-      } else {
-        this.formTitle = '添加销售策略'
+        optionPrice: option.optionPrice || 0,
+        availableRegions: '',
+        channels: '',
+        bundleWith: '',
+        mutexWith: '',
+        marketingTitle: '',
+        marketingImage: '',
+        sortWeight: 0,
+        effectiveFrom: null,
+        effectiveTo: null
       }
       this.openForm = true
+      // 如果已有策略，调用详情接口获取完整数据
+      if (option.inPolicy && option.id) {
+        getOptionPolicyDetail(this.saleModelCode, option.id).then(response => {
+          if (response.data) {
+            const detail = response.data
+            this.form = {
+              id: detail.id,
+              optionCode: detail.optionCode,
+              optionFamilyCode: detail.optionFamilyCode,
+              saleStatus: detail.saleStatus || 'active',
+              optionPrice: detail.optionPrice || 0,
+              availableRegions: Array.isArray(detail.availableRegions) ? detail.availableRegions.join(', ') : (detail.availableRegions || ''),
+              channels: Array.isArray(detail.channels) ? detail.channels.join(', ') : (detail.channels || ''),
+              bundleWith: Array.isArray(detail.bundleWith) ? detail.bundleWith.join(', ') : (detail.bundleWith || ''),
+              mutexWith: Array.isArray(detail.mutexWith) ? detail.mutexWith.join(', ') : (detail.mutexWith || ''),
+              marketingTitle: detail.marketingTitle || '',
+              marketingImage: detail.marketingImage || '',
+              sortWeight: detail.sortWeight !== undefined ? detail.sortWeight : 0,
+              effectiveFrom: detail.effectiveFrom || null,
+              effectiveTo: detail.effectiveTo || null
+            }
+          }
+        }).catch(() => {
+          this.$modal.msgError('获取策略详情失败')
+        })
+      }
     },
     handleUpdate(row) {
-      this.form = { ...row }
       this.formTitle = '修改销售策略'
+      // 先设置基本信息
+      this.form = {
+        id: row.id,
+        optionCode: row.optionCode,
+        optionFamilyCode: row.optionFamilyCode,
+        saleStatus: row.saleStatus || 'active',
+        optionPrice: row.optionPrice || 0,
+        availableRegions: '',
+        channels: '',
+        bundleWith: '',
+        mutexWith: '',
+        marketingTitle: '',
+        marketingImage: '',
+        sortWeight: 0,
+        effectiveFrom: null,
+        effectiveTo: null
+      }
       this.openForm = true
+      // 调用详情接口获取完整数据
+      getOptionPolicyDetail(this.saleModelCode, row.id).then(response => {
+        if (response.data) {
+          const detail = response.data
+          this.form = {
+            id: detail.id,
+            optionCode: detail.optionCode,
+            optionFamilyCode: detail.optionFamilyCode,
+            saleStatus: detail.saleStatus || 'active',
+            optionPrice: detail.optionPrice || 0,
+            availableRegions: Array.isArray(detail.availableRegions) ? detail.availableRegions.join(', ') : (detail.availableRegions || ''),
+            channels: Array.isArray(detail.channels) ? detail.channels.join(', ') : (detail.channels || ''),
+            bundleWith: Array.isArray(detail.bundleWith) ? detail.bundleWith.join(', ') : (detail.bundleWith || ''),
+            mutexWith: Array.isArray(detail.mutexWith) ? detail.mutexWith.join(', ') : (detail.mutexWith || ''),
+            marketingTitle: detail.marketingTitle || '',
+            marketingImage: detail.marketingImage || '',
+            sortWeight: detail.sortWeight !== undefined ? detail.sortWeight : 0,
+            effectiveFrom: detail.effectiveFrom || null,
+            effectiveTo: detail.effectiveTo || null
+          }
+        }
+      }).catch(() => {
+        this.$modal.msgError('获取策略详情失败')
+      })
     },
     handleDelete(row) {
       this.$confirm('是否确认删除选项代码"' + row.optionCode + '"的销售策略？', '警告', {
@@ -343,11 +452,11 @@ export default {
         ...existingData,
         optionFamilyCode: family.optionFamilyCode
       }
-      this.familyFormTitle = this.hasFamilyMarketing(family.optionFamilyCode) ? '编辑OptionFamily营销' : '添加OptionFamily营销'
+      this.familyFormTitle = this.hasFamilyMarketing(family.optionFamilyCode) ? '编辑选项族营销' : '添加选项族营销'
       this.openFamilyForm = true
     },
     handleDeleteFamilyMarketing(family) {
-      this.$confirm('是否确认删除OptionFamily"' + family.optionFamilyCode + '"的营销信息？', '警告', {
+      this.$confirm('是否确认删除选项族"' + family.optionFamilyCode + '"的营销信息？', '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'

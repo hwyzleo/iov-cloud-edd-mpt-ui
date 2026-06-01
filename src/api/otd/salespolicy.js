@@ -1,18 +1,93 @@
 import request from '@/utils/request'
 
-// 获取Configuration白名单
-export function getConfigPolicy(saleModelCode) {
+// ==================== Model 销售策略 ====================
+
+// 获取 Model 销售策略列表
+export function getModelPolicy(saleModelCode) {
   return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/configPolicy',
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/modelPolicy',
     method: 'get'
   })
 }
 
+// 获取单个 Model 销售策略详情
+export function getModelPolicyDetail(saleModelCode, modelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/modelPolicy/' + modelCode,
+    method: 'get'
+  })
+}
+
+// 创建/更新 Model 销售策略
+export function createModelPolicy(saleModelCode, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/modelPolicy',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除 Model 销售策略
+export function deleteModelPolicy(saleModelCode, modelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/modelPolicy/' + modelCode,
+    method: 'delete'
+  })
+}
+
+// ==================== Variant 销售策略 ====================
+
+// 获取 Variant 销售策略列表
+export function getVariantPolicy(saleModelCode, modelCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/variantPolicy',
+    method: 'get',
+    params: { modelCode }
+  })
+}
+
+// 获取单个 Variant 销售策略详情
+export function getVariantPolicyDetail(saleModelCode, variantCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/variantPolicy/' + variantCode,
+    method: 'get'
+  })
+}
+
+// 创建/更新 Variant 销售策略
+export function createVariantPolicy(saleModelCode, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/variantPolicy',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除 Variant 销售策略
+export function deleteVariantPolicy(saleModelCode, variantCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/variantPolicy/' + variantCode,
+    method: 'delete'
+  })
+}
+
+// ==================== Configuration 白名单 ====================
+
+// 获取Configuration白名单
+export function getConfigPolicy(saleModelCode, variantCode) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/configPolicy',
+    method: 'get',
+    params: { variantCode }
+  })
+}
+
 // 获取可用的Configuration列表（MDM投影 + 白名单状态）
-export function getAvailableConfigPolicies(saleModelCode) {
+export function getAvailableConfigPolicies(saleModelCode, variantCode) {
   return request({
     url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/configPolicy/available',
-    method: 'get'
+    method: 'get',
+    params: { variantCode }
   })
 }
 
@@ -26,10 +101,11 @@ export function createConfigPolicy(saleModelCode, data) {
 }
 
 // 删除Configuration白名单
-export function deleteConfigPolicy(saleModelCode, configurationCode) {
+export function deleteConfigPolicy(saleModelCode, variantCode, configurationCode) {
   return request({
     url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/configPolicy/' + configurationCode,
-    method: 'delete'
+    method: 'delete',
+    params: { variantCode }
   })
 }
 
@@ -54,11 +130,20 @@ export function getOptionPolicy(saleModelCode, query) {
   })
 }
 
+// 获取单条OptionCode销售策略详情
+export function getOptionPolicyDetail(saleModelCode, id) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/optionPolicy/' + id,
+    method: 'get'
+  })
+}
+
 // 获取可用的OptionCode列表（按OptionFamily分组）
-export function getAvailableOptionPolicies(saleModelCode) {
+export function getAvailableOptionPolicies(saleModelCode, variantCode) {
   return request({
     url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelCode + '/optionPolicy/available',
-    method: 'get'
+    method: 'get',
+    params: { variantCode }
   })
 }
 

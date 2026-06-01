@@ -7,14 +7,14 @@
       style="margin-bottom: 15px;"
     >
       <template slot="default">
-        展示指定 Model 下 MDM 全部 Variant。可配置每个 Variant 的销售状态、价格、营销信息等。
-        <span style="color: #E6A23C;">空表视为 ALL 全开（但 variantPrice 为空的 Variant 仍不可售）。</span>
+        展示指定车型下 MDM 全部版本。可配置每个版本的销售状态、价格、营销信息等。
+        <span style="color: #E6A23C;">空表视为 ALL 全开（但 variantPrice 为空的版本仍不可售）。</span>
       </template>
     </el-alert>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="6">
-        <el-select v-model="selectedModelCode" placeholder="请选择Model" clearable @change="handleModelChange" size="small">
+        <el-select v-model="selectedModelCode" placeholder="请选择车型" clearable @change="handleModelChange" size="small">
           <el-option
             v-for="item in modelOptions"
             :key="item.modelCode"
@@ -43,9 +43,9 @@
       border
       style="width: 100%"
     >
-      <el-table-column label="Variant代码" prop="variantCode" width="140" show-overflow-tooltip/>
-      <el-table-column label="Variant名称" prop="variantName" width="150" show-overflow-tooltip/>
-      <el-table-column label="Model名称" prop="modelName" width="150" show-overflow-tooltip/>
+      <el-table-column label="版本代码" prop="variantCode" width="140" show-overflow-tooltip/>
+      <el-table-column label="版本名称" prop="variantName" width="150" show-overflow-tooltip/>
+      <el-table-column label="车型名称" prop="modelName" width="150" show-overflow-tooltip/>
       <el-table-column label="MDM状态" align="center" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.status === 'active'" type="success" size="mini">启用</el-tag>
@@ -63,7 +63,7 @@
           <el-tag v-else type="info" size="mini">未配置</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Variant价格" align="center" width="120">
+      <el-table-column label="版本价格" align="center" width="120">
         <template slot-scope="scope">
           <span style="color: #67C23A;">￥{{ scope.row.variantPrice || 0 }}</span>
         </template>
@@ -126,7 +126,7 @@
             营销信息将在提交时更新，GET接口不再返回这些字段。
           </template>
         </el-alert>
-        <el-form-item label="Variant" prop="variantCode">
+        <el-form-item label="版本" prop="variantCode">
           <el-input v-model="policyForm.variantCode" disabled />
         </el-form-item>
         <el-form-item label="销售状态" prop="saleStatus">
@@ -136,8 +136,8 @@
             <el-radio label="coming_soon">即将上市</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="Variant价格" prop="variantPrice">
-          <el-input-number v-model="policyForm.variantPrice" :precision="2" :min="0" controls-position="right" placeholder="请输入Variant价格"/>
+        <el-form-item label="版本价格" prop="variantPrice">
+          <el-input-number v-model="policyForm.variantPrice" :precision="2" :min="0" controls-position="right" placeholder="请输入版本价格"/>
         </el-form-item>
         <el-form-item label="意向金价格">
           <el-input-number v-model="policyForm.earnestMoneyPrice" :precision="2" :min="0" controls-position="right" placeholder="请输入意向金价格"/>
@@ -179,7 +179,7 @@
 </template>
 
 <script>
-import { getVariantPolicy, createVariantPolicy, deleteVariantPolicy, getModelPolicy } from '@/api/otd/salespolicy'
+import { getVariantPolicy, getVariantPolicyDetail, createVariantPolicy, deleteVariantPolicy, getModelPolicy } from '@/api/otd/salespolicy'
 
 export default {
   name: 'VariantPolicyList',
@@ -216,13 +216,13 @@ export default {
       },
       policyRules: {
         variantCode: [
-          { required: true, message: '请选择Variant', trigger: 'change' }
+          { required: true, message: '请选择版本', trigger: 'change' }
         ],
         saleStatus: [
           { required: true, message: '请选择销售状态', trigger: 'change' }
         ],
         variantPrice: [
-          { required: true, message: '请输入Variant价格', trigger: 'blur' }
+          { required: true, message: '请输入版本价格', trigger: 'blur' }
         ]
       }
     }
@@ -257,7 +257,7 @@ export default {
       })
     },
     handleAddSingle(row) {
-      this.dialogTitle = '添加Variant销售策略'
+      this.dialogTitle = '添加版本销售策略'
       this.isEdit = false
       this.policyForm = {
         saleModelCode: this.saleModelCode,
@@ -278,8 +278,9 @@ export default {
       this.dialogOpen = true
     },
     handleUpdate(row) {
-      this.dialogTitle = '编辑Variant销售策略'
+      this.dialogTitle = '编辑版本销售策略'
       this.isEdit = true
+      // 先设置基本信息，然后调用详情接口获取完整数据
       this.policyForm = {
         saleModelCode: this.saleModelCode,
         variantCode: row.variantCode,
@@ -297,9 +298,33 @@ export default {
         effectiveTo: null
       }
       this.dialogOpen = true
+      // 调用详情接口获取完整策略数据
+      getVariantPolicyDetail(this.saleModelCode, row.variantCode).then(response => {
+        if (response.data) {
+          const detail = response.data
+          this.policyForm = {
+            saleModelCode: this.saleModelCode,
+            variantCode: row.variantCode,
+            saleStatus: detail.saleStatus || row.saleStatus || 'active',
+            variantPrice: detail.variantPrice !== undefined ? detail.variantPrice : (row.variantPrice || 0),
+            earnestMoneyPrice: detail.earnestMoneyPrice !== undefined ? detail.earnestMoneyPrice : (row.earnestMoneyPrice || 0),
+            downPaymentPrice: detail.downPaymentPrice !== undefined ? detail.downPaymentPrice : (row.downPaymentPrice || 0),
+            marketingName: detail.marketingName || '',
+            marketingImage: detail.marketingImage || '',
+            marketingCopy: detail.marketingCopy || '',
+            availableRegions: Array.isArray(detail.availableRegions) ? detail.availableRegions.join(', ') : (detail.availableRegions || ''),
+            channels: Array.isArray(detail.channels) ? detail.channels.join(', ') : (detail.channels || ''),
+            sortWeight: detail.sortWeight !== undefined ? detail.sortWeight : 99,
+            effectiveFrom: detail.effectiveFrom || null,
+            effectiveTo: detail.effectiveTo || null
+          }
+        }
+      }).catch(() => {
+        this.$modal.msgError('获取策略详情失败')
+      })
     },
     handleDelete(row) {
-      this.$modal.confirm('是否确认删除Variant[' + row.variantCode + ']的销售策略?').then(() => {
+      this.$modal.confirm('是否确认删除版本[' + row.variantCode + ']的销售策略?').then(() => {
         return deleteVariantPolicy(this.saleModelCode, row.variantCode)
       }).then(() => {
         this.getList()

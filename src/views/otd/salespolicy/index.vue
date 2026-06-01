@@ -9,14 +9,20 @@
       <el-descriptions :column="3" border size="small" style="margin-bottom: 20px;">
         <el-descriptions-item label="销售代码">{{ saleModelInfo.saleModelCode }}</el-descriptions-item>
         <el-descriptions-item label="销售车型名称">{{ saleModelInfo.modelName }}</el-descriptions-item>
-        <el-descriptions-item label="Variant代码">{{ saleModelInfo.variantCode }}</el-descriptions-item>
+        <el-descriptions-item label="车系代码">{{ saleModelInfo.carlineCode }}</el-descriptions-item>
       </el-descriptions>
 
       <el-tabs v-model="activeTab" type="card">
-        <el-tab-pane label="Configuration白名单" name="configPolicy">
+        <el-tab-pane label="车型销售策略" name="modelPolicy">
+          <ModelPolicyList :saleModelCode="saleModelCode"/>
+        </el-tab-pane>
+        <el-tab-pane label="版本销售策略" name="variantPolicy">
+          <VariantPolicyList :saleModelCode="saleModelCode"/>
+        </el-tab-pane>
+        <el-tab-pane label="配置白名单" name="configPolicy">
           <ConfigPolicyList :saleModelCode="saleModelCode"/>
         </el-tab-pane>
-        <el-tab-pane label="OptionCode销售策略" name="optionPolicy">
+        <el-tab-pane label="选项值销售策略" name="optionPolicy">
           <OptionPolicyList :saleModelCode="saleModelCode"/>
         </el-tab-pane>
       </el-tabs>
@@ -26,12 +32,16 @@
 
 <script>
 import { getSaleModelByCode } from '@/api/otd/salemodel'
+import ModelPolicyList from './components/ModelPolicyList.vue'
+import VariantPolicyList from './components/VariantPolicyList.vue'
 import ConfigPolicyList from './components/ConfigPolicyList.vue'
 import OptionPolicyList from './components/OptionPolicyList.vue'
 
 export default {
   name: 'SalesPolicy',
   components: {
+    ModelPolicyList,
+    VariantPolicyList,
     ConfigPolicyList,
     OptionPolicyList
   },
@@ -39,7 +49,7 @@ export default {
     return {
       saleModelCode: '',
       saleModelInfo: {},
-      activeTab: 'configPolicy'
+      activeTab: 'modelPolicy'
     }
   },
   created() {

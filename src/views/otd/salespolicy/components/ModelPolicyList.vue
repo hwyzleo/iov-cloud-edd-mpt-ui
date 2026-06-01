@@ -7,8 +7,8 @@
       style="margin-bottom: 15px;"
     >
       <template slot="default">
-        展示该车系下 MDM 全部 Model。可配置每个 Model 的销售状态、营销信息等。
-        <span style="color: #E6A23C;">空表视为 ALL 全开（该车系下全部 Model 都可售）。</span>
+        展示该车系下 MDM 全部车型。可配置每个车型的销售状态、营销信息等。
+        <span style="color: #E6A23C;">空表视为 ALL 全开（该车系下全部车型都可售）。</span>
       </template>
     </el-alert>
 
@@ -34,8 +34,8 @@
       border
       style="width: 100%"
     >
-      <el-table-column label="Model代码" prop="modelCode" width="140" show-overflow-tooltip/>
-      <el-table-column label="Model名称" prop="modelName" width="150" show-overflow-tooltip/>
+      <el-table-column label="车型代码" prop="modelCode" width="140" show-overflow-tooltip/>
+      <el-table-column label="车型名称" prop="modelName" width="150" show-overflow-tooltip/>
       <el-table-column label="MDM状态" align="center" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.status === 'active'" type="success" size="mini">启用</el-tag>
@@ -100,7 +100,7 @@
             营销信息将在提交时更新，GET接口不再返回这些字段。
           </template>
         </el-alert>
-        <el-form-item label="Model" prop="modelCode">
+        <el-form-item label="车型" prop="modelCode">
           <el-input v-model="policyForm.modelCode" disabled />
         </el-form-item>
         <el-form-item label="销售状态" prop="saleStatus">
@@ -144,7 +144,7 @@
 </template>
 
 <script>
-import { getModelPolicy, createModelPolicy, deleteModelPolicy } from '@/api/otd/salespolicy'
+import { getModelPolicy, getModelPolicyDetail, createModelPolicy, deleteModelPolicy } from '@/api/otd/salespolicy'
 
 export default {
   name: 'ModelPolicyList',
@@ -176,7 +176,7 @@ export default {
       },
       policyRules: {
         modelCode: [
-          { required: true, message: '请选择Model', trigger: 'change' }
+          { required: true, message: '请选择车型', trigger: 'change' }
         ],
         saleStatus: [
           { required: true, message: '请选择销售状态', trigger: 'change' }
@@ -192,7 +192,7 @@ export default {
       this.loading = true
       getModelPolicy(this.saleModelCode).then(response => {
         const data = response.data || []
-        // 显示所有Model列表（包括未配置策略的）
+        // 显示所有车型列表（包括未配置策略的）
         this.modelPolicyList = data.map(item => ({
           ...item,
           saleStatus: item.inPolicy ? (item.saleStatus || 'active') : '未配置'
@@ -203,7 +203,7 @@ export default {
       })
     },
     handleAddSingle(row) {
-      this.dialogTitle = '添加Model销售策略'
+        this.dialogTitle = '添加车型销售策略'
       this.isEdit = false
       this.policyForm = {
         saleModelCode: this.saleModelCode,
@@ -221,8 +221,9 @@ export default {
       this.dialogOpen = true
     },
     handleUpdate(row) {
-      this.dialogTitle = '编辑Model销售策略'
+      this.dialogTitle = '编辑车型销售策略'
       this.isEdit = true
+      // 先设置基本信息，然后调用详情接口获取完整数据
       this.policyForm = {
         saleModelCode: this.saleModelCode,
         modelCode: row.modelCode,
@@ -237,9 +238,30 @@ export default {
         effectiveTo: null
       }
       this.dialogOpen = true
+      // 调用详情接口获取完整策略数据
+      getModelPolicyDetail(this.saleModelCode, row.modelCode).then(response => {
+        if (response.data) {
+          const detail = response.data
+          this.policyForm = {
+            saleModelCode: this.saleModelCode,
+            modelCode: row.modelCode,
+            saleStatus: detail.saleStatus || row.saleStatus || 'active',
+            marketingName: detail.marketingName || '',
+            marketingImage: detail.marketingImage || '',
+            marketingCopy: detail.marketingCopy || '',
+            availableRegions: Array.isArray(detail.availableRegions) ? detail.availableRegions.join(', ') : (detail.availableRegions || ''),
+            channels: Array.isArray(detail.channels) ? detail.channels.join(', ') : (detail.channels || ''),
+            sortWeight: detail.sortWeight !== undefined ? detail.sortWeight : 99,
+            effectiveFrom: detail.effectiveFrom || null,
+            effectiveTo: detail.effectiveTo || null
+          }
+        }
+      }).catch(() => {
+        this.$modal.msgError('获取策略详情失败')
+      })
     },
     handleDelete(row) {
-      this.$modal.confirm('是否确认删除Model[' + row.modelCode + ']的销售策略?').then(() => {
+      this.$modal.confirm('是否确认删除车型[' + row.modelCode + ']的销售策略?').then(() => {
         return deleteModelPolicy(this.saleModelCode, row.modelCode)
       }).then(() => {
         this.getList()

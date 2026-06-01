@@ -7,12 +7,22 @@
       style="margin-bottom: 15px;"
     >
       <template slot="default">
-        展示该 Variant 下 MDM 全部 Configuration。勾选即加入白名单，取消勾选即移除。
-        <span style="color: #E6A23C;">空白名单视为 ALL 全开（该 Variant 下全部 Configuration 都可售）。</span>
+        展示指定版本下 MDM 全部配置。勾选即加入白名单，取消勾选即移除。
+        <span style="color: #E6A23C;">空白名单视为 ALL 全开（该版本下全部配置都可售）。</span>
       </template>
     </el-alert>
 
     <el-row :gutter="10" class="mb8">
+      <el-col :span="6">
+        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small">
+          <el-option
+            v-for="item in variantOptions"
+            :key="item.variantCode"
+            :label="item.variantCode + ' - ' + item.variantName"
+            :value="item.variantCode"
+          />
+        </el-select>
+      </el-col>
       <el-col :span="1.5">
         <el-button
           type="primary"
@@ -77,6 +87,7 @@
 
 <script>
 import { getAvailableConfigPolicies, createConfigPolicy, deleteConfigPolicy } from '@/api/otd/salespolicy'
+import { getVariantPolicy } from '@/api/otd/salespolicy'
 
 export default {
   name: 'ConfigPolicyList',
@@ -90,18 +101,37 @@ export default {
     return {
       loading: false,
       configList: [],
+      variantOptions: [],
+      selectedVariantCode: '',
       selectedConfigs: [],
       originalWhitelist: [],
       hasChanges: false
     }
   },
   created() {
-    this.getList()
+    this.getVariantOptions()
   },
   methods: {
+    getVariantOptions() {
+      // 获取所有版本选项（从车型策略中获取）
+      getVariantPolicy(this.saleModelCode).then(response => {
+        this.variantOptions = response.data || []
+        if (this.variantOptions.length > 0) {
+          this.selectedVariantCode = this.variantOptions[0].variantCode
+          this.getList()
+        }
+      })
+    },
+    handleVariantChange() {
+      this.getList()
+    },
     getList() {
+      if (!this.selectedVariantCode) {
+        this.configList = []
+        return
+      }
       this.loading = true
-      getAvailableConfigPolicies(this.saleModelCode).then(response => {
+      getAvailableConfigPolicies(this.saleModelCode, this.selectedVariantCode).then(response => {
         this.configList = response.data || []
         // 记录原始白名单状态
         this.originalWhitelist = this.configList
@@ -130,11 +160,15 @@ export default {
 
       const promises = []
       if (toAdd.length > 0) {
-        promises.push(createConfigPolicy(this.saleModelCode, { configurationCodes: toAdd, status: 'active' }))
+        promises.push(createConfigPolicy(this.saleModelCode, { 
+          variantCode: this.selectedVariantCode,
+          configurationCodes: toAdd, 
+          status: 'active' 
+        }))
       }
       if (toRemove.length > 0) {
         toRemove.forEach(code => {
-          promises.push(deleteConfigPolicy(this.saleModelCode, code))
+          promises.push(deleteConfigPolicy(this.saleModelCode, this.selectedVariantCode, code))
         })
       }
 

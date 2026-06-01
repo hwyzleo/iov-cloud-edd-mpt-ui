@@ -19,10 +19,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="Variant代码" prop="variantCode">
+      <el-form-item label="车系代码" prop="carlineCode">
         <el-input
-          v-model="queryParams.variantCode"
-          placeholder="请输入Variant代码"
+          v-model="queryParams.carlineCode"
+          placeholder="请输入车系代码"
           clearable
           style="width: 150px"
           @keyup.enter.native="handleQuery"
@@ -105,22 +105,7 @@
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="销售代码" prop="saleModelCode" width="120"/>
       <el-table-column label="销售车型名称" prop="modelName" show-overflow-tooltip/>
-      <el-table-column label="Variant代码" prop="variantCode" width="120"/>
-      <el-table-column label="基础价格" align="center" width="100">
-        <template slot-scope="scope">
-          <span>￥{{ scope.row.basePrice || 0 }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="意向金" align="center" width="100">
-        <template slot-scope="scope">
-          <span>￥{{ scope.row.earnestMoneyPrice || 0 }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="定金" align="center" width="100">
-        <template slot-scope="scope">
-          <span>￥{{ scope.row.downPaymentPrice || 0 }}</span>
-        </template>
-      </el-table-column>
+      <el-table-column label="车系代码" prop="carlineCode" width="120"/>
       <el-table-column label="启用意向金" align="center" width="100">
         <template slot-scope="scope">
           <el-switch
@@ -227,7 +212,7 @@ export default {
         pageSize: 10,
         saleModelCode: undefined,
         name: undefined,
-        variantCode: undefined,
+        carlineCode: undefined,
         listingStatus: undefined
       },
       openForm: false,
@@ -282,11 +267,7 @@ export default {
       this.$router.push({ path: '/otd/saleConfig/salesPolicy/' + row.saleModelCode })
     },
     handleSyncMdm(row) {
-      this.$confirm('是否确认同步MDM数据？这将强制刷新该variantCode的本地MDM投影', '警告', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      this.$modal.confirm('是否确认同步MDM数据？这将强制刷新该carlineCode的本地MDM投影').then(() => {
         return syncMdmData(row.saleModelCode)
       }).then(response => {
         this.$modal.msgSuccess('同步成功')
