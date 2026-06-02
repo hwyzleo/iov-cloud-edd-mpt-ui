@@ -63,7 +63,7 @@
           <span style="color: #67C23A;">￥{{ scope.row.guidePrice || 0 }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="OptionCodes" prop="optionCodes" show-overflow-tooltip>
+      <el-table-column label="选项" prop="optionCodes" show-overflow-tooltip>
         <template slot-scope="scope">
           <span>{{ scope.row.optionCodes ? scope.row.optionCodes.join(', ') : '-' }}</span>
         </template>

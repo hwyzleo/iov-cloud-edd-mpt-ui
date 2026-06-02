@@ -35,11 +35,11 @@
       style="width: 100%"
     >
       <el-table-column label="车型代码" prop="modelCode" width="140" show-overflow-tooltip/>
-      <el-table-column label="车型名称" prop="modelName" width="150" show-overflow-tooltip/>
+      <el-table-column label="车型名称" prop="modelName" min-width="150" show-overflow-tooltip/>
       <el-table-column label="MDM状态" align="center" width="100">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 'active'" type="success" size="mini">启用</el-tag>
-          <el-tag v-else-if="scope.row.status === 'inactive'" type="info" size="mini">停用</el-tag>
+          <el-tag v-if="scope.row.status && scope.row.status.toLowerCase() === 'active'" type="success" size="mini">启用</el-tag>
+          <el-tag v-else-if="scope.row.status && scope.row.status.toLowerCase() === 'inactive'" type="info" size="mini">停用</el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -53,6 +53,7 @@
           <el-tag v-else type="info" size="mini">未配置</el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="营销名称" prop="marketingName" width="150" show-overflow-tooltip/>
       <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -115,6 +116,17 @@
         </el-form-item>
         <el-form-item label="营销图片">
           <el-input v-model="policyForm.marketingImage" placeholder="请输入营销图片URL"/>
+          <el-image
+            v-if="policyForm.marketingImage && isValidImage(policyForm.marketingImage)"
+            :src="policyForm.marketingImage"
+            style="width: 100px; margin-top: 5px;"
+            fit="cover"
+            :preview-src-list="[policyForm.marketingImage]"
+          >
+            <div slot="error" class="image-slot">
+              <i class="el-icon-picture-outline"></i>
+            </div>
+          </el-image>
         </el-form-item>
         <el-form-item label="营销文案">
           <el-input v-model="policyForm.marketingCopy" type="textarea" placeholder="请输入营销文案"/>
@@ -283,7 +295,24 @@ export default {
           })
         }
       })
+    },
+    isValidImage(url) {
+      if (!url) return false
+      return /\.(jpg|jpeg|png|gif|svg|webp|bmp)$/i.test(url) || url.startsWith('data:image/')
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.image-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: #f5f7fa;
+  color: #909399;
+  font-size: 20px;
+}
+</style>

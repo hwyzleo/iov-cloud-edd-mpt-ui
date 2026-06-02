@@ -19,6 +19,38 @@
       </el-form-item>
       <el-form-item label="图标">
         <el-input v-model="form.icon" placeholder="请输入图标URL" />
+        <el-image
+          v-if="form.icon && isValidImage(form.icon)"
+          :src="form.icon"
+          style="width: 100px; margin-top: 5px;"
+          fit="cover"
+        >
+          <div slot="error" class="image-slot">
+            <i class="el-icon-picture-outline"></i>
+          </div>
+        </el-image>
+      </el-form-item>
+      <el-form-item
+        v-for="(image, index) in form.images"
+        :key="'image-' + index"
+        :label="'图片 ' + (index + 1)"
+      >
+        <el-input v-model="form.images[index]" placeholder="请输入图片URL">
+          <el-button slot="append" icon="el-icon-delete" @click="removeImage(index)" />
+        </el-input>
+        <el-image
+          v-if="form.images[index] && isValidImage(form.images[index])"
+          :src="form.images[index]"
+          style="width: 100%; margin-top: 5px;"
+          fit="cover"
+        >
+          <div slot="error" class="image-slot">
+            <i class="el-icon-picture-outline"></i>
+          </div>
+        </el-image>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-plus" size="mini" @click="addImage">添加图片</el-button>
       </el-form-item>
       <el-form-item label="营销文案">
         <el-input v-model="form.marketingCopy" type="textarea" placeholder="请输入营销文案" />
@@ -81,6 +113,7 @@ export default {
         modelName: undefined,
         carlineCode: undefined,
         icon: undefined,
+        images: [],
         marketingCopy: undefined,
         sortWeight: 99,
         availableRegions: undefined,
@@ -134,6 +167,7 @@ export default {
         modelName: undefined,
         carlineCode: undefined,
         icon: undefined,
+        images: [],
         marketingCopy: undefined,
         sortWeight: 99,
         availableRegions: undefined,
@@ -159,6 +193,15 @@ export default {
           }
         }
       })
+    },
+    addImage() {
+      this.form.images.push('')
+    },
+    removeImage(index) {
+      this.form.images.splice(index, 1)
+    },
+    isValidImage(url) {
+      return url && /\.(jpeg|jpg|gif|png|webp|svg)/i.test(url)
     },
     cancel() {
       this.$emit('update:open', false)

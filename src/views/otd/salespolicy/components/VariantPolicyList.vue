@@ -48,8 +48,8 @@
       <el-table-column label="车型名称" prop="modelName" width="150" show-overflow-tooltip/>
       <el-table-column label="MDM状态" align="center" width="100">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === 'active'" type="success" size="mini">启用</el-tag>
-          <el-tag v-else-if="scope.row.status === 'inactive'" type="info" size="mini">停用</el-tag>
+          <el-tag v-if="scope.row.status && scope.row.status.toLowerCase() === 'active'" type="success" size="mini">启用</el-tag>
+          <el-tag v-else-if="scope.row.status && scope.row.status.toLowerCase() === 'inactive'" type="info" size="mini">停用</el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -63,6 +63,7 @@
           <el-tag v-else type="info" size="mini">未配置</el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="营销名称" prop="marketingName" width="150" show-overflow-tooltip/>
       <el-table-column label="版本价格" align="center" width="120">
         <template slot-scope="scope">
           <span style="color: #67C23A;">￥{{ scope.row.variantPrice || 0 }}</span>

@@ -22,7 +22,7 @@
         <el-tab-pane label="配置白名单" name="configPolicy">
           <ConfigPolicyList :saleModelCode="saleModelCode"/>
         </el-tab-pane>
-        <el-tab-pane label="选项值销售策略" name="optionPolicy">
+        <el-tab-pane label="选项销售策略" name="optionPolicy">
           <OptionPolicyList :saleModelCode="saleModelCode"/>
         </el-tab-pane>
       </el-tabs>

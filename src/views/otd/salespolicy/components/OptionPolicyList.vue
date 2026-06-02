@@ -84,6 +84,7 @@
             >
               <el-table-column label="选项值代码" prop="optionCode" width="160" show-overflow-tooltip/>
               <el-table-column label="选项值名称" prop="optionName" show-overflow-tooltip/>
+              <el-table-column label="营销标题" prop="marketingTitle" width="150" show-overflow-tooltip/>
               <el-table-column label="策略状态" align="center" width="120">
                 <template slot-scope="scope">
                   <el-tag v-if="scope.row.inPolicy && scope.row.saleStatus === 'active'" type="success" size="mini">已上架</el-tag>
@@ -143,6 +144,7 @@
         <el-table v-loading="loadingConfigured" :data="optionPolicyList" size="small" border style="width: 100%">
           <el-table-column label="选项值代码" prop="optionCode" width="160" show-overflow-tooltip/>
           <el-table-column label="选项族代码" prop="optionFamilyCode" width="160" show-overflow-tooltip/>
+          <el-table-column label="营销标题" prop="marketingTitle" width="150" show-overflow-tooltip/>
           <el-table-column label="销售状态" align="center" width="120">
             <template slot-scope="scope">
               <el-tag v-if="scope.row.saleStatus === 'active'" type="success" size="mini">上架</el-tag>
