@@ -104,7 +104,12 @@ export default {
     submitForm() {
       this.$refs['form'].validate(valid => {
         if (valid) {
-          saveOptionFamilyPolicy(this.saleModelCode, this.form).then(response => {
+          const submitData = {
+            ...this.form,
+            effectiveFrom: this.form.effectiveFrom ? Math.floor(new Date(this.form.effectiveFrom).getTime() / 1000) : null,
+            effectiveTo: this.form.effectiveTo ? Math.floor(new Date(this.form.effectiveTo).getTime() / 1000) : null
+          }
+          saveOptionFamilyPolicy(this.saleModelCode, submitData).then(response => {
             this.$modal.msgSuccess('保存成功')
             this.$emit('success')
           })

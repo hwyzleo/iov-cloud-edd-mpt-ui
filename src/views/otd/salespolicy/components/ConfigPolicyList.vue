@@ -152,6 +152,10 @@ export default {
         .map(item => item.configurationCode)
       this.hasChanges = JSON.stringify(this.selectedConfigs.sort()) !== JSON.stringify(this.originalWhitelist.sort())
     },
+    getModelCodeByVariant(variantCode) {
+      const variant = this.variantOptions.find(item => item.variantCode === variantCode)
+      return variant ? variant.modelCode : ''
+    },
     handleSubmit() {
       // 找出需要添加的（选中的但不在原白名单中的）
       const toAdd = this.selectedConfigs.filter(code => !this.originalWhitelist.includes(code))
@@ -161,6 +165,7 @@ export default {
       const promises = []
       if (toAdd.length > 0) {
         promises.push(createConfigPolicy(this.saleModelCode, { 
+          modelCode: this.getModelCodeByVariant(this.selectedVariantCode),
           variantCode: this.selectedVariantCode,
           configurationCodes: toAdd, 
           status: 'active' 

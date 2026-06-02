@@ -52,6 +52,12 @@
       <el-form-item>
         <el-button type="primary" icon="el-icon-plus" size="mini" @click="addImage">添加图片</el-button>
       </el-form-item>
+      <el-form-item label="启用意向金">
+        <el-switch v-model="form.earnestMoney" :active-value="true" :inactive-value="false" />
+      </el-form-item>
+      <el-form-item label="启用定金">
+        <el-switch v-model="form.downPayment" :active-value="true" :inactive-value="false" />
+      </el-form-item>
       <el-form-item label="营销文案">
         <el-input v-model="form.marketingCopy" type="textarea" placeholder="请输入营销文案" />
       </el-form-item>
@@ -114,6 +120,8 @@ export default {
         carlineCode: undefined,
         icon: undefined,
         images: [],
+        earnestMoney: false,
+        downPayment: false,
         marketingCopy: undefined,
         sortWeight: 99,
         availableRegions: undefined,
@@ -168,6 +176,8 @@ export default {
         carlineCode: undefined,
         icon: undefined,
         images: [],
+        earnestMoney: false,
+        downPayment: false,
         marketingCopy: undefined,
         sortWeight: 99,
         availableRegions: undefined,
@@ -180,13 +190,20 @@ export default {
     submitForm() {
       this.$refs['form'].validate(valid => {
         if (valid) {
+          const submitData = {
+            ...this.form,
+            availableRegions: this.form.availableRegions ? this.form.availableRegions.split(',').map(s => s.trim()).filter(s => s) : [],
+            channels: this.form.channels ? this.form.channels.split(',').map(s => s.trim()).filter(s => s) : [],
+            effectiveFrom: this.form.effectiveFrom ? Math.floor(new Date(this.form.effectiveFrom).getTime() / 1000) : null,
+            effectiveTo: this.form.effectiveTo ? Math.floor(new Date(this.form.effectiveTo).getTime() / 1000) : null
+          }
           if (this.form.id !== undefined) {
-            updateSaleModel(this.form).then(response => {
+            updateSaleModel(submitData).then(response => {
               this.$modal.msgSuccess('修改成功')
               this.$emit('success')
             })
           } else {
-            addSaleModel(this.form).then(response => {
+            addSaleModel(submitData).then(response => {
               this.$modal.msgSuccess('新增成功')
               this.$emit('success')
             })

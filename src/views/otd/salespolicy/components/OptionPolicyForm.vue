@@ -74,6 +74,10 @@ export default {
     variantCode: {
       type: String,
       default: ''
+    },
+    modelCode: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -160,7 +164,14 @@ export default {
 
           const submitData = {
             ...this.form,
-            variantCode: this.variantCode
+            modelCode: this.modelCode,
+            variantCode: this.variantCode,
+            availableRegions: this.form.availableRegions ? this.form.availableRegions.split(',').map(s => s.trim()).filter(s => s) : [],
+            channels: this.form.channels ? this.form.channels.split(',').map(s => s.trim()).filter(s => s) : [],
+            bundleWith: this.form.bundleWith ? this.form.bundleWith.split(',').map(s => s.trim()).filter(s => s) : [],
+            mutexWith: this.form.mutexWith ? this.form.mutexWith.split(',').map(s => s.trim()).filter(s => s) : [],
+            effectiveFrom: this.form.effectiveFrom ? Math.floor(new Date(this.form.effectiveFrom).getTime() / 1000) : null,
+            effectiveTo: this.form.effectiveTo ? Math.floor(new Date(this.form.effectiveTo).getTime() / 1000) : null
           }
 
           if (this.form.id != null) {

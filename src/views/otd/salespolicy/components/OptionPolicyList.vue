@@ -208,6 +208,7 @@
       :formData="form"
       :saleModelCode="saleModelCode"
       :variantCode="selectedVariantCode"
+      :modelCode="getModelCodeByVariant(selectedVariantCode)"
       @success="handleFormSuccess"
     />
 
@@ -284,6 +285,10 @@ export default {
     handleVariantChange() {
       this.getAvailableList()
       this.getConfiguredList()
+    },
+    getModelCodeByVariant(variantCode) {
+      const variant = this.variantOptions.find(item => item.variantCode === variantCode)
+      return variant ? variant.modelCode : ''
     },
     getAvailableList() {
       if (!this.selectedVariantCode) {

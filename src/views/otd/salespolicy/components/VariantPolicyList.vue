@@ -337,8 +337,11 @@ export default {
         if (valid) {
           const submitData = {
             ...this.policyForm,
+            modelCode: this.selectedModelCode,
             availableRegions: this.policyForm.availableRegions ? this.policyForm.availableRegions.split(',').map(s => s.trim()).filter(s => s) : [],
-            channels: this.policyForm.channels ? this.policyForm.channels.split(',').map(s => s.trim()).filter(s => s) : []
+            channels: this.policyForm.channels ? this.policyForm.channels.split(',').map(s => s.trim()).filter(s => s) : [],
+            effectiveFrom: this.policyForm.effectiveFrom ? Math.floor(new Date(this.policyForm.effectiveFrom).getTime() / 1000) : null,
+            effectiveTo: this.policyForm.effectiveTo ? Math.floor(new Date(this.policyForm.effectiveTo).getTime() / 1000) : null
           }
           createVariantPolicy(this.saleModelCode, submitData).then(() => {
             this.$modal.msgSuccess(this.isEdit ? '修改成功' : '新增成功')
