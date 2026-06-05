@@ -95,7 +95,7 @@
 import {
   listTransportOrder,
   applyTransport
-} from "@/api/completevehicle/order/transport";
+} from "@/api/otd/order/transport";
 
 export default {
   name: "Transport",

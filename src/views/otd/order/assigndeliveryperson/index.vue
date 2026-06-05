@@ -109,7 +109,7 @@ import {
   bindingDeliveryPerson,
   listOrderWithoutDeliveryPerson,
   listDeliveryCenterStaff
-} from "@/api/completevehicle/order/assigndeliveryperson";
+} from "@/api/otd/order/assigndeliveryperson";
 
 export default {
   name: "AssignDeliveryPerson",

@@ -333,7 +333,7 @@ import {
   updateSaleModel,
   updateSaleModelImages,
   updateSaleModelConfig, listModelConfigChangeableOrder
-} from "@/api/completevehicle/order/changemodel";
+} from "@/api/otd/order/changemodel";
 
 export default {
   name: "OrderChangeConfig",

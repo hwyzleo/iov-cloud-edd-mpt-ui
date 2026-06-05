@@ -236,7 +236,7 @@ import {
   auditReject,
   lockOrder,
   closeOrder
-} from "@/api/completevehicle/order/info";
+} from "@/api/otd/order/info";
 
 export default {
   name: "VehicleSaleOrder",

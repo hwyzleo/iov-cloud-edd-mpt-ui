@@ -110,7 +110,7 @@
 import {
   bindingVehicle,
   listAssignableOrder
-} from "@/api/completevehicle/order/assignvehicle";
+} from "@/api/otd/order/assignvehicle";
 import {
   listAssignableVehicle
 } from "@/api/completevehicle/vehicle/info";
