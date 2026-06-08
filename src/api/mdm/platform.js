@@ -9,6 +9,14 @@ export function listPlatform(query) {
   })
 }
 
+// 查询所有平台列表
+export function listAllPlatform() {
+  return request({
+    url: '/edd-mdm/api/mpt/platform/v1/listAll',
+    method: 'get'
+  })
+}
+
 // 查询平台详细
 export function getPlatform(code) {
   return request({

@@ -295,7 +295,7 @@ import {
 } from "@/api/completevehicle/product/basemodel";
 import {
   listAllPlatform
-} from "@/api/completevehicle/product/platform";
+} from "@/api/mdm/platform";
 import {
   listAllBrand
 } from "@/api/mdm/brand";
