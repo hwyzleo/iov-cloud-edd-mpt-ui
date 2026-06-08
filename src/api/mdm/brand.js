@@ -9,6 +9,14 @@ export function listBrand(query) {
   })
 }
 
+// 查询所有品牌
+export function listAllBrand() {
+  return request({
+    url: '/edd-mdm/api/mpt/brand/v1/listAll',
+    method: 'get'
+  })
+}
+
 // 查询品牌详细
 export function getBrand(code) {
   return request({

@@ -258,7 +258,7 @@ import {
   updateAccount,
   delAccount
 } from "@/api/customer/account/info";
-import {getBrand} from "@/api/completevehicle/product/brand";
+import {getBrand} from "@/api/mdm/brand";
 
 export default {
   name: "Account",

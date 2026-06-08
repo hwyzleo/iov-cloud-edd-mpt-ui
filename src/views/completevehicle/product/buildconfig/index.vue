@@ -330,7 +330,7 @@ import {
   updateBuildConfig
 } from "@/api/completevehicle/product/buildconfig";
 import {listAllPlatform} from "@/api/completevehicle/product/platform";
-import {listAllBrand} from "@/api/completevehicle/product/brand";
+import {listAllBrand} from "@/api/mdm/brand";
 import {listSeriesByBrandCode} from "@/api/completevehicle/product/series";
 import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
 import {listBaseModelByPlatformCodeAndSeriesCodeAndModelCode} from "@/api/completevehicle/product/basemodel";

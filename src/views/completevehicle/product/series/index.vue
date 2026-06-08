@@ -205,7 +205,7 @@ import {
 } from "@/api/completevehicle/product/series";
 import {
   listAllBrand
-} from "@/api/completevehicle/product/brand";
+} from "@/api/mdm/brand";
 
 export default {
   name: "Series",

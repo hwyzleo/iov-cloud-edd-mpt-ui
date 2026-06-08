@@ -298,7 +298,7 @@ import {
 } from "@/api/completevehicle/product/platform";
 import {
   listAllBrand
-} from "@/api/completevehicle/product/brand";
+} from "@/api/mdm/brand";
 import {
   listSeriesByBrandCode
 } from "@/api/completevehicle/product/series";
