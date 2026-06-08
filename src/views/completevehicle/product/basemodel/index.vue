@@ -300,8 +300,8 @@ import {
   listAllBrand
 } from "@/api/mdm/brand";
 import {
-  listSeriesByBrandCode
-} from "@/api/completevehicle/product/series";
+  listSeries
+} from "@/api/mdm/carline";
 import Treeselect from "@riophae/vue-treeselect";
 import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
 
@@ -427,8 +427,8 @@ export default {
     /** 品牌下拉选择操作 */
     handleBrandChange(value) {
       if(value !== undefined && value !== null && value !== "") {
-        listSeriesByBrandCode(value).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: value}).then(response => {
+          this.seriesList = response.data.items;
         });
       }
     },
@@ -468,8 +468,8 @@ export default {
       });
       getBaseModel(id).then(response => {
         this.form = response.data;
-        listSeriesByBrandCode(this.form.brandCode).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: this.form.brandCode}).then(response => {
+          this.seriesList = response.data.items;
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
           this.modelList = response.data;

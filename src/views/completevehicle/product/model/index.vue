@@ -252,8 +252,8 @@ import {
   listAllBrand
 } from "@/api/mdm/brand";
 import {
-  listSeriesByBrandCode
-} from "@/api/completevehicle/product/series";
+  listSeries
+} from "@/api/mdm/carline";
 
 export default {
   name: "Model",
@@ -369,8 +369,8 @@ export default {
     /** 品牌下拉选择操作 */
     handleBrandChange(value) {
       if(value !== undefined && value !== null && value !== "") {
-        listSeriesByBrandCode(value).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: value}).then(response => {
+          this.seriesList = response.data.items;
         });
       }
     },
@@ -402,8 +402,8 @@ export default {
       });
       getModel(modelId).then(response => {
         this.form = response.data;
-        listSeriesByBrandCode(this.form.brandCode).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: this.form.brandCode}).then(response => {
+          this.seriesList = response.data.items;
           this.open = true;
         });
       });

@@ -331,7 +331,7 @@ import {
 } from "@/api/completevehicle/product/buildconfig";
 import {listAllPlatform} from "@/api/mdm/platform";
 import {listAllBrand} from "@/api/mdm/brand";
-import {listSeriesByBrandCode} from "@/api/completevehicle/product/series";
+import {listSeries} from "@/api/mdm/carline";
 import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
 import {listBaseModelByPlatformCodeAndSeriesCodeAndModelCode} from "@/api/completevehicle/product/basemodel";
 
@@ -461,8 +461,8 @@ export default {
     /** 品牌下拉选择操作 */
     handleBrandChange(value) {
       if (value !== undefined && value !== null && value !== "") {
-        listSeriesByBrandCode(value).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: value}).then(response => {
+          this.seriesList = response.data.items;
         });
       }
     },
@@ -516,8 +516,8 @@ export default {
       });
       getBuildConfig(id).then(response => {
         this.form = response.data;
-        listSeriesByBrandCode(this.form.brandCode).then(response => {
-          this.seriesList = response.data;
+        listSeries({brandCode: this.form.brandCode}).then(response => {
+          this.seriesList = response.data.items;
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
           this.modelList = response.data;
