@@ -28,15 +28,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="基础车型代码" prop="baseModelCode">
-        <el-input
-          v-model="queryParams.baseModelCode"
-          placeholder="请输入基础车型代码"
-          clearable
-          style="width: 140px"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="生产配置代码" prop="code">
         <el-input
           v-model="queryParams.code"
@@ -127,7 +118,6 @@
       <el-table-column label="平台代码" prop="platformCode" width="80" align="center"/>
       <el-table-column label="车系代码" prop="seriesCode" width="80" align="center"/>
       <el-table-column label="车型代码" prop="modelCode" width="80" align="center"/>
-      <el-table-column label="基础车型代码" prop="baseModelCode" width="110" align="center"/>
       <el-table-column label="生产配置代码" prop="code" width="190"/>
       <el-table-column label="生产配置名称" prop="name"/>
       <el-table-column label="是否启用" align="center" width="80">
@@ -255,24 +245,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="基础车型" prop="baseModelCode">
-              <el-select
-                v-model="form.baseModelCode"
-                placeholder="基础车型"
-                clearable
-                :disabled="form.id !== undefined"
-                @change="handleBaseModelChange"
-              >
-                <el-option
-                  v-for="baseModel in baseModelList"
-                  :key="baseModel.code"
-                  :label="baseModel.name"
-                  :value="baseModel.code"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
         </el-row>
         <el-row>
           <el-col :span="24">
@@ -333,7 +305,6 @@ import {listAllPlatform} from "@/api/mdm/platform";
 import {listAllBrand} from "@/api/mdm/brand";
 import {listSeries} from "@/api/mdm/carline";
 import {listModelByPlatformCodeAndSeriesCode} from "@/api/mdm/model";
-import {listBaseModelByPlatformCodeAndSeriesCodeAndModelCode} from "@/api/completevehicle/product/basemodel";
 
 export default {
   name: "BuildConfig",
@@ -362,8 +333,6 @@ export default {
       seriesList: [],
       // 车型列表
       modelList: [],
-      // 基础车型列表
-      baseModelList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -390,9 +359,6 @@ export default {
         ],
         modelCode: [
           {required: true, message: "车型代码不能为空", trigger: "blur"}
-        ],
-        basicModelCode: [
-          {required: true, message: "基础车型代码不能为空", trigger: "blur"}
         ],
         code: [
           {required: true, message: "生产配置代码不能为空", trigger: "blur"}
@@ -477,15 +443,7 @@ export default {
     /** 车型下拉选择操作 */
     handleModelChange(value) {
       if (value !== undefined && value !== null && value !== "") {
-        listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(this.form.platformCode, this.form.seriesCode, value).then(response => {
-          this.baseModelList = response.data;
-        });
-      }
-    },
-    /** 基础车型下拉选择操作 */
-    handleBaseModelChange(value) {
-      if (value !== undefined && value !== null && value !== "") {
-        // 基础车型选择后的逻辑
+        // 车型选择后的逻辑
       }
     },
     /** 新增按钮操作 */
@@ -521,9 +479,6 @@ export default {
         });
         listModelByPlatformCodeAndSeriesCode(this.form.platformCode, this.form.seriesCode).then(response => {
           this.modelList = response.data;
-        });
-        listBaseModelByPlatformCodeAndSeriesCodeAndModelCode(this.form.platformCode, this.form.seriesCode, this.form.modelCode).then(response => {
-          this.baseModelList = response.data;
         });
         this.open = true;
       });
