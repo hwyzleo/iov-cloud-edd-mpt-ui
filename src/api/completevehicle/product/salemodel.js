@@ -94,50 +94,6 @@ export function delSaleModelConfig(saleModelId, saleModelConfigId) {
   })
 }
 
-// 查询销售车型生产配置关联列表（分页）
-export function listSaleModelBuildConfig(saleModelId, query) {
-  return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
-    method: 'get',
-    params: query
-  })
-}
-
-// 查询销售车型聚合后的特征值范围
-export function getSaleModelFeatureCodeRanges(saleModelId) {
-  return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/featureCodeRanges',
-    method: 'get'
-  })
-}
-
-// 新增销售车型生产配置关联
-export function addSaleModelBuildConfig(saleModelId, data) {
-  return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改销售车型生产配置关联
-export function updateSaleModelBuildConfig(saleModelId, data) {
-  return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除销售车型生产配置关联
-export function delSaleModelBuildConfig(saleModelId, ids) {
-  return request({
-    url: '/otd-vso/api/mpt/saleModel/v1/' + saleModelId + '/buildConfig',
-    method: 'delete',
-    params: { ids: ids.join(',') }
-  })
-}
-
 // 手动同步销售车型配置
 export function syncSaleModelConfig(saleModelId) {
   return request({

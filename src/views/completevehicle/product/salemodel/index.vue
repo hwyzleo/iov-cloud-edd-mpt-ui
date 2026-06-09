@@ -90,11 +90,6 @@
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="销售代码" prop="saleCode" width="100"/>
       <el-table-column label="销售车型名称" prop="modelName"/>
-      <el-table-column label="生产配置数" align="center" width="100">
-        <template slot-scope="scope">
-          <span>{{ scope.row.buildConfigCount || 0 }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="图片数量" align="center" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.images.length }}</span>
@@ -149,14 +144,6 @@
             v-hasPermi="['completeVehicle:product:saleModel:edit']"
           >维护图片
           </el-button>
-<el-button
-             size="mini"
-             type="text"
-             icon="el-icon-connection"
-             @click="handleBuildConfig(scope.row)"
-             v-hasPermi="['completeVehicle:product:saleModel:edit']"
-           >生产配置
-           </el-button>
            <el-button
              size="mini"
              type="text"
@@ -322,294 +309,6 @@
       </div>
     </el-dialog>
 
-    <!-- 生产配置关联管理对话框 -->
-    <el-dialog :title="title" :visible.sync="openBuildConfig" width="900px" append-to-body>
-      <el-tabs v-model="activeBuildConfigTab" type="card">
-        <el-tab-pane label="生产配置关联" name="buildConfigList">
-          <el-row :gutter="10" class="mb8">
-            <el-col :span="1.5">
-              <el-button
-                type="primary"
-                plain
-                icon="el-icon-plus"
-                size="mini"
-                @click="handleAddBuildConfig"
-                v-hasPermi="['completeVehicle:product:saleModel:edit']"
-              >新增生产配置
-              </el-button>
-            </el-col>
-          </el-row>
-          <el-table
-            v-loading="loadingBuildConfig"
-            :data="buildConfigRelationList"
-            size="small"
-            border
-            style="width: 100%"
-          >
-            <el-table-column label="生产配置代码" prop="buildConfigCode" width="160" show-overflow-tooltip/>
-            <el-table-column label="生产配置名称" prop="buildConfigName" show-overflow-tooltip/>
-            <el-table-column label="状态" align="center" width="70">
-              <template slot-scope="scope">
-                <el-tag v-if="scope.row.enable" type="success" size="mini">启用</el-tag>
-                <el-tag v-else type="info" size="mini">禁用</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
-              <template slot-scope="scope">
-                <el-button
-                  size="mini"
-                  type="text"
-                  icon="el-icon-edit"
-                  @click="handleUpdateBuildConfig(scope.row)"
-                  v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                >修改
-                </el-button>
-                <el-button
-                  size="mini"
-                  type="text"
-                  icon="el-icon-delete"
-                  @click="handleDeleteBuildConfig(scope.row)"
-                  v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                >删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="buildConfigTotal > 0"
-            :total="buildConfigTotal"
-            :page.sync="buildConfigPageNum"
-            :limit.sync="buildConfigPageSize"
-            @pagination="getListBuildConfig(form.id)"
-          />
-        </el-tab-pane>
-
-        <el-tab-pane label="特征族维护" name="priceImageConfig">
-          <el-row style="margin-bottom: 15px;">
-            <el-col :span="16">
-              <el-alert
-                title="说明"
-                type="info"
-                :closable="false"
-              >
-                <template slot="default">
-                  特征族和特征值由生产配置自动生成。请维护价格和图片信息，用于用户选择配置时的展示和价格计算。
-                  <span style="color: #E6A23C;">价格为0的项表示尚未维护，请在修改时补充。</span>
-                  <span style="color: #409EFF; margin-left: 10px;">可通过拖拽调整特征族和特征值的排序顺序。</span>
-                </template>
-              </el-alert>
-            </el-col>
-            <el-col :span="8" style="text-align: right;">
-              <el-button
-                type="primary"
-                size="mini"
-                icon="el-icon-refresh"
-                @click="handleSyncConfigs"
-                v-hasPermi="['completeVehicle:product:saleModel:edit']"
-              >同步特征值
-              </el-button>
-            </el-col>
-          </el-row>
-
-          <div v-loading="loadingConfig" style="max-height: 500px; overflow-y: auto;">
-            <el-empty v-if="!configTreeData || configTreeData.length === 0" description="暂无配置数据" :image-size="80"/>
-
-            <draggable
-              v-else
-              v-model="configTreeData"
-              group="family"
-              handle=".drag-handle-family"
-              animation="200"
-              @end="handleFamilyDragEnd"
-            >
-              <transition-group type="transition" name="flip-list">
-                <el-card
-                  v-for="(family, familyIndex) in configTreeData"
-                  :key="family.treeId"
-                  shadow="hover"
-                  style="margin-bottom: 15px;"
-                  :body-style="{ padding: '15px' }"
-                >
-                  <div slot="header" class="family-header">
-                    <el-row type="flex" align="middle">
-                      <el-col :span="1">
-                        <i class="el-icon-rank drag-handle-family" style="cursor: move; font-size: 16px; color: #909399;"></i>
-                      </el-col>
-                      <el-col :span="1">
-                        <el-button
-                          type="text"
-                          size="mini"
-                          :icon="family.expanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right'"
-                          @click="toggleFamilyExpand(family)"
-                          style="padding: 0;"
-                        ></el-button>
-                      </el-col>
-                      <el-col :span="5">
-                        <el-tag type="success" size="small" style="margin-right: 8px;">特征族</el-tag>
-                        <span style="font-weight: 500; font-size: 14px;">{{ family.code }}</span>
-                      </el-col>
-                      <el-col :span="8">
-                        <span style="color: #606266;">{{ family.typeName }}</span>
-                      </el-col>
-                      <el-col :span="3" style="text-align: right;">
-                        <span style="color: #67C23A; font-weight: 500;">￥{{ family.typePrice || 0 }}</span>
-                      </el-col>
-                      <el-col :span="2" style="text-align: center;">
-                        <el-tag v-if="family.typeImage && family.typeImage.length > 0" size="mini" type="success">
-                          {{ family.typeImage.length }}张
-                        </el-tag>
-                        <el-tag v-else size="mini" type="warning">待维护</el-tag>
-                      </el-col>
-                      <el-col :span="2" style="text-align: center;">
-                        <el-tag v-if="family.enable" size="mini" type="success">启用</el-tag>
-                        <el-tag v-else size="mini" type="info">禁用</el-tag>
-                      </el-col>
-                      <el-col :span="2" style="text-align: right;">
-                        <el-button
-                          size="mini"
-                          type="text"
-                          icon="el-icon-edit"
-                          @click="handleUpdateConfig(family)"
-                          v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                          :disabled="!family.enable"
-                        >维护
-                        </el-button>
-                      </el-col>
-                    </el-row>
-                  </div>
-
-                  <div v-if="family.expanded && family.children && family.children.length > 0" style="margin-top: 10px;">
-                    <el-divider content-position="left">
-                      <span style="font-size: 12px; color: #909399;">特征值列表 (可拖拽排序)</span>
-                    </el-divider>
-
-                    <draggable
-                      v-model="family.children"
-                      group="feature"
-                      handle=".drag-handle-feature"
-                      animation="200"
-                      @end="handleFeatureDragEnd(family)"
-                    >
-                      <transition-group type="transition" name="flip-list">
-                        <el-row
-                          v-for="(feature, featureIndex) in family.children"
-                          :key="feature.treeId"
-                          type="flex"
-                          align="middle"
-                          style="padding: 8px 0; border-bottom: 1px solid #EBEEF5;"
-                          :style="{ 'background-color': featureIndex % 2 === 0 ? '#FAFAFA' : '#FFFFFF' }"
-                        >
-                          <el-col :span="1">
-                            <i class="el-icon-rank drag-handle-feature" style="cursor: move; font-size: 14px; color: #909399;"></i>
-                          </el-col>
-                          <el-col :span="6">
-                            <el-tag type="primary" size="small" style="margin-right: 8px;">特征值</el-tag>
-                            <span style="font-size: 13px;">{{ feature.code }}</span>
-                          </el-col>
-                          <el-col :span="8">
-                            <span style="color: #606266; font-size: 13px;">{{ feature.typeName }}</span>
-                          </el-col>
-                          <el-col :span="3" style="text-align: right;">
-                            <span style="color: #67C23A; font-size: 13px;">￥{{ feature.typePrice || 0 }}</span>
-                          </el-col>
-                          <el-col :span="2" style="text-align: center;">
-                            <el-tag v-if="feature.typeImage && feature.typeImage.length > 0" size="mini" type="success">
-                              {{ feature.typeImage.length }}张
-                            </el-tag>
-                            <el-tag v-else size="mini" type="warning">待维护</el-tag>
-                          </el-col>
-                          <el-col :span="2" style="text-align: center;">
-                            <el-tag v-if="feature.enable" size="mini" type="success">启用</el-tag>
-                            <el-tag v-else size="mini" type="info">禁用</el-tag>
-                          </el-col>
-                          <el-col :span="2" style="text-align: right;">
-                            <el-button
-                              size="mini"
-                              type="text"
-                              icon="el-icon-edit"
-                              @click="handleUpdateConfig(feature)"
-                              v-hasPermi="['completeVehicle:product:saleModel:edit']"
-                              :disabled="!feature.enable"
-                            >维护
-                            </el-button>
-                          </el-col>
-                        </el-row>
-                      </transition-group>
-                    </draggable>
-                  </div>
-
-                  <el-empty v-if="family.expanded && (!family.children || family.children.length === 0)" description="该特征族暂无特征值" :image-size="60" style="padding: 20px 0;"/>
-                </el-card>
-              </transition-group>
-            </draggable>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="cancelBuildConfig">关 闭</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 新增生产配置关联对话框 -->
-    <el-dialog :title="titleBuildConfig" :visible.sync="openAddBuildConfig" width="600px" append-to-body>
-      <el-form ref="formBuildConfig" :model="formBuildConfig" :rules="rulesBuildConfig" label-width="120px">
-        <el-form-item label="生产配置" prop="buildConfigCodes">
-          <el-select
-            v-model="formBuildConfig.buildConfigCodes"
-            placeholder="请选择生产配置"
-            filterable
-            clearable
-            multiple
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in buildConfigOptions"
-              :key="item.code"
-              :label="item.name"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="是否启用">
-          <el-radio-group v-model="formBuildConfig.enable">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序">
-          <el-input-number v-model="formBuildConfig.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitBuildConfig">确 定</el-button>
-        <el-button @click="cancelAddBuildConfig">取 消</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 修改生产配置关联对话框 -->
-    <el-dialog :title="titleBuildConfig" :visible.sync="openEditBuildConfig" width="500px" append-to-body>
-      <el-form ref="formEditBuildConfig" :model="formEditBuildConfig" label-width="120px">
-        <el-form-item label="生产配置代码">
-          <el-input v-model="formEditBuildConfig.buildConfigCode" :disabled="true"/>
-        </el-form-item>
-        <el-form-item label="生产配置名称">
-          <el-input v-model="formEditBuildConfig.buildConfigName" :disabled="true"/>
-        </el-form-item>
-        <el-form-item label="是否启用">
-          <el-radio-group v-model="formEditBuildConfig.enable">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序">
-          <el-input-number v-model="formEditBuildConfig.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitEditBuildConfig">确 定</el-button>
-        <el-button @click="cancelEditBuildConfig">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -624,11 +323,6 @@ import {
   updateSaleModelImages,
   delSaleModel,
   updateSaleModelConfig,
-  listSaleModelBuildConfig,
-  getSaleModelFeatureCodeRanges,
-  addSaleModelBuildConfig,
-  updateSaleModelBuildConfig,
-  delSaleModelBuildConfig,
   syncSaleModelConfig,
   updateConfigSort
 } from "@/api/completevehicle/product/salemodel";
@@ -646,8 +340,6 @@ export default {
       loading: true,
       // 遮罩层（车型配置）
       loadingConfig: true,
-      // 遮罩层（生产配置关联）
-      loadingBuildConfig: true,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -664,38 +356,16 @@ export default {
       saleModelConfigFamilyList: [],
       // 配置树形数据（用于拖拽排序）
       configTreeData: [],
-      // 生产配置关联表格数据
-      buildConfigRelationList: [],
-      // 生产配置关联分页总数
-      buildConfigTotal: 0,
-      // 生产配置关联分页页码
-      buildConfigPageNum: 1,
-      // 生产配置关联分页每页条数
-      buildConfigPageSize: 10,
-      // 聚合后的特征值范围
-      aggregatedFeatureCodeRanges: [],
-      // 生产配置选项列表（用于新增关联）
-      buildConfigOptions: [],
       // 弹出层标题
       title: "",
       // 2级弹出层标题
       title2: "",
-      // 生产配置关联弹出层标题
-      titleBuildConfig: "",
       // 是否显示弹出层
       open: false,
       // 是否显示弹出层（图片维护）
       openImages: false,
       // 是否显示弹出层（车型配置）
       openConfig: false,
-      // 是否显示弹出层（生产配置关联管理）
-      openBuildConfig: false,
-      // 生产配置管理标签页
-      activeBuildConfigTab: 'buildConfigList',
-      // 是否显示弹出层（新增生产配置关联）
-      openAddBuildConfig: false,
-      // 是否显示弹出层（修改生产配置关联）
-      openEditBuildConfig: false,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -707,10 +377,6 @@ export default {
       form: {},
       // 销售车型配置表单参数
       formConfig: {},
-      // 新增生产配置关联表单参数
-      formBuildConfig: {},
-      // 修改生产配置关联表单参数
-      formEditBuildConfig: {},
       // 销售车型表单校验
       rules: {
         saleCode: [
@@ -733,12 +399,6 @@ export default {
         ],
         sort: [
           {required: true, message: "排序不能为空", trigger: "blur"}
-        ]
-      },
-      // 生产配置关联表单校验
-      rulesBuildConfig: {
-        buildConfigCodes: [
-          {required: true, message: "生产配置不能为空", trigger: "change", type: "array"}
         ]
       }
     };
@@ -808,34 +468,6 @@ export default {
         return familyNode;
       });
     },
-    /** 查询销售车型生产配置关联列表 */
-    getListBuildConfig(saleModelId) {
-      this.loadingBuildConfig = true;
-      console.log('查询生产配置关联列表，saleModelId:', saleModelId);
-      const query = {
-        pageNum: this.buildConfigPageNum,
-        pageSize: this.buildConfigPageSize
-      };
-      listSaleModelBuildConfig(saleModelId, query).then(response => {
-        console.log('生产配置关联列表返回数据:', response);
-        this.buildConfigRelationList = response.data.items || [];
-        this.buildConfigTotal = response.data.total || 0;
-        this.loadingBuildConfig = false;
-
-        // 查询聚合后的特征值范围
-        console.log('查询聚合特征值范围，saleModelId:', saleModelId);
-        getSaleModelFeatureCodeRanges(saleModelId).then(response => {
-          console.log('聚合特征值范围返回数据:', response);
-          this.aggregatedFeatureCodeRanges = response.data || [];
-        }).catch(error => {
-          console.error('查询聚合特征值范围失败:', error);
-          this.aggregatedFeatureCodeRanges = [];
-        });
-      }).catch(error => {
-        console.error('查询生产配置关联列表失败:', error);
-        this.loadingBuildConfig = false;
-      });
-    },
     /** 取消按钮 */
     cancel() {
       this.open = false;
@@ -850,25 +482,6 @@ export default {
     cancelConfig() {
       this.openConfig = false;
       this.resetConfig();
-    },
-    /** 取消按钮（生产配置关联管理） */
-    cancelBuildConfig() {
-      this.openBuildConfig = false;
-      this.buildConfigRelationList = [];
-      this.aggregatedFeatureCodeRanges = [];
-      this.saleModelConfigFamilyList = [];
-      this.configTreeData = [];
-      this.activeBuildConfigTab = 'buildConfigList';
-    },
-    /** 取消按钮（新增生产配置关联） */
-    cancelAddBuildConfig() {
-      this.openAddBuildConfig = false;
-      this.resetBuildConfig();
-    },
-    /** 取消按钮（修改生产配置关联） */
-    cancelEditBuildConfig() {
-      this.openEditBuildConfig = false;
-      this.resetEditBuildConfig();
     },
     /** 表单重置 */
     reset() {
@@ -903,27 +516,6 @@ export default {
         typeImage: []
       };
       this.resetForm("formConfig");
-    },
-    /** 生产配置关联表单重置 */
-    resetBuildConfig() {
-      this.formBuildConfig = {
-        buildConfigCodes: [],
-        enable: true,
-        sort: 0
-      };
-      this.buildConfigOptions = [];
-      this.resetForm("formBuildConfig");
-    },
-    /** 修改生产配置关联表单重置 */
-    resetEditBuildConfig() {
-      this.formEditBuildConfig = {
-        id: undefined,
-        buildConfigCode: undefined,
-        buildConfigName: undefined,
-        enable: true,
-        sort: 0
-      };
-      this.resetForm("formEditBuildConfig");
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -1097,7 +689,6 @@ export default {
             this.$modal.msgSuccess("维护成功");
             this.openConfig = false;
             this.getListConfig(this.form.id);
-            this.activeBuildConfigTab = 'priceImageConfig';
           });
         }
       });
@@ -1118,80 +709,6 @@ export default {
       this.download('otd-vso/mpt/saleModel/v1/export', {
         ...this.queryParams
       }, `sale_model_${new Date().getTime()}.xlsx`)
-    },
-    /** 生产配置关联管理按钮操作 */
-    handleBuildConfig(row) {
-      this.reset();
-      this.buildConfigPageNum = 1;
-      getSaleModel(row.id).then(response => {
-        this.form = response.data;
-        this.getListBuildConfig(row.id);
-        this.getListConfig(row.id);
-        this.activeBuildConfigTab = 'buildConfigList';
-        this.openBuildConfig = true;
-      });
-      this.title = "生产配置关联管理";
-    },
-    /** 新增生产配置关联按钮操作 */
-    handleAddBuildConfig() {
-      console.log('点击新增生产配置，当前openAddBuildConfig:', this.openAddBuildConfig);
-      this.resetBuildConfig();
-      this.openAddBuildConfig = true;
-      this.titleBuildConfig = "新增生产配置关联";
-      console.log('设置后openAddBuildConfig:', this.openAddBuildConfig);
-    },
-    /** 修改生产配置关联按钮操作 */
-    handleUpdateBuildConfig(row) {
-      this.resetEditBuildConfig();
-      this.formEditBuildConfig = {
-        id: row.id,
-        buildConfigCode: row.buildConfigCode,
-        buildConfigName: row.buildConfigName,
-        enable: row.enable,
-        sort: row.sort
-      };
-      this.openEditBuildConfig = true;
-      this.titleBuildConfig = "修改生产配置关联";
-    },
-    /** 删除生产配置关联按钮操作 */
-    handleDeleteBuildConfig(row) {
-      const buildConfigIds = row.id;
-      const saleModelId = this.form.id;
-      this.$modal.confirm('是否确认删除生产配置关联ID为"' + buildConfigIds + '"的数据项？').then(() => {
-        return delSaleModelBuildConfig(saleModelId, [buildConfigIds]);
-      }).then(() => {
-        this.getListBuildConfig(saleModelId);
-        this.getListConfig(saleModelId);
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
-    },
-    /** 提交生产配置关联 */
-    submitBuildConfig() {
-      this.$refs["formBuildConfig"].validate(valid => {
-        if (valid) {
-          console.log('提交新增生产配置关联，form.id:', this.form.id);
-          console.log('提交数据:', this.formBuildConfig);
-          addSaleModelBuildConfig(this.form.id, this.formBuildConfig).then(response => {
-            console.log('新增成功，返回数据:', response);
-            this.$modal.msgSuccess("新增成功");
-            this.openAddBuildConfig = false;
-            this.getListBuildConfig(this.form.id);
-            this.activeBuildConfigTab = 'buildConfigList';
-          }).catch(error => {
-            console.error('新增失败:', error);
-            this.$modal.msgError("新增失败：" + error.message);
-          });
-        }
-      });
-    },
-    /** 提交修改生产配置关联 */
-    submitEditBuildConfig() {
-      updateSaleModelBuildConfig(this.form.id, this.formEditBuildConfig).then(response => {
-        this.$modal.msgSuccess("修改成功");
-        this.openEditBuildConfig = false;
-        this.getListBuildConfig(this.form.id);
-        this.activeBuildConfigTab = 'buildConfigList';
-      });
     },
     /** 特征族拖拽结束 */
     handleFamilyDragEnd(event) {
