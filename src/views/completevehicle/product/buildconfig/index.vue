@@ -332,7 +332,7 @@ import {
 import {listAllPlatform} from "@/api/mdm/platform";
 import {listAllBrand} from "@/api/mdm/brand";
 import {listSeries} from "@/api/mdm/carline";
-import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
+import {listModelByPlatformCodeAndSeriesCode} from "@/api/mdm/model";
 import {listBaseModelByPlatformCodeAndSeriesCodeAndModelCode} from "@/api/completevehicle/product/basemodel";
 
 export default {

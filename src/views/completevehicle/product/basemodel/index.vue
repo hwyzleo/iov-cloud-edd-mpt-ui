@@ -303,7 +303,7 @@ import {
   listSeries
 } from "@/api/mdm/carline";
 import Treeselect from "@riophae/vue-treeselect";
-import {listModelByPlatformCodeAndSeriesCode} from "@/api/completevehicle/product/model";
+import {listModelByPlatformCodeAndSeriesCode} from "@/api/mdm/model";
 
 export default {
   name: "BaseModel",

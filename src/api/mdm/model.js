@@ -60,3 +60,16 @@ export function listModelHistory(code) {
     method: 'get'
   })
 }
+
+// 查询车型平台及车系下车型列表
+export function listModelByPlatformCodeAndSeriesCode(platformCode, seriesCode) {
+  const params = {
+    platformCode: platformCode,
+    seriesCode: seriesCode
+  }
+  return request({
+    url: '/edd-mdm/api/mpt/model/v1/listByPlatformCodeAndSeriesCode',
+    method: 'get',
+    params: params
+  })
+}
