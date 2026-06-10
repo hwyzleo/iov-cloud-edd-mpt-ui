@@ -321,7 +321,7 @@ import {
 } from "@/api/mdm/vehicleNode";
 import {
   listPart
-} from "@/api/completevehicle/vehicle/part";
+} from "@/api/mdm/part";
 
 export default {
   name: "SoftwarePackage",

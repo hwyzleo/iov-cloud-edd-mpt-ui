@@ -271,7 +271,7 @@ import {
   updateSoftwareBuildVersion
 } from "@/api/ota/pota/softwarebuildversion";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
-import {listPart} from "@/api/completevehicle/vehicle/part";
+import {listPart} from "@/api/mdm/part";
 
 export default {
   name: "SoftwareBuildVersion",
