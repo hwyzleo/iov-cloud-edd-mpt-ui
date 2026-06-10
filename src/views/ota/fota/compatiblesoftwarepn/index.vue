@@ -188,8 +188,8 @@ import {
   updateCompatibleSoftwarePn,
 } from "@/api/ota/fota/compatiblesoftwarepn";
 import {
-  listAllDevice
-} from "@/api/completevehicle/vehicle/device";
+  listAllVehicleNode
+} from "@/api/mdm/vehicleNode";
 
 export default {
   name: "CompatibleSoftwarePn",
@@ -254,8 +254,8 @@ export default {
       );
     },
     getAllDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

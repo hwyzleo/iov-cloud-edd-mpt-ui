@@ -270,7 +270,7 @@ import {
   listSoftwareBuildVersion,
   updateSoftwareBuildVersion
 } from "@/api/ota/pota/softwarebuildversion";
-import {listAllDevice,} from "@/api/completevehicle/vehicle/device";
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import {listPart} from "@/api/completevehicle/vehicle/part";
 
 export default {
@@ -353,8 +353,8 @@ export default {
       );
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

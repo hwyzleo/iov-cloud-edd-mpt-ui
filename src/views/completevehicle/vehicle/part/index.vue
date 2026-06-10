@@ -251,7 +251,7 @@
 
 <script>
 import {addPart, delPart, getPart, listPart, updatePart} from "@/api/completevehicle/vehicle/part";
-import {listAllDevice} from "@/api/completevehicle/vehicle/device";
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {
   name: "Part",
@@ -313,8 +313,8 @@ export default {
       );
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

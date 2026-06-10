@@ -317,8 +317,8 @@ import {
   delSoftwarePackage
 } from "@/api/ota/pota/softwarepackage";
 import {
-  listAllDevice,
-} from "@/api/completevehicle/vehicle/device";
+  listAllVehicleNode,
+} from "@/api/mdm/vehicleNode";
 import {
   listPart
 } from "@/api/completevehicle/vehicle/part";
@@ -408,8 +408,8 @@ export default {
       );
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

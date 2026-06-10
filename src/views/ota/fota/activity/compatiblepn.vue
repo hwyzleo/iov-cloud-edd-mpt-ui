@@ -146,7 +146,7 @@ import {
   regroupSoftwareBuildVersion,
 } from "@/api/ota/fota/activity";
 import {listCompatiblePn} from "@/api/ota/pota/compatiblepn";
-import {listAllDevice} from "@/api/completevehicle/vehicle/device";
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {
   name: "ActivityCompatiblePn",
@@ -210,8 +210,8 @@ export default {
       });
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

@@ -140,7 +140,7 @@ import {
   listActivityFixedConfigWord,
 } from "@/api/ota/fota/activity";
 import {listFixedConfigWord} from "@/api/ota/dota/configword";
-import {listAllDevice} from "@/api/completevehicle/vehicle/device";
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {
   name: "ActivityFixedConfigWord",
@@ -204,8 +204,8 @@ export default {
       });
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },

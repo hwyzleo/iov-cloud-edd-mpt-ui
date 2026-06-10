@@ -266,7 +266,7 @@ import {
   updateBaselineSoftwareBuildVersionOta
 } from "@/api/ota/baseline/baseline";
 import {listSoftwareBuildVersion} from "@/api/ota/pota/softwarebuildversion"
-import {listAllDevice} from "@/api/completevehicle/vehicle/device";
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import Sortable from 'sortablejs'
 
 export default {
@@ -352,8 +352,8 @@ export default {
       );
     },
     getDeviceList() {
-      listAllDevice().then(response => {
-          this.deviceList = response.data;
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },
