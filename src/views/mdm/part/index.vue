@@ -106,6 +106,19 @@
     <el-table v-loading="loading" :data="partList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="零件编码" prop="code" width="120" />
+      <el-table-column label="零件基础号" prop="baseNo" width="120" />
+      <el-table-column label="发号来源" prop="numberingSource" width="100">
+        <template slot-scope="scope">
+          {{ getNumberingSourceLabel(scope.row.numberingSource) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="是否总成件" prop="isAssembly" width="100" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isAssembly ? 'success' : 'info'">
+            {{ scope.row.isAssembly ? '是' : '否' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="零件名称" prop="name" />
       <el-table-column label="物料分类" prop="categoryCode" width="120" />
       <el-table-column label="零件类型" prop="partType" width="100">
@@ -717,6 +730,14 @@ export default {
     },
     getLifecycleStageLabel(stage) {
       return LIFECYCLE_STAGE_MAP[stage] || stage
+    },
+    getNumberingSourceLabel(source) {
+      const sourceMap = {
+        'MDM_GEN': '系统生成',
+        'PLM': 'PLM同步',
+        'IMPORT': '存量导入'
+      }
+      return sourceMap[source] || source
     },
     cancel() {
       this.open = false
