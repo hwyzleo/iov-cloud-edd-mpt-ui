@@ -73,11 +73,11 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="分类编码" prop="code" width="200" />
+      <el-table-column label="分类编码" prop="code" width="100" />
       <el-table-column label="分类名称" prop="name" />
       <el-table-column label="本地化名称" prop="nameLocal" />
-      <el-table-column label="父分类编码" prop="parentCode" width="150" />
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="父分类编码" prop="parentCode" width="100" />
+      <el-table-column label="状态" align="center" width="60">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ scope.row.status === 'ACTIVE' ? '启用' : scope.row.status === 'INACTIVE' ? '停用' : scope.row.status === 'DEPRECATED' ? '废弃' : '草稿' }}
@@ -90,7 +90,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="240" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['mdm:materialCategory:edit']"
