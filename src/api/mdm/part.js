@@ -85,3 +85,39 @@ export function listPartHistory(code) {
     method: 'get'
   })
 }
+
+// 手动指定code创建
+export function createWithCode(data) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/part/v1/createWithCode',
+    method: 'post',
+    data: data
+  })
+}
+
+// 存量批量导入
+export function importPart(data) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/part/v1/import',
+    method: 'post',
+    data: data
+  })
+}
+
+// 代次升级
+export function upgradeGeneration(code, operator) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/part/v1/' + code + '/upgradeGeneration',
+    method: 'post',
+    params: { operator }
+  })
+}
+
+// 小修订
+export function minorRevision(code, data) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/part/v1/' + code + '/minorRevision',
+    method: 'put',
+    data: data
+  })
+}
