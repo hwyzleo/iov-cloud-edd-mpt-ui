@@ -158,7 +158,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="340" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="340" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['mdm:part:edit']"
