@@ -158,7 +158,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="240" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="340" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['mdm:part:edit']"
@@ -183,6 +183,20 @@
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
           >删除</el-button>
+          <el-button
+            v-hasPermi="['mdm:part:edit']"
+            size="mini"
+            type="text"
+            icon="el-icon-refresh"
+            @click="handleUpgradeGeneration(scope.row)"
+          >代次升级</el-button>
+          <el-button
+            v-hasPermi="['mdm:part:edit']"
+            size="mini"
+            type="text"
+            icon="el-icon-edit-outline"
+            @click="handleMinorRevision(scope.row)"
+          >小修订</el-button>
           <el-button
             v-hasPermi="['mdm:part:query']"
             size="mini"
@@ -505,6 +519,22 @@
         <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
       </template>
     </history-snapshot>
+
+    <!-- 小修订弹窗 -->
+    <el-dialog title="小修订" :visible.sync="minorRevisionOpen" width="500px" append-to-body>
+      <el-form ref="minorRevisionForm" :model="minorRevisionForm" :rules="minorRevisionRules" label-width="100px">
+        <el-form-item label="零件编码">
+          <el-input v-model="minorRevisionForm.code" readonly />
+        </el-form-item>
+        <el-form-item label="新图纸版本" prop="drawingVersion">
+          <el-input v-model="minorRevisionForm.drawingVersion" placeholder="请输入新图纸版本" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitMinorRevision">确 定</el-button>
+        <el-button @click="minorRevisionOpen = false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -517,7 +547,9 @@ import {
   delPart,
   deactivatePart,
   exportPart,
-  listPartHistory
+  listPartHistory,
+  upgradeGeneration,
+  minorRevision
 } from '@/api/mdm/part'
 import { listAllVehicleNode } from '@/api/mdm/vehicleNode'
 import { listAllSupplier } from '@/api/mdm/supplier'
@@ -650,6 +682,16 @@ export default {
         { prop: 'effectiveTo', label: '生效结束时间', type: 'date' }
       ],
       historyCode: '',
+      minorRevisionOpen: false,
+      minorRevisionForm: {
+        code: '',
+        drawingVersion: ''
+      },
+      minorRevisionRules: {
+        drawingVersion: [
+          { required: true, message: '新图纸版本不能为空', trigger: 'blur' }
+        ]
+      },
       rules: {
         code: [
           { required: true, message: '零件编码不能为空', trigger: 'blur' }
@@ -876,6 +918,33 @@ export default {
       listPartHistory(this.historyCode).then(response => {
         this.historyList = response.data.rows
         this.historyLoading = false
+      })
+    },
+    handleUpgradeGeneration(row) {
+      this.$modal.confirm('是否确认对零件"' + row.code + '"进行代次升级？升级后将生成新的零件号。').then(() => {
+        return upgradeGeneration(row.code, this.$store.state.user.name)
+      }).then((response) => {
+        this.$modal.msgSuccess('代次升级成功，新零件号：' + response.data.code)
+        this.getList()
+      }).catch(() => {})
+    },
+    handleMinorRevision(row) {
+      this.minorRevisionForm.code = row.code
+      this.minorRevisionForm.drawingVersion = ''
+      this.minorRevisionOpen = true
+    },
+    submitMinorRevision() {
+      this.$refs['minorRevisionForm'].validate(valid => {
+        if (valid) {
+          minorRevision(this.minorRevisionForm.code, {
+            drawingVersion: this.minorRevisionForm.drawingVersion,
+            operator: this.$store.state.user.name
+          }).then(response => {
+            this.$modal.msgSuccess('小修订成功')
+            this.minorRevisionOpen = false
+            this.getList()
+          })
+        }
       })
     }
   }
