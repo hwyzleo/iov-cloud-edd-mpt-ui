@@ -466,6 +466,18 @@
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" placeholder="请输入描述" />
         </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="零件基础号">
+              <el-input v-model="form.baseNo" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="发号来源">
+              <el-input v-model="form.numberingSource" readonly />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="生效时间">
           <el-date-picker
             v-model="effectiveDateRange"
@@ -522,6 +534,9 @@
         <el-form-item label="生命周期阶段">{{ getLifecycleStageLabel(data.lifecycleStage) }}</el-form-item>
         <el-form-item label="替代零件编码">{{ data.substitutePartCode }}</el-form-item>
         <el-form-item label="描述">{{ data.description }}</el-form-item>
+        <el-form-item label="零件基础号">{{ data.baseNo }}</el-form-item>
+        <el-form-item label="发号来源">{{ getNumberingSourceLabel(data.numberingSource) }}</el-form-item>
+        <el-form-item label="是否总成件">{{ data.isAssembly ? '是' : '否' }}</el-form-item>
         <el-form-item label="版本">{{ data.version }}</el-form-item>
         <el-form-item label="状态">{{ data.status === 'ACTIVE' ? '启用' : data.status === 'INACTIVE' ? '停用' : data.status }}</el-form-item>
         <el-form-item label="生效开始时间">{{ parseTime(data.effectiveFrom) }}</el-form-item>
@@ -686,6 +701,9 @@ export default {
         { prop: 'lifecycleStage', label: '生命周期阶段' },
         { prop: 'substitutePartCode', label: '替代零件编码' },
         { prop: 'description', label: '描述' },
+        { prop: 'baseNo', label: '零件基础号' },
+        { prop: 'numberingSource', label: '发号来源' },
+        { prop: 'isAssembly', label: '是否总成件', type: 'boolean' },
         { prop: 'version', label: '版本' },
         { prop: 'status', label: '状态', type: 'status' },
         { prop: 'effectiveFrom', label: '生效开始时间', type: 'date' },
