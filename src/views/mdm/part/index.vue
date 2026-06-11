@@ -601,23 +601,19 @@ const PART_TYPE_MAP = {
 }
 
 const LIFECYCLE_STAGE_OPTIONS = [
-  { label: '概念', value: 'CONCEPT' },
-  { label: '设计', value: 'DESIGN' },
-  { label: '原型', value: 'PROTOTYPE' },
-  { label: '预生产', value: 'PRE_PRODUCTION' },
-  { label: '生产', value: 'PRODUCTION' },
-  { label: '维护', value: 'MAINTENANCE' },
-  { label: '停产', value: 'DISCONTINUED' }
+  { label: '样件', value: 'PROTOTYPE' },
+  { label: '预量产', value: 'PRE_PRODUCTION' },
+  { label: '量产', value: 'MASS_PRODUCTION' },
+  { label: '停产过渡', value: 'PHASE_OUT' },
+  { label: '淘汰', value: 'OBSOLETE' }
 ]
 
 const LIFECYCLE_STAGE_MAP = {
-  'CONCEPT': '概念',
-  'DESIGN': '设计',
-  'PROTOTYPE': '原型',
-  'PRE_PRODUCTION': '预生产',
-  'PRODUCTION': '生产',
-  'MAINTENANCE': '维护',
-  'DISCONTINUED': '停产'
+  'PROTOTYPE': '样件',
+  'PRE_PRODUCTION': '预量产',
+  'MASS_PRODUCTION': '量产',
+  'PHASE_OUT': '停产过渡',
+  'OBSOLETE': '淘汰'
 }
 
 const KEY_PART_OPTIONS = [
