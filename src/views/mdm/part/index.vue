@@ -585,21 +585,19 @@ import { listAllSupplier } from '@/api/mdm/supplier'
 import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
 const PART_TYPE_OPTIONS = [
-  { label: '硬件', value: 'HARDWARE' },
+  { label: '原材料', value: 'RAW_MATERIAL' },
+  { label: '标准件', value: 'STANDARD_PART' },
+  { label: '定制件', value: 'CUSTOM_PART' },
   { label: '软件', value: 'SOFTWARE' },
-  { label: '固件', value: 'FIRMWARE' },
-  { label: '机械件', value: 'MECHANICAL' },
-  { label: '电气件', value: 'ELECTRICAL' },
-  { label: '其他', value: 'OTHER' }
+  { label: '总成件', value: 'ASSEMBLY' }
 ]
 
 const PART_TYPE_MAP = {
-  'HARDWARE': '硬件',
+  'RAW_MATERIAL': '原材料',
+  'STANDARD_PART': '标准件',
+  'CUSTOM_PART': '定制件',
   'SOFTWARE': '软件',
-  'FIRMWARE': '固件',
-  'MECHANICAL': '机械件',
-  'ELECTRICAL': '电气件',
-  'OTHER': '其他'
+  'ASSEMBLY': '总成件'
 }
 
 const LIFECYCLE_STAGE_OPTIONS = [
