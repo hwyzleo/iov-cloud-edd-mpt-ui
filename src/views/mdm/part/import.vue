@@ -4,14 +4,14 @@
       <div slot="header">
         <span>零件批量导入</span>
       </div>
-      
+
       <!-- 步骤条 -->
       <el-steps :active="active" finish-status="success">
         <el-step title="上传文件" />
         <el-step title="数据预览" />
         <el-step title="导入结果" />
       </el-steps>
-      
+
       <!-- 步骤1：上传文件 -->
       <div v-if="active === 0" style="margin-top: 20px;">
         <el-upload
@@ -28,7 +28,7 @@
         </el-upload>
         <el-button style="margin-top: 12px;" type="primary" @click="next">下一步</el-button>
       </div>
-      
+
       <!-- 步骤2：数据预览 -->
       <div v-if="active === 1" style="margin-top: 20px;">
         <el-table :data="previewData" border style="width: 100%">
@@ -44,7 +44,7 @@
           <el-button type="primary" @click="handleImport">开始导入</el-button>
         </div>
       </div>
-      
+
       <!-- 步骤3：导入结果 -->
       <div v-if="active === 2" style="margin-top: 20px;">
         <el-result
@@ -121,13 +121,13 @@ export default {
         this.$modal.msgWarning('没有可导入的数据')
         return
       }
-      
+
       this.$modal.confirm('确认导入 ' + this.previewData.length + ' 条数据？').then(() => {
         const importData = this.previewData.map(row => ({
           ...row,
           operator: this.$store.state.user.name
         }))
-        
+
         return importPart(importData)
       }).then(response => {
         this.importResult = {
