@@ -570,7 +570,6 @@ import {
   updatePart,
   delPart,
   deactivatePart,
-  exportPart,
   listPartHistory,
   upgradeGeneration,
   minorRevision
