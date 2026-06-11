@@ -219,32 +219,36 @@
     <!-- 添加或修改零件对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item v-if="hasManualCodePermission" label="手动指定零件号">
-          <el-switch v-model="manualCodeMode" />
-        </el-form-item>
-        <el-form-item v-if="manualCodeMode && hasManualCodePermission" label="零件编码" prop="code">
-          <el-input v-model="form.code" placeholder="请输入零件编码" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="手动指定零件号">
+              <el-switch v-model="manualCodeMode" />
+            </el-form-item>
+          </el-col>
+          <el-col v-if="manualCodeMode" :span="12">
+            <el-form-item label="零件编码" prop="code">
+              <el-input v-model="form.code" placeholder="请输入零件编码" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="零件名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入零件名称" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="本地化名称" prop="nameLocal">
               <el-input v-model="form.nameLocal" placeholder="请输入本地化名称" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="物料分类" prop="categoryCode">
               <el-input v-model="form.categoryCode" placeholder="请输入物料分类编码" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="零件类型" prop="partType">
               <el-select v-model="form.partType" placeholder="请选择零件类型" clearable style="width: 100%">
@@ -257,6 +261,8 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="车载节点" prop="vehicleNodeCode">
               <el-select
@@ -726,6 +732,15 @@ export default {
         ],
         name: [
           { required: true, message: '零件名称不能为空', trigger: 'blur' }
+        ],
+        categoryCode: [
+          { required: true, message: '物料分类编码不能为空', trigger: 'blur' }
+        ],
+        partType: [
+          { required: true, message: '零件类型不能为空', trigger: 'change' }
+        ],
+        lifecycleStage: [
+          { required: true, message: '生命周期阶段不能为空', trigger: 'change' }
         ]
       }
     }
