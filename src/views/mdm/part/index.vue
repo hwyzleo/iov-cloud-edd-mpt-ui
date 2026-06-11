@@ -219,12 +219,13 @@
     <!-- 添加或修改零件对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-form-item v-if="hasManualCodePermission" label="手动指定零件号">
+          <el-switch v-model="manualCodeMode" />
+        </el-form-item>
+        <el-form-item v-if="manualCodeMode && hasManualCodePermission" label="零件编码" prop="code">
+          <el-input v-model="form.code" placeholder="请输入零件编码" />
+        </el-form-item>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="零件编码" prop="code">
-              <el-input v-model="form.code" :readonly="form.code !== undefined && form.id !== undefined" placeholder="请输入零件编码" />
-            </el-form-item>
-          </el-col>
           <el-col :span="12">
             <el-form-item label="零件名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入零件名称" />
@@ -372,6 +373,13 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="是否总成件" prop="isAssembly">
+              <el-switch v-model="form.isAssembly" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="功能配置特征码" prop="ffaCode">
               <el-input v-model="form.ffaCode" placeholder="请输入功能配置特征码" />
             </el-form-item>
@@ -498,6 +506,7 @@
         <el-form-item label="是否架构件">{{ data.isFramePart ? '是' : '否' }}</el-form-item>
         <el-form-item label="是否精准追溯">{{ data.isAccuratelyTraced ? '是' : '否' }}</el-form-item>
         <el-form-item label="是否有数模">{{ data.isDigitate ? '是' : '否' }}</el-form-item>
+        <el-form-item label="是否总成件">{{ data.isAssembly ? '是' : '否' }}</el-form-item>
         <el-form-item label="功能配置特征码">{{ data.ffaCode }}</el-form-item>
         <el-form-item label="功能配置特征描述">{{ data.ffaDesc }}</el-form-item>
         <el-form-item label="初始车型">{{ data.initialModel }}</el-form-item>
@@ -661,6 +670,7 @@ export default {
         { prop: 'isFramePart', label: '是否架构件' },
         { prop: 'isAccuratelyTraced', label: '是否精准追溯' },
         { prop: 'isDigitate', label: '是否有数模' },
+        { prop: 'isAssembly', label: '是否总成件' },
         { prop: 'ffaCode', label: '功能配置特征码' },
         { prop: 'ffaDesc', label: '功能配置特征描述' },
         { prop: 'initialModel', label: '初始车型' },
@@ -682,6 +692,7 @@ export default {
         { prop: 'effectiveTo', label: '生效结束时间', type: 'date' }
       ],
       historyCode: '',
+      manualCodeMode: false,
       minorRevisionOpen: false,
       minorRevisionForm: {
         code: '',
@@ -700,6 +711,11 @@ export default {
           { required: true, message: '零件名称不能为空', trigger: 'blur' }
         ]
       }
+    }
+  },
+  computed: {
+    hasManualCodePermission() {
+      return this.$store.state.user.permissions.includes('mdm:material:part:code:manual')
     }
   },
   created() {
@@ -805,6 +821,7 @@ export default {
         ffaCode: undefined,
         ffaDesc: undefined,
         isDigitate: false,
+        isAssembly: false,
         initialModel: undefined,
         productionCode: undefined,
         firstProductionDate: undefined,
@@ -821,6 +838,7 @@ export default {
         effectiveTo: undefined
       }
       this.effectiveDateRange = []
+      this.manualCodeMode = false
       this.resetForm('form')
     },
     handleQuery() {
@@ -876,7 +894,11 @@ export default {
               this.getList()
             })
           } else {
-            addPart(this.form).then(response => {
+            const submitData = { ...this.form }
+            if (!this.manualCodeMode) {
+              delete submitData.code
+            }
+            addPart(submitData).then(response => {
               this.$modal.msgSuccess('新增成功')
               this.open = false
               this.getList()
