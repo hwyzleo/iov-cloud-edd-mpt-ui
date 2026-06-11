@@ -180,6 +180,19 @@ export const dynamicRoutes = [
         hidden: true
       }
     ]
+  },
+  {
+    path: '/mdm/part',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'import',
+        component: () => import('@/views/mdm/part/import'),
+        name: 'PartImport',
+        meta: { title: '零件批量导入', activeMenu: '/mdm/part' }
+      }
+    ]
   }
 ]
 
