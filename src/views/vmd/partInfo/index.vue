@@ -107,6 +107,7 @@
     <el-table v-loading="loading" :data="partInfoList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="零件编码" prop="partCode" width="120" />
+      <el-table-column label="零件名称" prop="partName" />
       <el-table-column label="序列号" prop="sn" />
       <el-table-column label="供应商编码" prop="supplierCode" width="120" />
       <el-table-column label="批次号" prop="batchNum" width="130" />
