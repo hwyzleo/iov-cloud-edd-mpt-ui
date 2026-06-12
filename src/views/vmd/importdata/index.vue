@@ -50,7 +50,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['completeVehicle:vehicle:importData:add']"
+          v-hasPermi="['vmd:importData:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +62,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['completeVehicle:vehicle:importData:edit']"
+          v-hasPermi="['vmd:importData:edit']"
         >解析处理
         </el-button>
       </el-col>
@@ -74,7 +74,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['completeVehicle:vehicle:importData:remove']"
+          v-hasPermi="['vmd:importData:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +85,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['completeVehicle:vehicle:importData:export']"
+          v-hasPermi="['vmd:importData:export']"
         >导出
         </el-button>
       </el-col>
@@ -119,7 +119,7 @@
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-if="scope.row.handle === false"
-            v-hasPermi="['completeVehicle:vehicle:importData:edit']"
+            v-hasPermi="['vmd:importData:edit']"
           >解析处理
           </el-button>
           <el-button
@@ -127,7 +127,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['completeVehicle:vehicle:importData:remove']"
+            v-hasPermi="['vmd:importData:remove']"
           >删除
           </el-button>
         </template>
@@ -187,10 +187,10 @@ import {
   addVehicleImportData,
   updateVehicleImportData,
   delVehicleImportData
-} from "@/api/completevehicle/vehicle/importdata";
+} from "@/api/vmd/importdata";
 
 export default {
-  name: "VehicleImportData",
+  name: "VmdImportData",
   dicts: ['iov_import_data_type'],
   data() {
     return {
