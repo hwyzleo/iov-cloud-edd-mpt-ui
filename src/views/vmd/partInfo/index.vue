@@ -106,29 +106,24 @@
     <!-- 数据表格 -->
     <el-table v-loading="loading" :data="partInfoList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="零件编码" prop="partCode" width="150" />
-      <el-table-column label="序列号" prop="sn" width="150" />
-      <el-table-column label="车辆节点编码" prop="vehicleNodeCode" width="150" />
-      <el-table-column label="配置字" prop="configWord" width="120" />
+      <el-table-column label="零件编码" prop="partCode" width="120" />
+      <el-table-column label="序列号" prop="sn" />
       <el-table-column label="供应商编码" prop="supplierCode" width="120" />
-      <el-table-column label="批次号" prop="batchNum" width="120" />
-      <el-table-column label="硬件版本" prop="hardwareVer" width="120" />
-      <el-table-column label="软件版本" prop="softwareVer" width="120" />
-      <el-table-column label="硬件料号" prop="hardwarePn" width="120" />
-      <el-table-column label="软件料号" prop="softwarePn" width="120" />
-      <el-table-column label="扩展信息" prop="extra" width="150" show-overflow-tooltip />
-      <el-table-column label="实例状态" prop="instanceState" width="100" align="center">
+      <el-table-column label="批次号" prop="batchNum" width="130" />
+      <el-table-column label="硬件版本" prop="hardwareVer" width="80" />
+      <el-table-column label="软件版本" prop="softwareVer" width="80" />
+      <el-table-column label="零件状态" prop="instanceState" width="80" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.instanceState === 0">正常</span>
           <span v-if="scope.row.instanceState === 1">禁用</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" prop="createTime" width="160" align="center">
+      <el-table-column label="创建时间" prop="createTime" width="140" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
