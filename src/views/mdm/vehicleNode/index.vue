@@ -193,7 +193,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="设备类别" prop="deviceCategory">
-          <el-input v-model="form.deviceCategory" placeholder="请输入设备类别" />
+          <el-select v-model="form.deviceCategory" placeholder="请选择设备类别" clearable filterable style="width: 100%">
+            <el-option v-for="item in deviceCategoryOptions" :key="item.code" :label="item.name" :value="item.code" />
+          </el-select>
         </el-form-item>
         <el-form-item label="核心节点" prop="isCoreNode">
           <el-switch v-model="form.isCoreNode" />
@@ -264,6 +266,7 @@ import {
   deactivateVehicleNode,
   listVehicleNodeHistory
 } from "@/api/mdm/vehicleNode";
+import { listAllDeviceCategory } from "@/api/mdm/deviceCategory";
 import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
 export default {
@@ -285,6 +288,8 @@ export default {
       title: "",
       open: false,
       effectiveDateRange: [],
+      isEdit: false,
+      deviceCategoryOptions: [],
       nodeTypeOptions: [
         { value: 'DCU', label: '域控制器' },
         { value: 'ECU', label: '电控单元' },
@@ -401,8 +406,14 @@ export default {
   },
   created() {
     this.getList();
+    this.loadDeviceCategories();
   },
   methods: {
+    loadDeviceCategories() {
+      listAllDeviceCategory().then(response => {
+        this.deviceCategoryOptions = response.data || [];
+      });
+    },
     getList() {
       this.loading = true;
       listVehicleNode(this.queryParams).then(response => {
@@ -433,6 +444,7 @@ export default {
         effectiveTo: undefined
       };
       this.effectiveDateRange = [];
+      this.isEdit = false;
       this.resetForm("form");
     },
     handleQuery() {
@@ -474,6 +486,7 @@ export default {
       const nodeCode = row.nodeCode || this.nodeCodes[0];
       getVehicleNode(nodeCode).then(response => {
         this.form = response.data;
+        this.isEdit = true;
         if (this.form.effectiveFrom && this.form.effectiveTo) {
           this.effectiveDateRange = [this.form.effectiveFrom, this.form.effectiveTo];
         }
@@ -484,7 +497,7 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.id !== undefined) {
+          if (this.isEdit) {
             updateVehicleNode(this.form.nodeCode, this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
