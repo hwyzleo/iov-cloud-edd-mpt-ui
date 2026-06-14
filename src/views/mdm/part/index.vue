@@ -106,12 +106,6 @@
     <el-table v-loading="loading" :data="partList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="零件编码" prop="code" width="110" />
-      <el-table-column label="零件基础号" prop="baseNo" width="90" />
-      <el-table-column label="发号来源" prop="numberingSource" width="80">
-        <template slot-scope="scope">
-          {{ getNumberingSourceLabel(scope.row.numberingSource) }}
-        </template>
-      </el-table-column>
       <el-table-column label="零件名称" prop="name" />
       <el-table-column label="物料分类" prop="categoryCode" width="80" />
       <el-table-column label="零件类型" prop="partType" width="80">
@@ -139,7 +133,6 @@
         </template>
       </el-table-column>
       <el-table-column label="车载节点" prop="vehicleNodeCode" width="80" />
-      <el-table-column label="供应商" prop="supplierCode" width="100" />
       <el-table-column label="生命周期" prop="lifecycleStage" width="80">
         <template slot-scope="scope">
           {{ getLifecycleStageLabel(scope.row.lifecycleStage) }}
