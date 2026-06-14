@@ -105,32 +105,30 @@
 
     <el-table v-loading="loading" :data="partList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="零件编码" prop="code" width="120" />
-      <el-table-column label="零件基础号" prop="baseNo" width="120" />
-      <el-table-column label="发号来源" prop="numberingSource" width="100">
+      <el-table-column label="零件编码" prop="code" width="110" />
+      <el-table-column label="零件基础号" prop="baseNo" width="90" />
+      <el-table-column label="发号来源" prop="numberingSource" width="80">
         <template slot-scope="scope">
           {{ getNumberingSourceLabel(scope.row.numberingSource) }}
         </template>
       </el-table-column>
-      <el-table-column label="是否总成件" prop="isAssembly" width="100" align="center">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.isAssembly ? 'success' : 'info'">
-            {{ scope.row.isAssembly ? '是' : '否' }}
-          </el-tag>
-        </template>
-      </el-table-column>
       <el-table-column label="零件名称" prop="name" />
-      <el-table-column label="物料分类" prop="categoryCode" width="120" />
-      <el-table-column label="零件类型" prop="partType" width="100">
+      <el-table-column label="物料分类" prop="categoryCode" width="80" />
+      <el-table-column label="零件类型" prop="partType" width="80">
         <template slot-scope="scope">
           {{ getPartTypeLabel(scope.row.partType) }}
         </template>
       </el-table-column>
-      <el-table-column label="车载节点" prop="vehicleNodeCode" width="100" />
-      <el-table-column label="供应商" prop="supplierCode" width="100" />
       <el-table-column label="关重特性" prop="isKeyPart" width="80" align="center">
         <template slot-scope="scope">
           {{ getKeyPartLabel(scope.row.isKeyPart) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="是否总成件" prop="isAssembly" width="90" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isAssembly ? 'success' : 'info'">
+            {{ scope.row.isAssembly ? '是' : '否' }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="是否软件" prop="isSoftware" width="80" align="center">
@@ -140,12 +138,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="生命周期" prop="lifecycleStage" width="100">
+      <el-table-column label="车载节点" prop="vehicleNodeCode" width="80" />
+      <el-table-column label="供应商" prop="supplierCode" width="100" />
+      <el-table-column label="生命周期" prop="lifecycleStage" width="80">
         <template slot-scope="scope">
           {{ getLifecycleStageLabel(scope.row.lifecycleStage) }}
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="状态" align="center" width="60">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ scope.row.status === 'ACTIVE' ? '启用' : scope.row.status === 'INACTIVE' ? '停用' : scope.row.status === 'DEPRECATED' ? '废弃' : '草稿' }}
@@ -153,9 +153,9 @@
         </template>
       </el-table-column>
       <el-table-column label="版本" prop="version" width="60" align="center" />
-      <el-table-column label="创建时间" align="center" width="160">
+      <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="340" fixed="right" class-name="small-padding fixed-width">
@@ -217,8 +217,8 @@
     />
 
     <!-- 添加或修改零件对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+    <el-dialog :title="title" :visible.sync="open" width="900px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="130px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="手动指定零件号">
@@ -285,6 +285,18 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="关重特性" prop="isKeyPart">
+              <el-select v-model="form.isKeyPart" placeholder="请选择关重特性" clearable style="width: 100%">
+                <el-option
+                  v-for="item in keyPartOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -324,15 +336,8 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="关重特性" prop="isKeyPart">
-              <el-select v-model="form.isKeyPart" placeholder="请选择关重特性" clearable style="width: 100%">
-                <el-option
-                  v-for="item in keyPartOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
+            <el-form-item label="是否总成件" prop="isAssembly">
+              <el-switch v-model="form.isAssembly" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -374,13 +379,6 @@
           <el-col :span="12">
             <el-form-item label="是否有数模" prop="isDigitate">
               <el-switch v-model="form.isDigitate" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="是否总成件" prop="isAssembly">
-              <el-switch v-model="form.isAssembly" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -587,9 +585,7 @@ import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 const PART_TYPE_OPTIONS = [
   { label: '原材料', value: 'RAW_MATERIAL' },
   { label: '标准件', value: 'STANDARD_PART' },
-  { label: '定制件', value: 'CUSTOM_PART' },
-  { label: '软件', value: 'SOFTWARE' },
-  { label: '总成件', value: 'ASSEMBLY' }
+  { label: '定制件', value: 'CUSTOM_PART' }
 ]
 
 const PART_TYPE_MAP = {
