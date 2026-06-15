@@ -132,7 +132,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="车载节点" prop="vehicleNodeCode" width="80" />
+      <el-table-column label="车载节点" prop="vehicleNodeCode" width="90" />
       <el-table-column label="生命周期" prop="lifecycleStage" width="80">
         <template slot-scope="scope">
           {{ getLifecycleStageLabel(scope.row.lifecycleStage) }}
