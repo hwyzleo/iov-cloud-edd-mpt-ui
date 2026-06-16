@@ -87,9 +87,9 @@
 
     <el-table v-loading="loading" :data="vehicleNodeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="节点编码" prop="nodeCode" width="120" />
-      <el-table-column label="节点名称" prop="name" min-width="120" />
-      <el-table-column label="本地化名称" prop="nameLocal" min-width="120" />
+      <el-table-column label="节点编码" prop="nodeCode" width="130" />
+      <el-table-column label="节点名称" prop="name" />
+      <el-table-column label="本地化名称" prop="nameLocal" />
       <el-table-column label="节点类型" prop="nodeType" width="120" align="center">
         <template slot-scope="scope">
           <el-tag>{{ nodeTypeMap[scope.row.nodeType] || scope.row.nodeType }}</el-tag>
@@ -118,12 +118,12 @@
         </template>
       </el-table-column>
       <el-table-column label="版本" prop="version" width="60" align="center" />
-      <el-table-column label="创建时间" align="center" width="160">
+      <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="250" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
