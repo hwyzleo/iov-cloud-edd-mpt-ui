@@ -10,10 +10,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="数据类型" prop="type">
+      <el-form-item label="零件代码" prop="partCode">
         <el-select
-          v-model="queryParams.type"
-          placeholder="数据类型"
+          v-model="queryParams.partCode"
+          placeholder="零件代码"
           clearable
           style="width: 200px"
         >
@@ -150,6 +150,7 @@
             placeholder="零件代码"
             clearable
             filterable
+            style="width: 100%"
           >
             <el-option
               v-for="item in partList"
@@ -225,6 +226,9 @@ export default {
       rules: {
         batchNum: [
           {required: true, message: "批次号不能为空", trigger: "blur"}
+        ],
+        partCode: [
+          {required: true, message: "零件代码不能为空", trigger: "change"}
         ],
         type: [
           {required: true, message: "数据类型不能为空", trigger: "blur"}
