@@ -10,19 +10,30 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="零件代码" prop="partCode">
+      <el-form-item label="数据类型" prop="type">
         <el-select
-          v-model="queryParams.partCode"
-          placeholder="零件代码"
+          v-model="queryParams.type"
+          placeholder="数据类型"
           clearable
           style="width: 200px"
         >
           <el-option
-            v-for="item in partList"
-            :key="item.code"
-            :label="item.code + ' - ' + item.name"
-            :value="item.code"
+            v-for="item in typeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="是否已处理" prop="handle">
+        <el-select
+          v-model="queryParams.handle"
+          placeholder="处理状态"
+          clearable
+          style="width: 200px"
+        >
+          <el-option label="是" value="true"/>
+          <el-option label="否" value="false"/>
         </el-select>
       </el-form-item>
       <el-form-item label="创建时间">
@@ -50,7 +61,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['vmd:importData:add']"
+          v-hasPermi="['completeVehicle:vehicle:importData:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +73,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['vmd:importData:edit']"
+          v-hasPermi="['completeVehicle:vehicle:importData:edit']"
         >解析处理
         </el-button>
       </el-col>
@@ -74,7 +85,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['vmd:importData:remove']"
+          v-hasPermi="['completeVehicle:vehicle:importData:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,17 +96,21 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['vmd:importData:export']"
+          v-hasPermi="['completeVehicle:vehicle:importData:export']"
         >导出
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="partImportDataList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="vehImportDataList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="批次号" prop="batchNum"/>
-      <el-table-column label="零件代码" prop="partCode" width="200"/>
+      <el-table-column label="数据类型" prop="type" align="center" width="150">
+        <template slot-scope="scope">
+          <span>{{ getTypeLabel(scope.row.type) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="数据版本" prop="version" align="center" width="150"/>
       <el-table-column label="是否已处理" align="center" width="150">
         <template slot-scope="scope">
@@ -115,7 +130,7 @@
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-if="scope.row.handle === false"
-            v-hasPermi="['vmd:importData:edit']"
+            v-hasPermi="['completeVehicle:vehicle:importData:edit']"
           >解析处理
           </el-button>
           <el-button
@@ -123,7 +138,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['vmd:importData:remove']"
+            v-hasPermi="['completeVehicle:vehicle:importData:remove']"
           >删除
           </el-button>
         </template>
@@ -138,33 +153,33 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改零件导入数据配置对话框 -->
+    <!-- 添加或修改车辆导入数据配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="批次号" prop="batchNum">
           <el-input v-model="form.batchNum" placeholder="请输入批次号"/>
         </el-form-item>
-        <el-form-item label="零件代码" prop="partCode">
+        <el-form-item label="数据类型" prop="type">
           <el-select
-            v-model="form.partCode"
-            placeholder="零件代码"
+            v-model="form.type"
+            placeholder="数据类型"
             clearable
             filterable
             style="width: 100%"
           >
             <el-option
-              v-for="item in partList"
-              :key="item.code"
-              :label="item.code + ' - ' + item.name"
-              :value="item.code"
+              v-for="item in typeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="数据版本" prop="version">
           <el-input v-model="form.version" placeholder="请输入数据版本"/>
         </el-form-item>
-        <el-form-item label="零件数据" prop="data">
-          <el-input v-model="form.data" type="textarea" placeholder="请输入零件数据" :rows="10"/>
+        <el-form-item label="车辆数据" prop="data">
+          <el-input v-model="form.data" type="textarea" placeholder="请输入车辆数据" :rows="10"/>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
@@ -180,19 +195,22 @@
 
 <script>
 import {
-  listPartImportData,
-  getPartImportData,
-  addPartImportData,
-  updatePartImportData,
-  delPartImportData
-} from "@/api/vmd/importdata";
-import { listAllParts } from "@/api/mdm/part";
+  listVehImportData,
+  getVehImportData,
+  addVehImportData,
+  updateVehImportData,
+  delVehImportData
+} from "@/api/vmd/vehImportData";
 
 export default {
-  name: "VmdImportData",
+  name: "VehImportData",
   dicts: [],
   data() {
     return {
+      // 数据类型选项
+      typeOptions: [
+        { label: '车辆生产', value: 'PRODUCE' }
+      ],
       // 遮罩层
       loading: true,
       // 选中数组
@@ -205,10 +223,8 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 零件导入数据表格数据
-      partImportDataList: [],
-      // 零件列表
-      partList: [],
+      // 车辆导入数据表格数据
+      vehImportDataList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -227,46 +243,36 @@ export default {
         batchNum: [
           {required: true, message: "批次号不能为空", trigger: "blur"}
         ],
-        partCode: [
-          {required: true, message: "零件代码不能为空", trigger: "change"}
-        ],
         type: [
-          {required: true, message: "数据类型不能为空", trigger: "blur"}
+          {required: true, message: "数据类型不能为空", trigger: "change"}
         ],
         version: [
           {required: true, message: "数据版本不能为空", trigger: "blur"}
         ],
         data: [
-          {required: true, message: "零件数据不能为空", trigger: "blur"}
+          {required: true, message: "车辆数据不能为空", trigger: "blur"}
         ]
       },
     };
   },
   created() {
     this.getList();
-    this.loadPartList();
   },
   methods: {
-    /** 查询零件导入数据列表 */
+    /** 获取数据类型标签 */
+    getTypeLabel(type) {
+      const item = this.typeOptions.find(item => item.value === type);
+      return item ? item.label : type;
+    },
+    /** 查询车辆导入数据列表 */
     getList() {
       this.loading = true;
-      listPartImportData(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.partImportDataList = response.data.items;
+      listVehImportData(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+          this.vehImportDataList = response.data.items;
           this.total = response.data.total;
           this.loading = false;
         }
       );
-    },
-    // 获取数据类型
-    getDataTypeLabel(dataType) {
-      const item = this.partList.find(part => part.code === dataType);
-      return item ? item.code + ' - ' + item.name : dataType;
-    },
-    // 加载零件列表
-    loadPartList() {
-      listAllParts().then(response => {
-        this.partList = response.data || [];
-      });
     },
     /** 取消按钮 */
     cancel() {
@@ -305,7 +311,7 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加零件导入数据";
+      this.title = "添加车辆导入数据";
       const now = new Date();
       const batchNum = now.getFullYear().toString() +
         (now.getMonth() + 1).toString().padStart(2, '0') +
@@ -321,25 +327,25 @@ export default {
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const partImportDataId = row.id || this.ids
-      getPartImportData(partImportDataId).then(response => {
+      const vehImportDataId = row.id || this.ids
+      getVehImportData(vehImportDataId).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "修改零件导入数据";
+      this.title = "修改车辆导入数据";
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updatePartImportData(this.form).then(response => {
+            updateVehImportData(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addPartImportData(this.form).then(response => {
+            addVehImportData(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -350,9 +356,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const partImportDataIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除零件导入数据ID为"' + partImportDataIds + '"的数据项？').then(function () {
-        return delPartImportData(partImportDataIds);
+      const vehImportDataIds = row.id || this.ids;
+      this.$modal.confirm('是否确认删除车辆导入数据ID为"' + vehImportDataIds + '"的数据项？').then(function () {
+        return delVehImportData(vehImportDataIds);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -361,9 +367,9 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('edd-vmd/api/partImportData/v1/export', {
+      this.download('edd-vmd/api/mpt/vehImportData/v1/export', {
         ...this.queryParams
-      }, `part_import_data_${new Date().getTime()}.xlsx`)
+      }, `veh_import_data_${new Date().getTime()}.xlsx`)
     }
   }
 };

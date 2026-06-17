@@ -113,7 +113,7 @@ import {
 } from "@/api/otd/order/assignvehicle";
 import {
   listAssignableVehicle
-} from "@/api/completevehicle/vehicle/info";
+} from "@/api/vmd/vehicleInfo";
 
 export default {
   name: "AssignVehicle",

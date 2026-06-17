@@ -80,21 +80,16 @@
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="车架号" fixed="left" width="170" prop="vin"/>
-      <el-table-column label="工厂代码" prop="manufacturerCode" align="center" width="80"/>
+      <el-table-column label="工厂代码" prop="plantCode" align="center" width="80"/>
       <el-table-column label="品牌代码" prop="brandCode" align="center" width="80"/>
       <el-table-column label="平台代码" prop="platformCode" align="center" width="80"/>
-      <el-table-column label="车系代码" prop="seriesCode" align="center" width="80"/>
+      <el-table-column label="车系代码" prop="carLineCode" align="center" width="80"/>
       <el-table-column label="车型代码" prop="modelCode" align="center" width="80"/>
-      <el-table-column label="基础车型代码" prop="baseModelCode" align="center" width="120"/>
-      <el-table-column label="生产配置代码" prop="buildConfigCode"/>
-      <el-table-column label="车辆下线时间" align="center" prop="eolTime" width="180">
+      <el-table-column label="版本代码" prop="variantCode" align="center" width="120"/>
+      <el-table-column label="配置代码" prop="configurationCode" width="180"/>
+      <el-table-column label="车辆下线时间" align="center" prop="eolTime" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.eolTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
@@ -254,10 +249,10 @@ import {
   updateVehicleLifecycle,
   delVehicle,
   delVehicleLifecycle
-} from "@/api/completevehicle/vehicle/info";
+} from "@/api/vmd/vehicleInfo";
 
 export default {
-  name: "Vehicle",
+  name: "VehicleInfo",
   dicts: ['iov_vehicle_lifecycle'],
   data() {
     return {
@@ -508,7 +503,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('tsp-vmd/vehicle/export', {
+      this.download('edd-vmd/api/mpt/vehicle/v1/export', {
         ...this.queryParams
       }, `vehicle_${new Date().getTime()}.xlsx`)
     }
