@@ -58,7 +58,7 @@
 
     <el-table v-loading="loading" :data="configurationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="配置代码" prop="code" width="160"/>
+      <el-table-column label="配置代码" prop="code" width="180"/>
       <el-table-column label="配置名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
       <el-table-column label="版本" prop="variantCode" width="160"/>
