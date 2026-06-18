@@ -88,31 +88,28 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="零件号" prop="pn" width="130" />
       <el-table-column label="车架号" prop="vin" width="170"/>
+      <el-table-column label="零件号" prop="partCode" width="110" />
       <el-table-column label="序列号" prop="sn" />
-      <el-table-column label="设备代码" prop="deviceCode" width="120" align="center" />
+      <el-table-column label="车载节点" prop="vehicleNodeCode" width="120" align="center" />
       <el-table-column label="设备项" prop="deviceItem" width="100" align="center" />
-      <el-table-column label="软件版本" prop="softwareVer" width="150" align="center" />
-      <el-table-column label="状态" prop="partState" width="100" align="center">
+      <el-table-column label="绑定状态" prop="bindState" width="80" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.partState === 0">待绑定</span>
-          <span v-if="scope.row.partState === 1">在用</span>
-          <span v-if="scope.row.partState === 2">待更换</span>
-          <span v-if="scope.row.partState === 3">已报废</span>
+          <span v-if="scope.row.bindState === 0">已解绑</span>
+          <span v-if="scope.row.bindState === 1">绑定中</span>
         </template>
       </el-table-column>
-      <el-table-column label="绑定时间" prop="bindTime" width="160" align="center">
+      <el-table-column label="绑定时间" prop="bindTime" width="140" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.bindTime) }}</span>
+          <span>{{ parseTime(scope.row.bindTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="解绑时间" prop="unbindTime" width="160" align="center">
+      <el-table-column label="解绑时间" prop="unbindTime" width="140" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.unbindTime) }}</span>
+          <span>{{ parseTime(scope.row.unbindTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="150" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -176,7 +173,7 @@ import {
   getVehiclePart,
   listVehiclePart,
   updateVehiclePart
-} from "@/api/completevehicle/vehicle/vehiclepart";
+} from "@/api/vmd/vehiclePart";
 
 export default {
   name: "VehiclePart",

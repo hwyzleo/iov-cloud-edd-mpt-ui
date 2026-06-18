@@ -209,7 +209,8 @@ export default {
     return {
       // 数据类型选项
       typeOptions: [
-        { label: '车辆生产', value: 'PRODUCE' }
+        { label: '车辆生产', value: 'PRODUCE' },
+        { label: '总装上线', value: 'TOL' }
       ],
       // 遮罩层
       loading: true,
