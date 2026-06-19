@@ -92,7 +92,7 @@
           <span>{{ parseTime(scope.row.eolTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="280" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['completeVehicle:vehicle:info:query']"
