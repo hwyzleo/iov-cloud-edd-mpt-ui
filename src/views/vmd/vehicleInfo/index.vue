@@ -776,7 +776,7 @@ export default {
     },
     /** 零件导出按钮操作 */
     handlePartExport() {
-      this.download('tsp-vmd/mpt/vehiclePart/export', {
+      this.download('edd-vmd/api/mpt/vehiclePart/v1/export', {
         ...this.partQueryParams
       }, `vehicle_part_${new Date().getTime()}.xlsx`)
     },
