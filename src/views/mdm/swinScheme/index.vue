@@ -346,13 +346,13 @@ export default {
           id: data.id,
           code: data.code,
           name: data.name,
-          nameLocal: data.nameLocal || data.name_local,
+          nameLocal: data.nameLocal,
           route: data.route,
-          structurePattern: data.structurePattern || data.structure_pattern,
-          versionFormat: data.versionFormat || data.version_format,
+          structurePattern: data.structurePattern,
+          versionFormat: data.versionFormat,
           description: data.description,
-          effectiveFrom: data.effectiveFrom || data.effective_from,
-          effectiveTo: data.effectiveTo || data.effective_to
+          effectiveFrom: data.effectiveFrom,
+          effectiveTo: data.effectiveTo
         }
         if (this.form.effectiveFrom && this.form.effectiveTo) {
           this.effectiveDateRange = [this.form.effectiveFrom, this.form.effectiveTo]
