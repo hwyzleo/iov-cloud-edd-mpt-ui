@@ -409,14 +409,15 @@ export default {
       this.form.typeRefCode = undefined
       this.typeRefCodeOptions = []
       if (val === 'VARIANT') {
-        listVariant({ page: 1, size: 1000 }).then(response => {
+        return listVariant({ page: 1, size: 1000 }).then(response => {
           this.typeRefCodeOptions = response.data.rows.filter(item => item.status === 'ACTIVE')
         })
       } else if (val === 'MODEL') {
-        listModel({ page: 1, size: 1000 }).then(response => {
+        return listModel({ page: 1, size: 1000 }).then(response => {
           this.typeRefCodeOptions = response.data.rows.filter(item => item.status === 'ACTIVE')
         })
       }
+      return Promise.resolve()
     },
     cancel() {
       this.open = false
@@ -459,12 +460,27 @@ export default {
       this.reset()
       const swinCode = row.swinCode || this.swinCodes[0]
       getSwinDefinition(swinCode).then(response => {
-        this.form = response.data
-        if (this.form.typeRefType) {
-          this.handleTypeRefTypeChange(this.form.typeRefType)
+        const data = response.data
+        this.form = {
+          id: data.id,
+          swinCode: data.swinCode,
+          schemeCode: data.schemeCode,
+          typeRefType: data.typeRefType,
+          typeRefCode: data.typeRefCode,
+          name: data.name,
+          nameLocal: data.nameLocal,
+          description: data.description
         }
-        this.open = true
-        this.title = '修改SWIN定义'
+        if (this.form.typeRefType) {
+          this.handleTypeRefTypeChange(this.form.typeRefType).then(() => {
+            this.form.typeRefCode = data.typeRefCode
+            this.open = true
+            this.title = '修改SWIN定义'
+          })
+        } else {
+          this.open = true
+          this.title = '修改SWIN定义'
+        }
       })
     },
     submitForm() {
