@@ -341,7 +341,19 @@ export default {
       this.reset()
       const code = row.code || this.codes[0]
       getSwinScheme(code).then(response => {
-        this.form = response.data
+        const data = response.data
+        this.form = {
+          id: data.id,
+          code: data.code,
+          name: data.name,
+          nameLocal: data.nameLocal || data.name_local,
+          route: data.route,
+          structurePattern: data.structurePattern || data.structure_pattern,
+          versionFormat: data.versionFormat || data.version_format,
+          description: data.description,
+          effectiveFrom: data.effectiveFrom || data.effective_from,
+          effectiveTo: data.effectiveTo || data.effective_to
+        }
         if (this.form.effectiveFrom && this.form.effectiveTo) {
           this.effectiveDateRange = [this.form.effectiveFrom, this.form.effectiveTo]
         }
