@@ -85,15 +85,14 @@
     <el-table v-loading="loading" :data="swinDefinitionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="SWIN编号" prop="swinCode" width="150"/>
+      <el-table-column label="名称" prop="name" width="150"/>
       <el-table-column label="编码方案" prop="schemeCode" width="150"/>
       <el-table-column label="型式锚点类型" prop="typeRefType" width="120">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.type_ref_type" :value="scope.row.typeRefType"/>
+          <span>{{ scope.row.typeRefType === 'VARIANT' ? 'Variant' : scope.row.typeRefType === 'MODEL' ? 'Model' : scope.row.typeRefType }}</span>
         </template>
       </el-table-column>
       <el-table-column label="型式锚点编码" prop="typeRefCode" width="150"/>
-      <el-table-column label="型式批准号" prop="typeApprovalNo" width="150"/>
-      <el-table-column label="SWIN版本" prop="swinVersion" width="100"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : 'warning'">
@@ -316,7 +315,7 @@ export default {
   components: {
     HistorySnapshot
   },
-  dicts: ['type_ref_type'],
+  dicts: [],
   data() {
     return {
       loading: true,
