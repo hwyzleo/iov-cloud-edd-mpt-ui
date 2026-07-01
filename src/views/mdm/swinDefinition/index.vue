@@ -188,12 +188,6 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="型式批准号">
-          <el-input v-model="form.typeApprovalNo" placeholder="请输入型式批准号"/>
-        </el-form-item>
-        <el-form-item label="SWIN版本">
-          <el-input v-model="form.swinVersion" placeholder="请输入SWIN版本"/>
-        </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" placeholder="请输入描述"/>
         </el-form-item>
@@ -437,8 +431,6 @@ export default {
         typeRefCode: undefined,
         name: undefined,
         nameLocal: undefined,
-        typeApprovalNo: undefined,
-        swinVersion: undefined,
         description: undefined
       }
       this.typeRefCodeOptions = []
