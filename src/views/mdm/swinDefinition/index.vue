@@ -571,7 +571,7 @@ export default {
       }).catch(() => {})
     },
     handleExport() {
-      this.download('edd-mdm/api/mpt/mdm/eead/swin/v1/export', {
+      this.download('edd-mdm/api/mpt/swinDefinition/v1/export', {
         ...this.queryParams
       }, `swinDefinition_${new Date().getTime()}.xlsx`)
     }

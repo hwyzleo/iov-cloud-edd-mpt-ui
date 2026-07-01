@@ -408,7 +408,7 @@ export default {
       })
     },
     handleExport() {
-      this.download('edd-mdm/api/mpt/mdm/eead/swinScheme/v1/export', {
+      this.download('edd-mdm/api/mpt/swinScheme/v1/export', {
         ...this.queryParams
       }, `swinScheme_${new Date().getTime()}.xlsx`)
     }

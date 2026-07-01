@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询SWIN定义列表
 export function listSwinDefinition(query) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/list',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listSwinDefinition(query) {
 // 查询SWIN定义详情
 export function getSwinDefinition(swinCode) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode,
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getSwinDefinition(swinCode) {
 // 新增SWIN定义
 export function addSwinDefinition(data) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/create',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/create',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addSwinDefinition(data) {
 // 修改SWIN定义
 export function updateSwinDefinition(swinCode, data) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode,
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode,
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateSwinDefinition(swinCode, data) {
 // 删除SWIN定义
 export function delSwinDefinition(swinCode) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode,
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function delSwinDefinition(swinCode) {
 // 强制删除SWIN定义
 export function forceDelSwinDefinition(swinCode, data) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode + '/force',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/force',
     method: 'delete',
     data: data
   })
@@ -55,7 +55,7 @@ export function forceDelSwinDefinition(swinCode, data) {
 // 停用SWIN定义
 export function deactivateSwinDefinition(swinCode) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode + '/deactivate',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/deactivate',
     method: 'post'
   })
 }
@@ -63,7 +63,7 @@ export function deactivateSwinDefinition(swinCode) {
 // 绑定受管系统
 export function bindManagedSystem(swinCode, data) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode + '/managedSystems/bind',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems/bind',
     method: 'post',
     data: data
   })
@@ -72,7 +72,7 @@ export function bindManagedSystem(swinCode, data) {
 // 解绑受管系统
 export function unbindManagedSystem(swinCode, data) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode + '/managedSystems/unbind',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems/unbind',
     method: 'post',
     data: data
   })
@@ -81,7 +81,7 @@ export function unbindManagedSystem(swinCode, data) {
 // 查询SWIN定义历史版本
 export function swinDefinitionHistory(swinCode) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/' + swinCode + '/history',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/history',
     method: 'get'
   })
 }
@@ -89,7 +89,7 @@ export function swinDefinitionHistory(swinCode) {
 // 导出SWIN定义
 export function exportSwinDefinition(query) {
   return request({
-    url: '/edd-mdm/api/mpt/mdm/eead/swin/v1/export',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/export',
     method: 'get',
     params: query,
     responseType: 'blob'
