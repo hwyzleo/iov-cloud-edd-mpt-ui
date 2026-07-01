@@ -69,7 +69,7 @@
     <el-table v-loading="loading" :data="swinSchemeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="编码方案代码" prop="code" width="150"/>
-      <el-table-column label="方案名称" prop="name" width="150"/>
+      <el-table-column label="方案名称" prop="name"/>
       <el-table-column label="编码路线" prop="route" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.route === 'SINGLE_SWIN' ? '单一SWIN' : scope.row.route === 'MULTI_SWIN' ? '多SWIN' : scope.row.route }}</span>
