@@ -148,8 +148,8 @@
         <el-form-item label="方案名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入方案名称"/>
         </el-form-item>
-        <el-form-item label="英文名称">
-          <el-input v-model="form.nameEn" placeholder="请输入英文名称"/>
+        <el-form-item label="本地化名称">
+          <el-input v-model="form.nameLocal" placeholder="请输入本地化名称"/>
         </el-form-item>
         <el-form-item label="编码路线" prop="route">
           <el-select v-model="form.route" placeholder="请选择编码路线" style="width: 100%">
@@ -193,7 +193,7 @@
       <template #detail-fields="{ data }">
         <el-form-item label="编码方案代码">{{ data.code }}</el-form-item>
         <el-form-item label="方案名称">{{ data.name }}</el-form-item>
-        <el-form-item label="英文名称">{{ data.nameEn }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
         <el-form-item label="编码路线">{{ data.route === 'SINGLE_SWIN' ? '单一SWIN' : '多SWIN' }}</el-form-item>
         <el-form-item label="SWIN结构模板">{{ data.structurePattern }}</el-form-item>
         <el-form-item label="版本号格式">{{ data.versionFormat }}</el-form-item>
@@ -253,7 +253,7 @@ export default {
       historyFields: [
         { prop: 'code', label: '编码方案代码' },
         { prop: 'name', label: '方案名称' },
-        { prop: 'nameEn', label: '英文名称' },
+        { prop: 'nameLocal', label: '本地化名称' },
         { prop: 'route', label: '编码路线' },
         { prop: 'structurePattern', label: 'SWIN结构模板' },
         { prop: 'versionFormat', label: '版本号格式' },
@@ -298,7 +298,7 @@ export default {
         id: undefined,
         code: undefined,
         name: undefined,
-        nameEn: undefined,
+        nameLocal: undefined,
         route: undefined,
         structurePattern: undefined,
         versionFormat: undefined,
