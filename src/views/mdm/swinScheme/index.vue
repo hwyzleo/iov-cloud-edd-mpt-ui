@@ -72,7 +72,7 @@
       <el-table-column label="方案名称" prop="name" width="150"/>
       <el-table-column label="编码路线" prop="route" width="120">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.swin_route" :value="scope.row.route"/>
+          <span>{{ scope.row.route === 'SINGLE_SWIN' ? '单一SWIN' : scope.row.route === 'MULTI_SWIN' ? '多SWIN' : scope.row.route }}</span>
         </template>
       </el-table-column>
       <el-table-column label="数据来源" prop="source" width="100"/>
@@ -83,9 +83,9 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" align="center" width="160">
+      <el-table-column label="创建时间" align="center" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updateTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width">
@@ -225,7 +225,7 @@ export default {
   components: {
     HistorySnapshot
   },
-  dicts: ['swin_route'],
+  dicts: [],
   data() {
     return {
       loading: true,
