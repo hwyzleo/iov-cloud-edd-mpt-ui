@@ -157,6 +157,12 @@
         <el-form-item label="SWIN编号" prop="swinCode">
           <el-input v-model="form.swinCode" :readonly="form.id !== undefined" placeholder="请输入SWIN编号"/>
         </el-form-item>
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入名称"/>
+        </el-form-item>
+        <el-form-item label="本地化名称">
+          <el-input v-model="form.nameLocal" placeholder="请输入本地化名称"/>
+        </el-form-item>
         <el-form-item label="编码方案" prop="schemeCode">
           <el-select v-model="form.schemeCode" placeholder="请选择编码方案" filterable style="width: 100%">
             <el-option
@@ -366,6 +372,9 @@ export default {
         swinCode: [
           { required: true, message: 'SWIN编号不能为空', trigger: 'blur' }
         ],
+        name: [
+          { required: true, message: '名称不能为空', trigger: 'blur' }
+        ],
         schemeCode: [
           { required: true, message: '编码方案不能为空', trigger: 'change' }
         ],
@@ -427,6 +436,8 @@ export default {
         schemeCode: undefined,
         typeRefType: undefined,
         typeRefCode: undefined,
+        name: undefined,
+        nameLocal: undefined,
         typeApprovalNo: undefined,
         swinVersion: undefined,
         description: undefined
