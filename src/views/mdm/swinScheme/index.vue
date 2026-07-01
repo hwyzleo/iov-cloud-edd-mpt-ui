@@ -216,13 +216,12 @@ import {
   delSwinScheme,
   deactivateSwinScheme,
   activateSwinScheme,
-  swinSchemeHistory,
-  exportSwinScheme
-} from "@/api/mdm/swinScheme";
-import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
+  swinSchemeHistory
+} from '@/api/mdm/swinScheme'
+import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
 export default {
-  name: "MdmSwinScheme",
+  name: 'MdmSwinScheme',
   components: {
     HistorySnapshot
   },
@@ -237,7 +236,7 @@ export default {
       showSearch: true,
       total: 0,
       swinSchemeList: [],
-      title: "",
+      title: '',
       open: false,
       effectiveDateRange: [],
       queryParams: {
@@ -267,32 +266,32 @@ export default {
       historyCode: '',
       rules: {
         code: [
-          { required: true, message: "编码方案代码不能为空", trigger: "blur" }
+          { required: true, message: '编码方案代码不能为空', trigger: 'blur' }
         ],
         name: [
-          { required: true, message: "方案名称不能为空", trigger: "blur" }
+          { required: true, message: '方案名称不能为空', trigger: 'blur' }
         ],
         route: [
-          { required: true, message: "编码路线不能为空", trigger: "change" }
+          { required: true, message: '编码路线不能为空', trigger: 'change' }
         ]
       }
-    };
+    }
   },
   created() {
-    this.getList();
+    this.getList()
   },
   methods: {
     getList() {
-      this.loading = true;
+      this.loading = true
       listSwinScheme(this.queryParams).then(response => {
-        this.swinSchemeList = response.data.rows;
-        this.total = response.data.total;
-        this.loading = false;
-      });
+        this.swinSchemeList = response.data.rows
+        this.total = response.data.total
+        this.loading = false
+      })
     },
     cancel() {
-      this.open = false;
-      this.reset();
+      this.open = false
+      this.reset()
     },
     reset() {
       this.form = {
@@ -306,107 +305,107 @@ export default {
         description: undefined,
         effectiveFrom: undefined,
         effectiveTo: undefined
-      };
-      this.effectiveDateRange = [];
-      this.resetForm("form");
+      }
+      this.effectiveDateRange = []
+      this.resetForm('form')
     },
     handleQuery() {
-      this.queryParams.page = 1;
-      this.getList();
+      this.queryParams.page = 1
+      this.getList()
     },
     resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id);
-      this.codes = selection.map(item => item.code);
-      this.single = selection.length !== 1;
-      this.multiple = !selection.length;
+      this.ids = selection.map(item => item.id)
+      this.codes = selection.map(item => item.code)
+      this.single = selection.length !== 1
+      this.multiple = !selection.length
     },
     handleEffectiveDateChange(val) {
       if (val) {
-        this.form.effectiveFrom = val[0];
-        this.form.effectiveTo = val[1];
+        this.form.effectiveFrom = val[0]
+        this.form.effectiveTo = val[1]
       } else {
-        this.form.effectiveFrom = undefined;
-        this.form.effectiveTo = undefined;
+        this.form.effectiveFrom = undefined
+        this.form.effectiveTo = undefined
       }
     },
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加编码方案";
+      this.reset()
+      this.open = true
+      this.title = '添加编码方案'
     },
     handleUpdate(row) {
-      this.reset();
-      const code = row.code || this.codes[0];
+      this.reset()
+      const code = row.code || this.codes[0]
       getSwinScheme(code).then(response => {
-        this.form = response.data;
+        this.form = response.data
         if (this.form.effectiveFrom && this.form.effectiveTo) {
-          this.effectiveDateRange = [this.form.effectiveFrom, this.form.effectiveTo];
+          this.effectiveDateRange = [this.form.effectiveFrom, this.form.effectiveTo]
         }
-        this.open = true;
-        this.title = "修改编码方案";
-      });
+        this.open = true
+        this.title = '修改编码方案'
+      })
     },
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs['form'].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
             updateSwinScheme(this.form.code, this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
+              this.$modal.msgSuccess('修改成功')
+              this.open = false
+              this.getList()
+            })
           } else {
             addSwinScheme(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
+              this.$modal.msgSuccess('新增成功')
+              this.open = false
+              this.getList()
+            })
           }
         }
-      });
+      })
     },
     handleDeactivate(row) {
-      const code = row.code;
+      const code = row.code
       this.$modal.confirm('是否确认停用编码方案"' + code + '"？').then(function() {
-        return deactivateSwinScheme(code);
+        return deactivateSwinScheme(code)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("停用成功");
-      }).catch(() => {});
+        this.getList()
+        this.$modal.msgSuccess('停用成功')
+      }).catch(() => {})
     },
     handleActivate(row) {
-      const code = row.code;
+      const code = row.code
       this.$modal.confirm('是否确认启用编码方案"' + code + '"？').then(function() {
-        return activateSwinScheme(code);
+        return activateSwinScheme(code)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("启用成功");
-      }).catch(() => {});
+        this.getList()
+        this.$modal.msgSuccess('启用成功')
+      }).catch(() => {})
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0];
+      const code = row.code || this.codes[0]
       this.$modal.confirm('是否确认删除编码方案"' + code + '"？').then(function() {
-        return delSwinScheme(code);
+        return delSwinScheme(code)
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+        this.getList()
+        this.$modal.msgSuccess('删除成功')
+      }).catch(() => {})
     },
     handleHistory(row) {
-      this.historyCode = row.code;
-      this.historyVisible = true;
-      this.loadHistory();
+      this.historyCode = row.code
+      this.historyVisible = true
+      this.loadHistory()
     },
     loadHistory() {
-      this.historyLoading = true;
+      this.historyLoading = true
       swinSchemeHistory(this.historyCode).then(response => {
-        this.historyList = response.data.rows;
-        this.historyLoading = false;
-      });
+        this.historyList = response.data.rows
+        this.historyLoading = false
+      })
     },
     handleExport() {
       this.download('edd-mdm/api/mpt/mdm/eead/swinScheme/v1/export', {
@@ -414,5 +413,5 @@ export default {
       }, `swinScheme_${new Date().getTime()}.xlsx`)
     }
   }
-};
+}
 </script>
