@@ -85,8 +85,8 @@
     <el-table v-loading="loading" :data="swinDefinitionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="SWIN编号" prop="swinCode" width="150"/>
-      <el-table-column label="名称" prop="name" width="150"/>
-      <el-table-column label="编码方案" prop="schemeCode" width="150"/>
+      <el-table-column label="名称" prop="name"/>
+      <el-table-column label="编码方案" prop="schemeCode" width="250"/>
       <el-table-column label="型式锚点类型" prop="typeRefType" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.typeRefType === 'VARIANT' ? 'Variant' : scope.row.typeRefType === 'MODEL' ? 'Model' : scope.row.typeRefType }}</span>
