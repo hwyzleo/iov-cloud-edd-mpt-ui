@@ -23,11 +23,10 @@
       <el-form-item label="型式锚点编码" prop="typeRefCode">
         <el-input v-model="queryParams.typeRefCode" placeholder="请输入型式锚点编码" clearable style="width: 180px" @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 180px">
-          <el-option label="草稿" value="DRAFT" />
-          <el-option label="启用" value="ACTIVE" />
-          <el-option label="停用" value="INACTIVE" />
+      <el-form-item label="状态" prop="includeInactive">
+        <el-select v-model="queryParams.includeInactive" placeholder="请选择状态" style="width: 180px">
+          <el-option label="仅启用" :value="false" />
+          <el-option label="包含停用" :value="true" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -333,7 +332,7 @@ export default {
         schemeCode: undefined,
         typeRefType: undefined,
         typeRefCode: undefined,
-        status: undefined
+        includeInactive: true
       },
       form: {},
       historyVisible: false,
