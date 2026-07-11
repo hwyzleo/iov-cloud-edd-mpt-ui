@@ -94,9 +94,9 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="设备" prop="deviceCode" width="100"/>
-      <el-table-column label="软件零件号" prop="softwarePn"/>
-      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="120"/>
+      <el-table-column label="设备" prop="deviceCode" width="80" fixed="left"/>
+      <el-table-column label="软件零件号" prop="softwarePn" width="120" fixed="left"/>
+      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100" fixed="left"/>
       <el-table-column label="测试报告" prop="softwareReport" width="80" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.softwareReport && scope.row.softwareReport.trim() ? '已上传' : '未上传' }}</span>
@@ -107,8 +107,7 @@
           <span>{{ scope.row.softwareSource === 1 ? 'BOM' : 'OTA' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="150"/>
-      <el-table-column label="适配的软件零件号" prop="adaptiveSoftwarePn" width="150"/>
+      <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="130"/>
       <el-table-column label="发布日期" align="center" prop="releaseDate" width="120">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
@@ -116,12 +115,7 @@
       </el-table-column>
       <el-table-column label="软件包数" prop="softwarePackageCount" width="80" align="center"/>
       <el-table-column label="依赖数" prop="dependencyCount" width="80" align="center"/>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -269,7 +263,7 @@ import {
   getSoftwareBuildVersion,
   listSoftwareBuildVersion,
   updateSoftwareBuildVersion
-} from "@/api/ota/pota/softwarebuildversion";
+} from "@/api/iov/ota/softwarebuildversion";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import {listPart} from "@/api/mdm/part";
 
@@ -485,13 +479,13 @@ export default {
     },
     handleSoftwareBuildVersionPackage(row) {
       this.$router.push({
-        path: "/ota/pota/softwareBuildVersionPackage",
+        path: "/iov/ota/softwareBuildVersionPackage",
         query: { id: row.id }
       });
     },
     handleSoftwareBuildVersionDependency(row) {
       this.$router.push({
-        path: "/ota/pota/softwareBuildVersionDependency",
+        path: "/iov/ota/softwareBuildVersionDependency",
         query: { id: row.id }
       });
     },

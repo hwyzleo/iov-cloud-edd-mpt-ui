@@ -47,19 +47,19 @@
     <el-table v-loading="loading" :data="list"
               @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="组" prop="versionGroup" width="60" align="center"/>
+      <el-table-column label="组" prop="versionGroup" width="40" align="center"/>
       <el-table-column label="安装顺序" prop="sort" width="80" align="center">
         <template slot-scope="scope">
           <i class="el-icon-rank" style="cursor: move; margin-right: 5px;"></i>
         </template>
       </el-table-column>
-      <el-table-column label="软件零件号" prop="softwarePn" width="120" align="center">
+      <el-table-column label="软件零件号" prop="softwarePn" width="130" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.softwarePn + scope.row.softwarePartVer }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="设备" prop="deviceCode" width="100"/>
-      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="120"/>
+      <el-table-column label="设备" prop="deviceCode" width="80" align="center"/>
+      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100"/>
       <el-table-column label="软件零件名称" prop="softwarePartName"/>
       <el-table-column label="软件来源" prop="softwareSource" width="120" align="center">
         <template slot-scope="scope">
@@ -148,9 +148,9 @@
                   :data="softwareBuildVersionList"
                   @selection-change="handleSelectionChangeSoftwareBuildVersion">
           <el-table-column type="selection" width="55" align="center"/>
-          <el-table-column label="设备" prop="deviceCode" width="100"/>
-          <el-table-column label="软件零件号" prop="softwarePn"/>
-          <el-table-column label="软件内部版本" prop="softwareBuildVer" width="120"/>
+          <el-table-column label="设备" prop="deviceCode" width="80" fixed="left"/>
+          <el-table-column label="软件零件号" prop="softwarePn" min-width="120" fixed="left"/>
+          <el-table-column label="软件内部版本" prop="softwareBuildVer" width="110"/>
           <el-table-column label="测试报告" prop="softwareReport" width="80" align="center">
             <template slot-scope="scope">
               <span>{{ scope.row.softwareReport && scope.row.softwareReport.trim() ? '已上传' : '未上传' }}</span>
@@ -161,21 +161,15 @@
               <span>{{ scope.row.softwareSource === 1 ? 'BOM' : 'OTA' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="150"/>
-          <el-table-column label="适配的软件零件号" prop="adaptiveSoftwarePn" width="150"/>
-          <el-table-column label="发布日期" align="center" prop="releaseDate" width="120">
+          <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="130"/>
+          <el-table-column label="发布日期" align="center" prop="releaseDate" width="100">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
             </template>
           </el-table-column>
           <el-table-column label="软件包数" prop="softwarePackageCount" width="80" align="center"/>
           <el-table-column label="依赖数" prop="dependencyCount" width="80" align="center"/>
-          <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-            <template slot-scope="scope">
-              <span>{{ parseTime(scope.row.createTime) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+          <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width" fixed="right">
             <template slot-scope="scope">
               <el-button
                 size="mini"
@@ -226,8 +220,8 @@ import {
   listAllActivityState,
   regroupSoftwareBuildVersion,
   resortSoftwareBuildVersion
-} from "@/api/ota/fota/activity";
-import {listSoftwareBuildVersion} from "@/api/ota/pota/softwarebuildversion";
+} from "@/api/iov/ota/activity";
+import {listSoftwareBuildVersion} from "@/api/iov/ota/softwarebuildversion";
 import Sortable from 'sortablejs'
 
 export default {

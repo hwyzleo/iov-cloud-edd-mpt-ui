@@ -192,7 +192,7 @@ import {
   getCompatiblePn,
   listCompatiblePn,
   updateCompatiblePn,
-} from "@/api/ota/pota/compatiblepn";
+} from "@/api/iov/ota/compatiblepn";
 import {
   listAllVehicleNode
 } from "@/api/mdm/vehicleNode";

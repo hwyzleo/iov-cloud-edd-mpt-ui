@@ -174,7 +174,7 @@
                   style="flex: 1;"
                 >
                   <template #default="{ item }">
-                    <div>{{ item.pn }} - {{ item.name }}</div>
+                    <div>{{ item.code }} - {{ item.name }}</div>
                   </template>
                 </el-autocomplete>
               </div>
@@ -401,8 +401,8 @@ export default {
     getList() {
       this.loading = true;
       listSoftwarePackage(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
@@ -423,10 +423,10 @@ export default {
         key: queryString,
         type: "P04"
       }).then(response => {
-        if (response.rows && response.rows.length > 0) {
-          const suggestions = response.rows.map(item => {
+        if (response.data && response.data.rows && response.data.rows.length > 0) {
+          const suggestions = response.data.rows.map(item => {
             return {
-              value: item.pn,
+              value: item.code,
               ...item
             };
           });

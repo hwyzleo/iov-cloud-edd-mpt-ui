@@ -1,15 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="分类" prop="type">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="分类"
-          clearable
-          style="width: 140px"
-        >
-        </el-select>
-      </el-form-item>
       <el-form-item label="设备" prop="deviceCode">
         <el-select
           v-model="queryParams.deviceCode"
@@ -50,7 +41,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:baseline:compatiblePn:add']"
+          v-hasPermi="['ota:dota:configWord:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +53,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:baseline:compatiblePn:edit']"
+          v-hasPermi="['ota:dota:configWord:edit']"
         >修改
         </el-button>
       </el-col>
@@ -74,7 +65,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:baseline:compatiblePn:remove']"
+          v-hasPermi="['ota:dota:configWord:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +76,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:baseline:compatiblePn:export']"
+          v-hasPermi="['ota:dota:configWord:export']"
         >导出
         </el-button>
       </el-col>
@@ -94,37 +85,50 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="设备" prop="deviceCode" width="200"/>
-      <el-table-column label="分类" prop="type" width="150">
+      <el-table-column label="配置字代码" prop="code" />
+      <el-table-column label="配置字名称" prop="name" />
+      <el-table-column label="设备" prop="deviceCode" width="100" align="center"/>
+      <el-table-column label="数据格式" prop="dataFormat" width="100" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.type === 1 ? '软件零件号' : '硬件零件号' }}</span>
+          <span v-if="scope.row.dataFormat === 'HEX'">HEX</span>
         </template>
       </el-table-column>
-      <el-table-column label="零件号" prop="pn" width="150"/>
-      <el-table-column label="兼容零件号" prop="compatiblePn">
-      </el-table-column>
-      <el-table-column label="描述" prop="description" width="150"/>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="数据长度" prop="byteLength" width="100" align="center"/>
+      <el-table-column label="读写能力" prop="rwCapability" width="100" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span v-if="scope.row.rwCapability === 'READ'">只读</span>
+          <span v-if="scope.row.rwCapability === 'WRITE'">读写</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="180" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:edit']"
+            v-hasPermi="['ota:dota:configWord:edit']"
           >修改
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-edit"
+            @click="handleProfile(scope.row)"
+            v-hasPermi="['ota:dota:configWord:query']"
+          >配置文件
           </el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:remove']"
+            v-hasPermi="['ota:dota:configWord:remove']"
           >删除
           </el-button>
         </template>
@@ -139,40 +143,66 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改对话框 -->
+    <!-- 添加或修改升级任务对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="140px">
-        <el-form-item label="设备" prop="deviceCode">
-          <el-select
-            v-model="form.deviceCode"
-            placeholder="设备"
-            style="width: 250px"
-            clearable
-          >
-            <el-option
-              v-for="device in this.deviceList"
-              :key="device.code"
-              :label="device.code + '(' + device.label + ')'"
-              :value="device.code"
-            />
-          </el-select>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="配置字代码" prop="code">
+          <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入配置字代码"/>
         </el-form-item>
-        <el-form-item label="分类" prop="type">
-          <el-select
-            v-model="form.type"
-            placeholder="分类"
-            clearable
-          >
-            <el-option label="软件零件号" :value="1" />
-            <el-option label="硬件零件号" :value="2" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="零件号" prop="pn">
-          <el-input v-model="form.pn" placeholder="请输入零件号"/>
-        </el-form-item>
-        <el-form-item label="兼容零件号" prop="pn">
-          <el-input v-model="form.compatiblePn" placeholder="请输入兼容零件号"/>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="配置字名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入配置字名称"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="设备" prop="deviceCode">
+              <el-select
+                v-model="form.deviceCode"
+                placeholder="设备"
+                style="width: 100%"
+                clearable
+              >
+                <el-option
+                  v-for="device in this.deviceList"
+                  :key="device.code"
+                  :label="device.code + '(' + device.label + ')'"
+                  :value="device.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item label="数据格式" prop="dataFormat">
+              <el-select
+                v-model="form.dataFormat"
+                placeholder="数据格式"
+                clearable
+              >
+                <el-option key="HEX" label="HEX" value="HEX"/>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="数据长度" prop="byteLength">
+              <el-input v-model="form.byteLength" placeholder="请输入数据长度"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="读写能力" prop="rwCapability">
+              <el-select
+                v-model="form.rwCapability"
+                placeholder="读写能力"
+                clearable
+              >
+                <el-option key="READ" label="只读" value="READ"/>
+                <el-option key="WRITE" label="读写" value="WRITE"/>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" placeholder="请输入描述内容"></el-input>
         </el-form-item>
@@ -187,18 +217,18 @@
 
 <script>
 import {
-  addCompatiblePn,
-  delCompatiblePn,
-  getCompatiblePn,
-  listCompatiblePn,
-  updateCompatiblePn,
-} from "@/api/ota/pota/compatiblepn";
+  addConfigWord,
+  delConfigWord,
+  getConfigWord,
+  listConfigWord,
+  updateConfigWord,
+} from "@/api/iov/ota/configword";
 import {
   listAllVehicleNode
 } from "@/api/mdm/vehicleNode";
 
 export default {
-  name: "CompatiblePn",
+  name: "ConfigWord",
   dicts: [],
   data() {
     return {
@@ -214,6 +244,7 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
+      // 表格数据
       list: [],
       deviceList: [],
       // 弹出层标题
@@ -231,17 +262,20 @@ export default {
       form: {},
       // 表单校验
       rules: {
+        code: [
+          {required: true, message: "配置字代码不能为空", trigger: "blur"}
+        ],
+        name: [
+          {required: true, message: "配置字名称不能为空", trigger: "blur"}
+        ],
         deviceCode: [
           {required: true, message: "设备不能为空", trigger: "blur"}
         ],
-        type: [
-          {required: true, message: "分类不能为空", trigger: "blur"}
+        dataFormat: [
+          {required: true, message: "数据格式不能为空", trigger: "blur"}
         ],
-        pn: [
-          {required: true, message: "零件号不能为空", trigger: "blur"}
-        ],
-        compatiblePn: [
-          {required: true, message: "兼容零件号不能为空", trigger: "blur"}
+        rwCapability: [
+          {required: true, message: "读写能力不能为空", trigger: "blur"}
         ]
       },
     };
@@ -251,9 +285,10 @@ export default {
     this.getList();
   },
   methods: {
+    /** 查询列表 */
     getList() {
       this.loading = true;
-      listCompatiblePn(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+      listConfigWord(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
           this.list = response.data.items;
           this.total = response.data.total;
           this.loading = false;
@@ -299,31 +334,31 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加兼容零件号";
+      this.title = "添加配置字";
       this.form = {};
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const compatiblePnId = row.id || this.ids
-      getCompatiblePn(compatiblePnId).then(response => {
+      const id = row.id || this.ids
+      getConfigWord(id).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "修改兼容零件号";
+      this.title = "修改配置字";
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateCompatiblePn(this.form).then(response => {
+            updateConfigWord(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addCompatiblePn(this.form).then(response => {
+            addConfigWord(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -334,9 +369,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const compatiblePnIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除兼容零件号ID为"' + compatiblePnIds + '"的数据项？').then(function () {
-        return delCompatiblePn(compatiblePnIds);
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除配置字ID为"' + ids + '"的数据项？').then(function () {
+        return delConfigWord(ids);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -345,9 +380,15 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-baseline/compatiblePn/export', {
+      this.download('ota-dota/mpt/configWord/export', {
         ...this.queryParams
-      }, `compatible_pn_${new Date().getTime()}.xlsx`)
+      }, `config_word_${new Date().getTime()}.xlsx`)
+    },
+    handleProfile(row) {
+      this.$router.push({
+        path: "/iov/ota/configWordProfile",
+        query: { code: row.code }
+      });
     },
   }
 };

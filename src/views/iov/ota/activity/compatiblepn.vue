@@ -144,8 +144,8 @@ import {
   delActivityCompatiblePn,
   listActivityCompatiblePn,
   regroupSoftwareBuildVersion,
-} from "@/api/ota/fota/activity";
-import {listCompatiblePn} from "@/api/ota/pota/compatiblepn";
+} from "@/api/iov/ota/activity";
+import {listCompatiblePn} from "@/api/iov/ota/compatiblepn";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {

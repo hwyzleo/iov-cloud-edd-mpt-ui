@@ -7,9 +7,9 @@
           plain
           icon="el-icon-plus"
           size="mini"
-          @click="handleAddCompatiblePn"
+          @click="handleAddFixedConfigWord"
           v-hasPermi="['ota:fota:activity:edit']"
-        >查询并添加兼容零件号
+        >查询并添加固定配置字
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -17,22 +17,22 @@
     <el-table v-loading="loading" :data="list"
               @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="分类" prop="type" width="120" align="center">
+      <el-table-column label="配置字代码" prop="configWordCode" width="120"/>
+      <el-table-column label="配置字名称" prop="configWordName" width="120"/>
+      <el-table-column label="设备" prop="deviceCode" width="100" align="center"/>
+      <el-table-column label="描述" prop="description"/>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
-          <span>{{ scope.row.type === 1 ? '软件零件号' : '硬件零件号' }}</span>
+          <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="设备" prop="deviceCode" width="100" align="center"/>
-      <el-table-column label="零件号" prop="pn" width="120"/>
-      <el-table-column label="兼容零件号" prop="compatiblePn"/>
-      <el-table-column label="描述" prop="description" width="120"/>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
-            @click="handleRemoveActivityCompatiblePn(scope.row)"
+            @click="handleRemoveActivityFixedConfigWord(scope.row)"
             v-hasPermi="['ota:fota:activity:edit']"
           >删除关联
           </el-button>
@@ -40,26 +40,26 @@
       </el-table-column>
     </el-table>
 
-    <el-drawer title="查询并添加兼容零件号" :visible.sync="open" direction="rtl" size="80%"
+    <el-drawer title="查询并添加固定配置字" :visible.sync="open" direction="rtl" size="80%"
                :modal="true"
                :append-to-body="true"
                @close="close">
       <div class="drawer-content">
-        <el-form :model="queryParamsCompatiblePn" ref="queryFormCompatiblePn" size="small"
+        <el-form :model="queryParamsFixedConfigWord" ref="queryFormFixedConfigWord" size="small"
                  :inline="true"
-                 v-show="showSearchCompatiblePn">
-          <el-form-item label="零件号" prop="pn">
+                 v-show="showSearchFixedConfigWord">
+          <el-form-item label="配置字代码" prop="code">
             <el-input
-              v-model="queryParamsCompatiblePn.pn"
-              placeholder="请输入零件号"
+              v-model="queryParamsFixedConfigWord.code"
+              placeholder="请输入配置字代码"
               clearable
               style="width: 140px"
-              @keyup.enter.native="handleQueryCompatiblePn"
+              @keyup.enter.native="handleQueryFixedConfigWord"
             />
           </el-form-item>
           <el-form-item label="设备" prop="deviceCode">
             <el-select
-              v-model="queryParamsCompatiblePn.deviceCode"
+              v-model="queryParamsFixedConfigWord.deviceCode"
               placeholder="设备"
               clearable
               style="width: 200px"
@@ -73,9 +73,9 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQueryCompatiblePn">搜索
+            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQueryFixedConfigWord">搜索
             </el-button>
-            <el-button icon="el-icon-refresh" size="mini" @click="resetQueryCompatiblePn">重置</el-button>
+            <el-button icon="el-icon-refresh" size="mini" @click="resetQueryFixedConfigWord">重置</el-button>
           </el-form-item>
         </el-form>
 
@@ -86,24 +86,27 @@
               plain
               icon="el-icon-plus"
               size="mini"
-              :disabled="multipleCompatiblePn"
-              @click="handleAddActivityCompatiblePn"
+              :disabled="multipleFixedConfigWord"
+              @click="handleAddActivityFixedConfigWord"
               v-hasPermi="['ota:fota:activity:edit']"
             >关联
             </el-button>
           </el-col>
-          <right-toolbar :showSearch.sync="showSearch" @queryTable="getListCompatiblePn"></right-toolbar>
+          <right-toolbar :showSearch.sync="showSearchFixedConfigWord"
+                         @queryTable="getListFixedConfigWord"></right-toolbar>
         </el-row>
 
-        <el-table ref="compatiblePnTable" v-loading="loadingCompatiblePn"
-                  :data="compatiblePnList"
-                  @selection-change="handleSelectionChangeCompatiblePn">
+        <el-table ref="fixedConfigWordTable" v-loading="loadingFixedConfigWord"
+                  :data="fixedConfigWordList"
+                  @selection-change="handleSelectionChangeFixedConfigWord">
           <el-table-column type="selection" width="55" align="center"/>
-          <el-table-column label="类型" prop="type" width="100"/>
+          <el-table-column label="配置字代码" prop="code" width="120"/>
+          <el-table-column label="配置字名称" prop="name" width="120"/>
           <el-table-column label="设备" prop="deviceCode" width="100"/>
-          <el-table-column label="零件号" prop="pn" width="120"/>
-          <el-table-column label="兼容零件号" prop="compatiblePn"/>
-          <el-table-column label="描述" prop="description" width="150"/>
+          <el-table-column label="数据格式" prop="dataFormat" width="100"/>
+          <el-table-column label="数据长度" prop="byteLength" width="100"/>
+          <el-table-column label="读写能力" prop="rwCapability" width="100"/>
+          <el-table-column label="描述" prop="description"/>
           <el-table-column label="创建时间" align="center" prop="createTime" width="180">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -115,7 +118,7 @@
                 size="mini"
                 type="text"
                 icon="el-icon-edit"
-                @click="handleAddActivityCompatiblePn(scope.row)"
+                @click="handleAddActivityFixedConfigWord(scope.row)"
                 v-hasPermi="['ota:fota:activity:edit']"
               >关联
               </el-button>
@@ -124,11 +127,11 @@
         </el-table>
 
         <pagination
-          v-show="totalCompatiblePn>0"
-          :total="totalCompatiblePn"
-          :page.sync="queryParamsCompatiblePn.pageNum"
-          :limit.sync="queryParamsCompatiblePn.pageSize"
-          @pagination="getListCompatiblePn"
+          v-show="totalFixedConfigWord>0"
+          :total="totalFixedConfigWord"
+          :page.sync="queryParamsFixedConfigWord.pageNum"
+          :limit.sync="queryParamsFixedConfigWord.pageSize"
+          @pagination="getListFixedConfigWord"
         />
         <div slot="footer" class="dialog-footer" style="text-align: center">
           <el-button @click="close">关 闭</el-button>
@@ -140,40 +143,39 @@
 
 <script>
 import {
-  addActivityCompatiblePn,
-  delActivityCompatiblePn,
-  listActivityCompatiblePn,
-  regroupSoftwareBuildVersion,
-} from "@/api/ota/fota/activity";
-import {listCompatiblePn} from "@/api/ota/pota/compatiblepn";
+  addActivityFixedConfigWord,
+  delActivityFixedConfigWord,
+  listActivityFixedConfigWord,
+} from "@/api/iov/ota/activity";
+import {listConfigWord} from "@/api/iov/ota/configword";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {
-  name: "ActivityCompatiblePn",
+  name: "ActivityFixedConfigWord",
   dicts: [],
   data() {
     return {
       // 遮罩层
       loading: true,
-      loadingCompatiblePn: true,
+      loadingFixedConfigWord: true,
       // 选中数组
       ids: [],
-      idsCompatiblePn: [],
+      idsFixedConfigWord: [],
       // 非单个禁用
       single: true,
-      singleCompatiblePn: true,
+      singleFixedConfigWord: true,
       // 非多个禁用
       multiple: true,
-      multipleCompatiblePn: true,
+      multipleFixedConfigWord: true,
       // 显示搜索条件
       showSearch: true,
-      showSearchCompatiblePn: true,
+      showSearchFixedConfigWord: true,
       // 总条数
       total: 0,
-      totalCompatiblePn: 0,
+      totalFixedConfigWord: 0,
       list: [],
       deviceList: [],
-      compatiblePnList: [],
+      fixedConfigWordList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -185,7 +187,7 @@ export default {
         pageNum: 1,
         pageSize: 10
       },
-      queryParamsCompatiblePn: {
+      queryParamsFixedConfigWord: {
         pageNum: 1,
         pageSize: 10
       },
@@ -204,7 +206,7 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      listActivityCompatiblePn(this.activityId).then(response => {
+      listActivityFixedConfigWord(this.activityId).then(response => {
         this.list = response.data;
         this.loading = false;
       });
@@ -215,12 +217,12 @@ export default {
         }
       );
     },
-    getListCompatiblePn() {
-      this.loadingCompatiblePn = true;
-      listCompatiblePn(this.queryParamsCompatiblePn).then(response => {
-          this.compatiblePnList = response.data.items;
-          this.totalCompatiblePn = response.data.total;
-          this.loadingCompatiblePn = false;
+    getListFixedConfigWord() {
+      this.loadingFixedConfigWord = true;
+      listConfigWord(this.queryParamsFixedConfigWord).then(response => {
+          this.fixedConfigWordList = response.data.items;
+          this.totalFixedConfigWord = response.data.total;
+          this.loadingFixedConfigWord = false;
           this.$nextTick(() => {
             this.setDefaultSelection();
           });
@@ -253,21 +255,21 @@ export default {
       this.resetForm("queryForm");
       this.handleQuery();
     },
-    resetQueryCompatiblePn() {
+    resetQueryFixedConfigWord() {
       this.dateRange = [];
-      this.resetForm("queryFormCompatiblePn");
-      this.handleQueryCompatiblePn();
+      this.resetForm("queryFormFixedConfigWord");
+      this.handleQueryFixedConfigWord();
     },
     /** 多选框选中数据 */
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.compatiblePnId)
+      this.ids = selection.map(item => item.fixedConfigWordId)
       this.single = selection.length != 1
       this.multiple = !selection.length
     },
-    handleSelectionChangeCompatiblePn(selection) {
-      this.idsCompatiblePn = selection.map(item => item.id)
-      this.singleCompatiblePn = selection.length != 1
-      this.multipleCompatiblePn = !selection.length
+    handleSelectionChangeFixedConfigWord(selection) {
+      this.idsFixedConfigWord = selection.map(item => item.id)
+      this.singleFixedConfigWord = selection.length != 1
+      this.multipleFixedConfigWord = !selection.length
     },
     /** 新增按钮操作 */
     handleAdd() {
@@ -277,19 +279,6 @@ export default {
     },
     /** 提交按钮 */
     submitForm: function () {
-      const data = [];
-      this.ids.forEach(id => {
-        data.push({
-          id: id,
-          versionGroup: this.form.versionGroup
-        })
-      })
-      regroupSoftwareBuildVersion(this.activityId, data).then(response => {
-        this.$modal.msgSuccess("修改成功");
-        this.resetQuery();
-        this.getList();
-        this.openChangeGroup = false;
-      })
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -297,28 +286,28 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
     },
-    handleRemoveActivityCompatiblePn(row) {
-      const compatiblePnIds = row.compatiblePnId || this.ids;
-      this.$modal.confirm('是否确认删除升级活动' + this.activityId + '下关联兼容零件号ID为"' + compatiblePnIds + '"的数据项？').then(() => {
-        return delActivityCompatiblePn(this.activityId, compatiblePnIds);
+    handleRemoveActivityFixedConfigWord(row) {
+      const fixedConfigWordIds = row.fixedConfigWordId || this.ids;
+      this.$modal.confirm('是否确认删除升级活动' + this.activityId + '下关联固定配置字ID为"' + fixedConfigWordIds + '"的数据项？').then(() => {
+        return delActivityFixedConfigWord(this.activityId, fixedConfigWordIds);
       }).then(() => {
         this.$modal.msgSuccess("删除成功");
         this.getList();
       }).catch(() => {
       });
     },
-    handleAddCompatiblePn() {
+    handleAddFixedConfigWord() {
       this.open = true;
-      this.getListCompatiblePn();
+      this.getListFixedConfigWord();
     },
-    handleQueryCompatiblePn() {
-      this.queryParamsCompatiblePn.pageNum = 1;
-      this.getListCompatiblePn();
+    handleQueryFixedConfigWord() {
+      this.queryParamsFixedConfigWord.pageNum = 1;
+      this.getListFixedConfigWord();
     },
-    handleAddActivityCompatiblePn(row) {
-      const compatiblePnIds = row.id || this.idsCompatiblePn;
-      this.$modal.confirm('是否确认将兼容零件号ID为"' + compatiblePnIds + '"的数据项关联到升级活动ID' + this.activityId + '？').then(() => {
-        return addActivityCompatiblePn(this.activityId, compatiblePnIds);
+    handleAddActivityFixedConfigWord(row) {
+      const fixedConfigWordIds = row.id || this.idsFixedConfigWord;
+      this.$modal.confirm('是否确认将固定配置字ID为"' + fixedConfigWordIds + '"的数据项关联到升级活动ID' + this.activityId + '？').then(() => {
+        return addActivityFixedConfigWord(this.activityId, fixedConfigWordIds);
       }).then(() => {
         this.$modal.msgSuccess("关联成功");
         this.close();
@@ -327,14 +316,14 @@ export default {
       });
     },
     setDefaultSelection() {
-      const linkedIds = this.list.map(item => item.compatiblePnId);
-      const selectedRows = this.compatiblePnList.filter(item =>
+      const linkedIds = this.list.map(item => item.fixedConfigWordId);
+      const selectedRows = this.fixedConfigWordList.filter(item =>
         linkedIds.includes(item.id)
       );
-      this.$refs.compatiblePnTable.clearSelection();
+      this.$refs.fixedConfigWordTable.clearSelection();
       this.$nextTick(() => {
         selectedRows.forEach(row => {
-          this.$refs.compatiblePnTable.toggleRowSelection(row, true);
+          this.$refs.fixedConfigWordTable.toggleRowSelection(row, true);
         });
       });
     },

@@ -17,10 +17,15 @@
     <el-table v-loading="loading" :data="list"
               @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="分类" prop="type" width="100" align="center"/>
+      <el-table-column label="配置字代码" prop="configWordCode" width="120"/>
+      <el-table-column label="配置字名称" prop="configWordName" width="120"/>
       <el-table-column label="设备" prop="deviceCode" width="100" align="center"/>
-      <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
       <el-table-column label="描述" prop="description"/>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -35,7 +40,7 @@
       </el-table-column>
     </el-table>
 
-    <el-drawer title="查询并添加兼容零件号" :visible.sync="open" direction="rtl" size="80%"
+    <el-drawer title="查询并添加固定配置字" :visible.sync="open" direction="rtl" size="80%"
                :modal="true"
                :append-to-body="true"
                @close="close">
@@ -43,10 +48,10 @@
         <el-form :model="queryParamsFixedConfigWord" ref="queryFormFixedConfigWord" size="small"
                  :inline="true"
                  v-show="showSearchFixedConfigWord">
-          <el-form-item label="软件零件号" prop="pn">
+          <el-form-item label="配置字代码" prop="code">
             <el-input
-              v-model="queryParamsFixedConfigWord.softwarePn"
-              placeholder="请输入软件零件号"
+              v-model="queryParamsFixedConfigWord.code"
+              placeholder="请输入配置字代码"
               clearable
               style="width: 140px"
               @keyup.enter.native="handleQueryFixedConfigWord"
@@ -95,9 +100,12 @@
                   :data="fixedConfigWordList"
                   @selection-change="handleSelectionChangeFixedConfigWord">
           <el-table-column type="selection" width="55" align="center"/>
-          <el-table-column label="类型" prop="type" width="100"/>
+          <el-table-column label="配置字代码" prop="code" width="120"/>
+          <el-table-column label="配置字名称" prop="name" width="120"/>
           <el-table-column label="设备" prop="deviceCode" width="100"/>
-          <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
+          <el-table-column label="数据格式" prop="dataFormat" width="100"/>
+          <el-table-column label="数据长度" prop="byteLength" width="100"/>
+          <el-table-column label="读写能力" prop="rwCapability" width="100"/>
           <el-table-column label="描述" prop="description"/>
           <el-table-column label="创建时间" align="center" prop="createTime" width="180">
             <template slot-scope="scope">
@@ -139,7 +147,7 @@ import {
   delActivityFixedConfigWord,
   listActivityFixedConfigWord,
 } from "@/api/ota/fota/activity";
-import {listFixedConfigWord} from "@/api/ota/dota/configword";
+import {listConfigWord} from "@/api/ota/dota/configword";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 
 export default {
@@ -211,9 +219,9 @@ export default {
     },
     getListFixedConfigWord() {
       this.loadingFixedConfigWord = true;
-      listFixedConfigWord(this.queryParamsFixedConfigWord).then(response => {
-          this.fixedConfigWordList = response.rows;
-          this.totalFixedConfigWord = response.total;
+      listConfigWord(this.queryParamsFixedConfigWord).then(response => {
+          this.fixedConfigWordList = response.data.items;
+          this.totalFixedConfigWord = response.data.total;
           this.loadingFixedConfigWord = false;
           this.$nextTick(() => {
             this.setDefaultSelection();

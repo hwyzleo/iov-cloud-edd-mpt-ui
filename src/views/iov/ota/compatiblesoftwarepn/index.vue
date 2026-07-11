@@ -50,7 +50,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:baseline:compatiblePn:add']"
+          v-hasPermi="['ota:fota:compatibleSoftwarePn:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +62,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:baseline:compatiblePn:edit']"
+          v-hasPermi="['ota:fota:compatibleSoftwarePn:edit']"
         >修改
         </el-button>
       </el-col>
@@ -74,7 +74,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:baseline:compatiblePn:remove']"
+          v-hasPermi="['ota:fota:compatibleSoftwarePn:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +85,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:baseline:compatiblePn:export']"
+          v-hasPermi="['ota:fota:compatibleSoftwarePn:export']"
         >导出
         </el-button>
       </el-col>
@@ -95,13 +95,9 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="设备" prop="deviceCode" width="200"/>
-      <el-table-column label="分类" prop="type" width="150">
-        <template slot-scope="scope">
-          <span>{{ scope.row.type === 1 ? '软件零件号' : '硬件零件号' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="零件号" prop="pn" width="150"/>
-      <el-table-column label="兼容零件号" prop="compatiblePn">
+      <el-table-column label="软件零件号" prop="softwarePn" width="150"/>
+      <el-table-column label="兼容软件零件号" prop="compatibleSoftwarePn" />
+      <el-table-column label="分类" prop="type" width="150" align="center">
       </el-table-column>
       <el-table-column label="描述" prop="description" width="150"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -116,7 +112,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:edit']"
+            v-hasPermi="['ota:fota:compatibleSoftwarePn:edit']"
           >修改
           </el-button>
           <el-button
@@ -124,7 +120,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:remove']"
+            v-hasPermi="['ota:fota:compatibleSoftwarePn:remove']"
           >删除
           </el-button>
         </template>
@@ -157,21 +153,19 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="软件零件号" prop="softwarePn">
+          <el-input v-model="form.softwarePn" placeholder="请输入软件零件号"/>
+        </el-form-item>
+        <el-form-item label="兼容软件零件号" prop="softwarePn">
+          <el-input v-model="form.compatibleSoftwarePn" placeholder="请输入兼容软件零件号"/>
+        </el-form-item>
         <el-form-item label="分类" prop="type">
           <el-select
             v-model="form.type"
             placeholder="分类"
             clearable
           >
-            <el-option label="软件零件号" :value="1" />
-            <el-option label="硬件零件号" :value="2" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="零件号" prop="pn">
-          <el-input v-model="form.pn" placeholder="请输入零件号"/>
-        </el-form-item>
-        <el-form-item label="兼容零件号" prop="pn">
-          <el-input v-model="form.compatiblePn" placeholder="请输入兼容零件号"/>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" placeholder="请输入描述内容"></el-input>
@@ -187,18 +181,18 @@
 
 <script>
 import {
-  addCompatiblePn,
-  delCompatiblePn,
-  getCompatiblePn,
-  listCompatiblePn,
-  updateCompatiblePn,
-} from "@/api/ota/pota/compatiblepn";
+  addCompatibleSoftwarePn,
+  delCompatibleSoftwarePn,
+  getCompatibleSoftwarePn,
+  listCompatibleSoftwarePn,
+  updateCompatibleSoftwarePn,
+} from "@/api/iov/ota/compatiblesoftwarepn";
 import {
   listAllVehicleNode
 } from "@/api/mdm/vehicleNode";
 
 export default {
-  name: "CompatiblePn",
+  name: "CompatibleSoftwarePn",
   dicts: [],
   data() {
     return {
@@ -214,8 +208,8 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
+      // 表格数据
       list: [],
-      deviceList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -234,16 +228,14 @@ export default {
         deviceCode: [
           {required: true, message: "设备不能为空", trigger: "blur"}
         ],
-        type: [
-          {required: true, message: "分类不能为空", trigger: "blur"}
+        softwarePn: [
+          {required: true, message: "软件零件号不能为空", trigger: "blur"}
         ],
-        pn: [
-          {required: true, message: "零件号不能为空", trigger: "blur"}
-        ],
-        compatiblePn: [
-          {required: true, message: "兼容零件号不能为空", trigger: "blur"}
+        compatibleSoftwarePn: [
+          {required: true, message: "兼容软件零件号不能为空", trigger: "blur"}
         ]
       },
+      deviceList: [],
     };
   },
   created() {
@@ -251,11 +243,12 @@ export default {
     this.getList();
   },
   methods: {
+    /** 查询列表 */
     getList() {
       this.loading = true;
-      listCompatiblePn(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.data.items;
-          this.total = response.data.total;
+      listCompatibleSoftwarePn(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+          this.list = response.rows;
+          this.total = response.total;
           this.loading = false;
         }
       );
@@ -299,31 +292,31 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加兼容零件号";
+      this.title = "添加兼容软件零件号";
       this.form = {};
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const compatiblePnId = row.id || this.ids
-      getCompatiblePn(compatiblePnId).then(response => {
+      const id = row.id || this.ids
+      getCompatibleSoftwarePn(id).then(response => {
         this.form = response.data;
         this.open = true;
       });
-      this.title = "修改兼容零件号";
+      this.title = "修改兼容软件零件号";
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateCompatiblePn(this.form).then(response => {
+            updateCompatibleSoftwarePn(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addCompatiblePn(this.form).then(response => {
+            addCompatibleSoftwarePn(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -334,9 +327,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const compatiblePnIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除兼容零件号ID为"' + compatiblePnIds + '"的数据项？').then(function () {
-        return delCompatiblePn(compatiblePnIds);
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除兼容软件零件号ID为"' + ids + '"的数据项？').then(function () {
+        return delCompatibleSoftwarePn(ids);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -345,9 +338,9 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-baseline/compatiblePn/export', {
+      this.download('ota-fota/compatibleSoftwarePn/export', {
         ...this.queryParams
-      }, `compatible_pn_${new Date().getTime()}.xlsx`)
+      }, `compatible_software_pn_${new Date().getTime()}.xlsx`)
     },
   }
 };

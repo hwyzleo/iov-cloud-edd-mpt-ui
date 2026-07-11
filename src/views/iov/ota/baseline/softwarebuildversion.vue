@@ -1,76 +1,122 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="组" prop="group">
-        <el-select
-          v-model="queryParams.group"
-          placeholder="组"
+    <el-form :model="queryParams" ref="queryForm"
+             size="small" :inline="true" v-show="showSearch">
+      <el-form-item label="软件零件号" prop="softwarePn">
+        <el-input
+          v-model="queryParams.softwarePn"
+          placeholder="请输入软件零件号"
           clearable
-          style="width: 140px"
-          @change="handleQuery"
+          style="width: 200px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="设备" prop="deviceCode">
+        <el-select
+          v-model="queryParams.deviceCode"
+          placeholder="设备"
+          clearable
+          style="width: 200px"
         >
           <el-option
-            v-for="group in groupList"
-            :key="group"
-            :label="group"
-            :value="group"
+            v-for="device in deviceList"
+            :key="device.code"
+            :label="device.code + '(' + device.label + ')'"
+            :value="device.code"
           />
         </el-select>
       </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">
+          搜索
+        </el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置
+        </el-button>
+      </el-form-item>
     </el-form>
+
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5" v-if="!baseline">
+      <el-col :span="1.5">
         <el-button
           type="primary"
           plain
           icon="el-icon-plus"
           size="mini"
           @click="handleAddSoftwareBuildVersion"
-          v-hasPermi="['ota:fota:activity:edit']"
+          v-hasPermi="['ota:baseline:baseline:edit']"
         >查询并添加软件内部版本
         </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
+          type="danger"
           plain
-          icon="el-icon-edit"
+          icon="el-icon-delete"
           size="mini"
           :disabled="multiple"
-          @click="handleChangeGroup"
-          v-hasPermi="['ota:fota:activity:edit']"
-        >调整组
+          @click="handleRemoveBaselineSoftwareBuildVersion"
+          v-hasPermi="['ota:baseline:baseline:remove']"
+        >删除关联
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="list"
-              @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="list" :key="tableKey" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="组" prop="versionGroup" width="60" align="center"/>
-      <el-table-column label="安装顺序" prop="sort" width="80" align="center">
+      <el-table-column label="排序" prop="sort" width="60" align="center">
         <template slot-scope="scope">
           <i class="el-icon-rank" style="cursor: move; margin-right: 5px;"></i>
         </template>
       </el-table-column>
-      <el-table-column label="软件零件号" prop="softwarePn" width="120" align="center">
+      <el-table-column label="软件零件号" prop="softwarePn" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.softwarePn + scope.row.softwarePartVer }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="设备" prop="deviceCode" width="100"/>
       <el-table-column label="软件内部版本" prop="softwareBuildVer" width="120"/>
-      <el-table-column label="软件零件名称" prop="softwarePartName"/>
-      <el-table-column label="软件来源" prop="softwareSource" width="120" align="center">
+      <el-table-column label="设备" prop="deviceCode" width="80"/>
+      <el-table-column label="是否关键" prop="critical" width="100" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.softwareSource === 1">BOM</span>
-          <span v-else-if="scope.row.softwareSource === 2">OTA</span>
-          <span v-else>未知</span>
+          <el-select
+            v-model="scope.row.critical"
+            placeholder="请选择"
+            size="mini"
+            @change="handleCriticalChange(scope.row)"
+          >
+            <el-option label="是" :value="true"></el-option>
+            <el-option label="否" :value="false"></el-option>
+          </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="强制升级" prop="forceUpgrade" width="80" align="center">
+      <el-table-column label="是否支持OTA" prop="ota" width="110" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.forceUpgrade ? '是' : '否' }}</span>
+          <el-select
+            v-model="scope.row.ota"
+            placeholder="请选择"
+            size="mini"
+            @change="handleOtaChange(scope.row)"
+          >
+            <el-option label="支持" :value="true"></el-option>
+            <el-option label="不支持" :value="false"></el-option>
+          </el-select>
+        </template>
+      </el-table-column>
+      <el-table-column label="软件零件名称" prop="softwarePartName"/>
+      <el-table-column label="测试报告" prop="softwareReport" width="80" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.softwareReport && scope.row.softwareReport.trim() ? '已上传' : '未上传' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="软件来源" prop="softwareSource" width="80" align="center">
+        <template slot-scope="scope">
+          <span>{{ scope.row.softwareSource === 1 ? 'BOM' : 'OTA' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="适配的总成硬件零件号" prop="adaptiveHardwarePn" width="150"/>
+      <el-table-column label="适配的总成软件零件号" prop="adaptiveSoftwarePn" width="150"/>
+      <el-table-column label="发布日期" align="center" prop="releaseDate" width="120">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
@@ -79,20 +125,27 @@
             size="mini"
             type="text"
             icon="el-icon-delete"
-            @click="handleRemoveActivitySoftwareBuildVersion(scope.row)"
-            v-hasPermi="['ota:fota:activity:edit']"
-            v-if="!baseline"
+            @click="handleRemoveBaselineSoftwareBuildVersion(scope.row)"
+            v-hasPermi="['ota:baseline:baseline:edit']"
           >删除关联
           </el-button>
         </template>
       </el-table-column>
     </el-table>
 
+    <pagination
+      v-show="total>0"
+      :total="total"
+      :page.sync="queryParams.pageNum"
+      :limit.sync="queryParams.pageSize"
+      @pagination="getList"
+    />
+
     <!-- 软件零件版本列表对话框 -->
-    <el-drawer title="查询并添加依赖软件内部版本" :visible.sync="open" direction="rtl" size="80%"
+    <el-drawer title="关联软件零件版本信息" :visible.sync="open" direction="rtl" size="80%"
                :modal="true"
                :append-to-body="true"
-               @close="close">
+               @close="onClose">
       <div class="drawer-content">
         <el-form :model="queryParamsSoftwareBuildVersion" ref="queryFormSoftwareBuildVersion" size="small"
                  :inline="true"
@@ -136,21 +189,22 @@
               icon="el-icon-plus"
               size="mini"
               :disabled="multipleSoftwareBuildVersion"
-              @click="handleAddActivitySoftwareBuildVersion"
+              @click="handleAddBaselineSoftwareBuildVersion"
               v-hasPermi="['ota:baseline:baseline:edit']"
             >关联
             </el-button>
           </el-col>
-          <right-toolbar :showSearch.sync="showSearch" @queryTable="getListSoftwareBuildVersion"></right-toolbar>
+          <right-toolbar :showSearch.sync="showSearchSoftwareBuildVersion"
+                         @queryTable="getListSoftwareBuildVersion"></right-toolbar>
         </el-row>
 
-        <el-table ref="softwareBuildVersionTable" v-loading="loadingSoftwareBuildVersion"
-                  :data="softwareBuildVersionList"
+        <el-table ref="SoftwareBuildVersionTable" v-loading="loadingSoftwareBuildVersion"
+                  :data="SoftwareBuildVersionList"
                   @selection-change="handleSelectionChangeSoftwareBuildVersion">
           <el-table-column type="selection" width="55" align="center"/>
           <el-table-column label="设备" prop="deviceCode" width="100"/>
           <el-table-column label="软件零件号" prop="softwarePn"/>
-          <el-table-column label="软件内部版本" prop="softwareBuildVer" width="120"/>
+          <el-table-column label="软件零件版本" prop="softwarePartVer" width="120"/>
           <el-table-column label="测试报告" prop="softwareReport" width="80" align="center">
             <template slot-scope="scope">
               <span>{{ scope.row.softwareReport && scope.row.softwareReport.trim() ? '已上传' : '未上传' }}</span>
@@ -161,15 +215,13 @@
               <span>{{ scope.row.softwareSource === 1 ? 'BOM' : 'OTA' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="150"/>
-          <el-table-column label="适配的软件零件号" prop="adaptiveSoftwarePn" width="150"/>
-          <el-table-column label="发布日期" align="center" prop="releaseDate" width="120">
+          <el-table-column label="适配的总成硬件零件号" prop="adaptiveHardwarePn" width="150"/>
+          <el-table-column label="适配的总成软件零件号" prop="adaptiveSoftwarePn" width="150"/>
+          <el-table-column label="发布日期" align="center" prop="releaseTime" width="120">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="软件包数" prop="softwarePackageCount" width="80" align="center"/>
-          <el-table-column label="依赖数" prop="dependencyCount" width="80" align="center"/>
           <el-table-column label="创建时间" align="center" prop="createTime" width="180">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -181,8 +233,8 @@
                 size="mini"
                 type="text"
                 icon="el-icon-edit"
-                @click="handleAddActivitySoftwareBuildVersion(scope.row)"
-                v-hasPermi="['ota:fota:activity:edit']"
+                @click="handleAddBaselineSoftwareBuildVersion(scope.row)"
+                v-hasPermi="['ota:baseline:baseline:edit']"
               >关联
               </el-button>
             </template>
@@ -201,37 +253,24 @@
         </div>
       </div>
     </el-drawer>
-
-    <!-- 修改组 -->
-    <el-dialog title="调整组" :visible.sync="openChangeGroup" width="400px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="组" prop="name">
-          <el-input-number v-model="form.versionGroup" controls-position="right" :min="0"/>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import {
-  addActivitySoftwareBuildVersion,
-  delActivitySoftwareBuildVersion,
-  getActivity,
-  listActivitySoftwareBuildVersion,
-  listAllActivityState,
-  regroupSoftwareBuildVersion,
-  resortSoftwareBuildVersion
-} from "@/api/ota/fota/activity";
-import {listSoftwareBuildVersion} from "@/api/ota/pota/softwarebuildversion";
+  addBaselineSoftwareBuildVersion,
+  delBaselineSoftwareBuildVersion,
+  listBaselineSoftwareBuildVersion,
+  resortBaselineSoftwareBuildVersion,
+  updateBaselineSoftwareBuildVersionCritical,
+  updateBaselineSoftwareBuildVersionOta
+} from "@/api/iov/ota/baseline";
+import {listSoftwareBuildVersion} from "@/api/iov/ota/softwarebuildversion"
+import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import Sortable from 'sortablejs'
 
 export default {
-  name: "ActivitySoftwareBuildVersion",
+  name: "BaselineSoftwareBuildVersion",
   dicts: [],
   data() {
     return {
@@ -240,7 +279,7 @@ export default {
       loadingSoftwareBuildVersion: true,
       // 选中数组
       ids: [],
-      idsSoftwareBuildVersion: true,
+      idsSoftwareBuildVersion: [],
       // 非单个禁用
       single: true,
       singleSoftwareBuildVersion: true,
@@ -254,21 +293,18 @@ export default {
       total: 0,
       totalSoftwareBuildVersion: 0,
       list: [],
+      SoftwareBuildVersionList: [],
       deviceList: [],
-      groupList: [],
-      activityStateList: [],
-      softwareBuildVersionList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
-      openChangeGroup: false,
       // 日期范围
       dateRange: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 50
       },
       queryParamsSoftwareBuildVersion: {
         pageNum: 1,
@@ -278,8 +314,9 @@ export default {
       form: {},
       // 表单校验
       rules: {},
-      activityId: undefined,
-      baseline: false
+      baselineId: undefined,
+      tableKey: 0,
+      sortable: null,
     };
   },
   mounted() {
@@ -288,11 +325,8 @@ export default {
     })
   },
   created() {
-    this.activityId = this.$route.query.id;
-    getActivity(this.activityId).then(response => {
-      this.baseline = response.data.baseline;
-    });
-    this.getActivityStateList();
+    this.baselineId = this.$route.query.id;
+    this.getDeviceList();
     this.getList();
   },
   beforeDestroy() {
@@ -305,33 +339,29 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      let group = "";
-      if (this.queryParams.group) {
-        group = this.queryParams.group;
-      }
-      listActivitySoftwareBuildVersion(this.activityId, group).then(response => {
-        this.list = response.data.list;
-        this.groupList = response.data.groups;
-        this.queryParams.group = response.data.group;
-        this.loading = false;
-        this.$nextTick(() => {
-          if (!this.sortable) {
-            this.initSort()
-          }
-        })
-      });
+      listBaselineSoftwareBuildVersion(this.baselineId, this.queryParams).then(response => {
+          this.list = response.rows;
+          this.total = response.total;
+          this.loading = false;
+          this.$nextTick(() => {
+            if (!this.sortable) {
+              this.initSort()
+            }
+          })
+        }
+      );
     },
-    getActivityStateList() {
-      listAllActivityState().then(response => {
-          this.activityStateList = response.data;
+    getDeviceList() {
+      listAllVehicleNode().then(response => {
+          this.deviceList = response.data.map(item => ({ code: item.nodeCode, label: item.name }));
         }
       );
     },
     getListSoftwareBuildVersion() {
       this.loadingSoftwareBuildVersion = true;
       listSoftwareBuildVersion(this.queryParamsSoftwareBuildVersion).then(response => {
-          this.softwareBuildVersionList = response.data.items;
-          this.totalSoftwareBuildVersion = response.data.total;
+          this.SoftwareBuildVersionList = response.rows;
+          this.totalSoftwareBuildVersion = response.total;
           this.loadingSoftwareBuildVersion = false;
           this.$nextTick(() => {
             this.setDefaultSelection();
@@ -339,22 +369,39 @@ export default {
         }
       );
     },
+    setDefaultSelection() {
+      const linkedIds = this.list.map(item => item.softwareBuildVersionId);
+      const selectedRows = this.SoftwareBuildVersionList.filter(item =>
+        linkedIds.includes(item.id)
+      );
+      this.$refs.SoftwareBuildVersionTable.clearSelection();
+      this.$nextTick(() => {
+        selectedRows.forEach(row => {
+          this.$refs.SoftwareBuildVersionTable.toggleRowSelection(row, true);
+        });
+      });
+    },
     /** 取消按钮 */
     cancel() {
-      this.openChangeGroup = false;
+      this.open = false;
       this.reset();
+    },
+    close() {
+      this.open = false;
     },
     /** 表单重置 */
     reset() {
-      this.form = {
-        versionGroup: 0,
-      };
+      this.form = {};
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNum = 1;
       this.getList();
+    },
+    handleQuerySoftwareBuildVersion() {
+      this.queryParamsSoftwareBuildVersion.pageNum = 1;
+      this.getListSoftwareBuildVersion();
     },
     /** 重置按钮操作 */
     resetQuery() {
@@ -363,17 +410,15 @@ export default {
       this.handleQuery();
     },
     resetQuerySoftwareBuildVersion() {
-      this.dateRange = [];
       this.resetForm("queryFormSoftwareBuildVersion");
       this.handleQuerySoftwareBuildVersion();
     },
     /** 多选框选中数据 */
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
+      this.ids = selection.map(item => item.softwareBuildVersionId)
       this.single = selection.length != 1
       this.multiple = !selection.length
     },
-    /** 多选框选中数据 */
     handleSelectionChangeSoftwareBuildVersion(selection) {
       this.idsSoftwareBuildVersion = selection.map(item => item.id)
       this.singleSoftwareBuildVersion = selection.length != 1
@@ -382,53 +427,33 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
     },
+    handleAddSoftwareBuildVersion() {
+      this.open = true;
+      this.getListSoftwareBuildVersion();
+    },
     /** 修改按钮操作 */
     handleUpdate(row) {
     },
-    /** 提交按钮 */
-    submitForm: function () {
-      const data = [];
-      this.ids.forEach(id => {
-        data.push({
-          id: id,
-          versionGroup: this.form.versionGroup
-        })
-      })
-      regroupSoftwareBuildVersion(this.activityId, data).then(response => {
-        this.$modal.msgSuccess("修改成功");
-        this.resetQuery();
-        this.getList();
-        this.openChangeGroup = false;
-      })
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-    },
-    handleRemoveActivitySoftwareBuildVersion(row) {
-      const softwareBuildVersionIds = row.id || this.idsSoftwareBuildVersion;
-      this.$modal.confirm('是否确认删除升级活动' + this.activityId + '下关联软件内部版本ID为"' + softwareBuildVersionIds + '"的数据项？').then(() => {
-        return delActivitySoftwareBuildVersion(this.activityId, softwareBuildVersionIds);
+    handleRemoveBaselineSoftwareBuildVersion(row) {
+      const softwareBuildVersionIds = row.softwareBuildVersionId || this.ids;
+      this.$modal.confirm('是否确认删除基线' + this.baselineId + '下关联软件内部版本ID为"' + softwareBuildVersionIds + '"的数据项？').then(() => {
+        return delBaselineSoftwareBuildVersion(this.baselineId, softwareBuildVersionIds);
       }).then(() => {
         this.$modal.msgSuccess("删除成功");
         this.getList();
       }).catch(() => {
       });
     },
-    handleAddSoftwareBuildVersion() {
-      this.open = true;
-      this.getListSoftwareBuildVersion();
+    /** 提交按钮 */
+    submitForm: function () {
     },
-    handleQuerySoftwareBuildVersion() {
-      this.queryParamsSoftwareBuildVersion.pageNum = 1;
-      this.getListSoftwareBuildVersion();
+    /** 删除按钮操作 */
+    handleDelete(row) {
     },
-    handleAddActivitySoftwareBuildVersion(row) {
+    handleAddBaselineSoftwareBuildVersion(row) {
       const softwareBuildVersionIds = row.id || this.idsSoftwareBuildVersion;
-      this.$modal.confirm('是否确认将软件零件版本ID为"' + softwareBuildVersionIds + '"的数据项关联到升级活动ID' + this.activityId + '？').then(() => {
-        return addActivitySoftwareBuildVersion(this.activityId, softwareBuildVersionIds);
+      this.$modal.confirm('是否确认将软件零件版本ID为"' + softwareBuildVersionIds + '"的数据项关联到基线ID' + this.baselineId + '？').then(() => {
+        return addBaselineSoftwareBuildVersion(this.baselineId, softwareBuildVersionIds);
       }).then(() => {
         this.$modal.msgSuccess("关联成功");
         this.close();
@@ -436,19 +461,10 @@ export default {
       }).catch(() => {
       });
     },
-    setDefaultSelection() {
-      const linkedIds = this.list.map(item => item.softwareBuildVersionId);
-      const selectedRows = this.softwareBuildVersionList.filter(item =>
-        linkedIds.includes(item.id)
-      );
-      this.$refs.softwareBuildVersionTable.clearSelection();
-      this.$nextTick(() => {
-        selectedRows.forEach(row => {
-          this.$refs.softwareBuildVersionTable.toggleRowSelection(row, true);
-        });
-      });
+    /** 导出按钮操作 */
+    handleExport() {
     },
-    onActivitySoftwareBuildVersionClose() {
+    onClose() {
       this.getList();
     },
     initSort() {
@@ -516,20 +532,24 @@ export default {
     saveSortOrder() {
       // 调用后端API保存排序
       const sortData = this.list.map(item => ({
-        id: item.id,
         softwareBuildVersionId: item.softwareBuildVersionId,
         sort: item.sort
       }))
-      resortSoftwareBuildVersion(this.activityId, sortData).then(response => {
+      resortBaselineSoftwareBuildVersion(this.baselineId, sortData).then(response => {
         console.log(response)
       })
     },
-    handleChangeGroup() {
-      this.reset();
-      this.openChangeGroup = true;
+    handleCriticalChange(row) {
+      const softwareBuildVersionIds = row.softwareBuildVersionId || this.ids;
+      updateBaselineSoftwareBuildVersionCritical(this.baselineId, softwareBuildVersionIds, row.critical).then(response => {
+        console.log(response);
+      })
     },
-    close() {
-      this.open = false;
+    handleOtaChange(row) {
+      const softwareBuildVersionIds = row.softwareBuildVersionId || this.ids;
+      updateBaselineSoftwareBuildVersionOta(this.baselineId, softwareBuildVersionIds, row.ota).then(response => {
+        console.log(response);
+      })
     }
   }
 };
@@ -567,5 +587,19 @@ export default {
 
 .drawer-row {
   margin-bottom: 15px;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  background: #f0f9ff;
+}
+
+.el-icon-rank {
+  cursor: move;
+  color: #909399;
+}
+
+.el-icon-rank:hover {
+  color: #409eff;
 }
 </style>
