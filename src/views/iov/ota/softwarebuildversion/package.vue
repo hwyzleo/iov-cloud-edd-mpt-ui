@@ -35,17 +35,16 @@
     </el-row>
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="软件包名称" prop="packageName"/>
+      <el-table-column label="软件包名称" prop="packageName" min-width="200" />
+      <el-table-column label="设备" prop="deviceCode" width="100"/>
       <el-table-column label="软件包类型" prop="packageType" width="100" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.packageType==='FULL'">全量</span>
           <span v-if="scope.row.packageType==='DELTA'">差分</span>
         </template>
       </el-table-column>
-      <el-table-column label="软件包来源" prop="packageSource" width="100" align="center" />
-      <el-table-column label="基础软件零件号" prop="baseSoftwarePn" width="150"/>
-      <el-table-column label="基础软件版本" prop="baseSoftwareVer" width="150"/>
-      <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="150" align="center">
+      <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
+      <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.packageAdaptiveLevel === 1">基础版本及以下</span>
           <span v-else-if="scope.row.packageAdaptiveLevel === 2">基础版本及以上</span>
@@ -58,7 +57,8 @@
           <span>{{ scope.row.ota ? '是' : '否' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="软件包来源" prop="packageSource" width="90" align="center" />
+      <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
