@@ -365,9 +365,9 @@ export default {
       }
       this.softwarePartVerRange = [];
       listPart({
-        deviceCode: this.selectDevice,
-        key: queryString,
-        type: "P04"
+        vehicleNodeCode: this.selectDevice,
+        keyword: queryString,
+        isSoftware: true
       }).then(response => {
         if (response.data && response.data.rows && response.data.rows.length > 0) {
           const suggestions = response.data.rows.map(item => {
