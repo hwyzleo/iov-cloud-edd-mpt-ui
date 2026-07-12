@@ -88,7 +88,6 @@
         </template>
       </el-table-column>
       <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
-      <el-table-column label="基础软件零件号" prop="baseSoftwarePn" width="120"/>
       <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.packageAdaptiveLevel === 1">基础版本及以下</span>
@@ -213,7 +212,7 @@
           <el-input v-model="form.packageName" placeholder="请输入软件包名称"/>
         </el-form-item>
         <el-form-item label="软件包代码" prop="packageCode">
-          <el-input v-model="form.packageCode" placeholder="请输入软件包代码"/>
+          <el-input v-model="form.packageCode" placeholder="系统自动生成" readonly disabled/>
         </el-form-item>
         <el-form-item label="软件包URL" prop="packageCode">
           <el-input v-model="form.packageUrl" placeholder="请输入软件包URL"/>
@@ -231,20 +230,23 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="软件包SHA256" prop="packageSha256">
+          <el-input v-model="form.packageSha256" placeholder="请输入软件包SHA256"/>
+        </el-form-item>
         <el-form-item label="软件包说明" prop="packageDesc">
           <el-input v-model="form.packageDesc" type="textarea" placeholder="请输入软件包说明"></el-input>
         </el-form-item>
         <el-row>
           <el-col :span="12">
             <el-form-item label="基础软件零件号" prop="baseSoftwarePn">
-              <el-input v-model="form.baseSoftwarePn" placeholder="请输入基础软件零件号"/>
+              <el-input v-model="form.baseSoftwarePn" :placeholder="form.packageType === 'DELTA' ? '差分包必填' : '请输入基础软件零件号'"/>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="软件包适配级别" prop="packageAdaptiveLevel">
               <el-select
                 v-model="form.packageAdaptiveLevel"
-                placeholder="软件包适配级别"
+                :placeholder="form.packageType === 'DELTA' ? '差分包必填' : '软件包适配级别'"
                 clearable
                 style="width: 100%"
               >
@@ -377,12 +379,8 @@ export default {
         packageSource: [
           {required: true, message: "软件包来源不能为空", trigger: "blur"}
         ],
-        baseSoftwarePn: [
-          {required: true, message: "基础软件零件号不能为空", trigger: "blur"}
-        ],
-        packageAdaptiveLevel: [
-          {required: true, message: "软件包适配级别不能为空", trigger: "blur"}
-        ],
+        baseSoftwarePn: [],
+        packageAdaptiveLevel: [],
         adaptiveAssemblyPn: [
           {required: true, message: "适配的总成零件号不能为空", trigger: "blur"}
         ],
@@ -396,7 +394,35 @@ export default {
     this.getDeviceList();
     this.getList();
   },
+  watch: {
+    'form.packageType': {
+      handler(newVal) {
+        this.updateValidationRules(newVal);
+      },
+      immediate: false
+    }
+  },
   methods: {
+    /** 根据软件包类型更新验证规则和默认值 */
+    updateValidationRules(packageType) {
+      if (packageType === 'DELTA') {
+        this.rules.baseSoftwarePn = [
+          {required: true, message: "基础软件零件号不能为空", trigger: "blur"}
+        ];
+        this.rules.packageAdaptiveLevel = [
+          {required: true, message: "软件包适配级别不能为空", trigger: "blur"}
+        ];
+      } else {
+        this.rules.baseSoftwarePn = [];
+        this.rules.packageAdaptiveLevel = [];
+        if (packageType === 'FULL' && !this.form.packageAdaptiveLevel) {
+          this.form.packageAdaptiveLevel = 1;
+        }
+      }
+      if (this.$refs.form) {
+        this.$refs.form.clearValidate(['baseSoftwarePn', 'packageAdaptiveLevel']);
+      }
+    },
     /** 查询软件包列表 */
     getList() {
       this.loading = true;
@@ -452,6 +478,7 @@ export default {
         packageType: undefined,
         packageSize: undefined,
         packageMd5: undefined,
+        packageSha256: undefined,
         packageDesc: undefined,
         packageSource: undefined,
         baseSoftwarePn: undefined,
@@ -488,7 +515,8 @@ export default {
       this.title = "添加软件包信息";
       this.form = {
         ota: true,
-        packageSource: "OTA"
+        packageSource: "OTA",
+        packageAdaptiveLevel: 1
       };
     },
     /** 修改按钮操作 */
@@ -515,6 +543,9 @@ export default {
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
+          if (this.form.packageType === 'FULL' && !this.form.packageAdaptiveLevel) {
+            this.form.packageAdaptiveLevel = 1;
+          }
           if (this.form.id !== undefined) {
             updateSoftwarePackage(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
