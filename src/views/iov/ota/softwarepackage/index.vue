@@ -79,15 +79,14 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="软件包名称" prop="packageName" min-width="100" fixed="left"/>
-      <el-table-column label="软件包类型" prop="packageType" width="90" align="center">
+      <el-table-column label="软件包名称" prop="packageName" min-width="200" fixed="left"/>
+      <el-table-column label="设备" prop="deviceCode" width="100" align="center" fixed="left"/>
+      <el-table-column label="软件包类型" prop="packageType" width="90" align="center" fixed="left">
         <template slot-scope="scope">
           <span v-if="scope.row.packageType==='FULL'">全量</span>
           <span v-if="scope.row.packageType==='DELTA'">差分</span>
         </template>
       </el-table-column>
-      <el-table-column label="软件包来源" prop="packageSource" width="90" align="center"/>
-      <el-table-column label="设备" prop="deviceCode" width="80" align="center"/>
       <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
       <el-table-column label="基础软件零件号" prop="baseSoftwarePn" width="120"/>
       <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
@@ -104,6 +103,7 @@
           <span>{{ scope.row.ota ? '是' : '否' }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="软件包来源" prop="packageSource" width="90" align="center"/>
       <el-table-column label="发布时间" align="center" prop="releaseDate" width="120">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>

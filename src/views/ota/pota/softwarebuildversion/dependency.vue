@@ -241,8 +241,8 @@ export default {
     getListDependency() {
       this.loadingDependency = true;
       listSoftwareBuildVersion(this.queryParamsDependency).then(response => {
-          this.dependencyList = response.rows;
-          this.totalDependency = response.total;
+          this.dependencyList = response.data.items;
+          this.totalDependency = response.data.total;
           this.loadingDependency = false;
           this.$nextTick(() => {
             this.setDependencySelection();

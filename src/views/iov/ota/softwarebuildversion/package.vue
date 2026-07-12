@@ -243,8 +243,8 @@ export default {
     getListSoftwarePackage() {
       this.loadingSoftwarePackage = true;
       listSoftwarePackage(this.queryParamsSoftwarePackage).then(response => {
-          this.softwarePackageList = response.rows;
-          this.totalSoftwarePackage = response.total;
+          this.softwarePackageList = response.data.items;
+          this.totalSoftwarePackage = response.data.total;
           this.loadingSoftwarePackage = false;
           this.$nextTick(() => {
             this.setSoftwarePackageSelection();
