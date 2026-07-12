@@ -42,3 +42,27 @@ export function delSoftwarePackage(softwarePackageIds) {
     method: 'delete'
   })
 }
+
+// 停用软件包
+export function deprecateSoftwarePackage(softwarePackageId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwarePackage/v1/' + softwarePackageId + '/action/deprecate',
+    method: 'post'
+  })
+}
+
+// 吊销软件包
+export function revokeSoftwarePackage(softwarePackageId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwarePackage/v1/' + softwarePackageId + '/action/revoke',
+    method: 'post'
+  })
+}
+
+// 退役软件包
+export function retireSoftwarePackage(softwarePackageId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwarePackage/v1/' + softwarePackageId + '/action/retire',
+    method: 'post'
+  })
+}

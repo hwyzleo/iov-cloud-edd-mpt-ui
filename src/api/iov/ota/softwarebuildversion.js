@@ -100,3 +100,69 @@ export function delSoftwareBuildVersionDependency(softwareBuildVersionId, softwa
     method: 'post'
   })
 }
+
+// 发布软件内部版本
+export function releaseSoftwareBuildVersion(softwareBuildVersionId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/action/release',
+    method: 'post'
+  })
+}
+
+// 停用软件内部版本
+export function deprecateSoftwareBuildVersion(softwareBuildVersionId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/action/deprecate',
+    method: 'post'
+  })
+}
+
+// 退役软件内部版本
+export function retireSoftwareBuildVersion(softwareBuildVersionId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/action/retire',
+    method: 'post'
+  })
+}
+
+// 查询软件内部版本测试报告列表
+export function listTestReport(softwareBuildVersionId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/listTestReport',
+    method: 'get'
+  })
+}
+
+// 新增软件内部版本测试报告
+export function addTestReport(softwareBuildVersionId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/action/addTestReport',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除软件内部版本测试报告
+export function delTestReport(softwareBuildVersionId, testReportIds) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/testReport/' + testReportIds,
+    method: 'delete'
+  })
+}
+
+// 查询软件内部版本适配矩阵
+export function listAdaptation(softwareBuildVersionId) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/listAdaptation',
+    method: 'get'
+  })
+}
+
+// 保存软件内部版本适配矩阵
+export function saveAdaptation(softwareBuildVersionId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/softwareBuildVersion/v1/' + softwareBuildVersionId + '/action/saveAdaptation',
+    method: 'post',
+    data: data
+  })
+}

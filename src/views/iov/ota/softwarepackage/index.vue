@@ -108,7 +108,7 @@
           <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="120" class-name="small-padding fixed-width" fixed="right">
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -118,6 +118,14 @@
             v-hasPermi="['ota:baseline:softwarePackage:edit']"
           >修改
           </el-button>
+          <el-dropdown @command="(command) => handleStatusCommand(command, scope.row)" v-hasPermi="['ota:pota:softwarePackage:edit']">
+            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="deprecate" icon="el-icon-warning">停用</el-dropdown-item>
+              <el-dropdown-item command="revoke" icon="el-icon-circle-close">吊销</el-dropdown-item>
+              <el-dropdown-item command="retire" icon="el-icon-remove">退役</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
           <el-button
             size="mini"
             type="text"
@@ -316,7 +324,10 @@ import {
   getSoftwarePackage,
   addSoftwarePackage,
   updateSoftwarePackage,
-  delSoftwarePackage
+  delSoftwarePackage,
+  deprecateSoftwarePackage,
+  revokeSoftwarePackage,
+  retireSoftwarePackage
 } from "@/api/iov/ota/softwarepackage";
 import {
   listAllVehicleNode,
@@ -578,6 +589,23 @@ export default {
       this.download('ota-baseline/softwarePackage/export', {
         ...this.queryParams
       }, `software_package_${new Date().getTime()}.xlsx`)
+    },
+    /** 状态流转命令处理 */
+    handleStatusCommand(command, row) {
+      const softwarePackageId = row.id;
+      const actions = {
+        deprecate: { api: deprecateSoftwarePackage, msg: '停用' },
+        revoke: { api: revokeSoftwarePackage, msg: '吊销' },
+        retire: { api: retireSoftwarePackage, msg: '退役' }
+      };
+      const action = actions[command];
+      if (!action) return;
+      this.$modal.confirm('是否确认' + action.msg + '软件包ID为"' + softwarePackageId + '"的数据项？').then(function () {
+        return action.api(softwarePackageId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess(action.msg + "成功");
+      }).catch(() => {});
     }
   }
 };

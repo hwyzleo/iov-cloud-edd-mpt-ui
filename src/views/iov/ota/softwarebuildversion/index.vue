@@ -95,27 +95,28 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="设备" prop="deviceCode" width="100" fixed="left"/>
-      <el-table-column label="软件零件号" prop="softwarePn" width="120" fixed="left"/>
+      <el-table-column label="软件零件号" prop="softwarePn" min-width="120" fixed="left"/>
       <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100" fixed="left"/>
-      <el-table-column label="测试报告" prop="softwareReport" width="80" align="center">
+      <el-table-column label="发布状态" prop="buildState" width="90" align="center" fixed="left">
         <template slot-scope="scope">
-          <span>{{ scope.row.softwareReport && scope.row.softwareReport.trim() ? '已上传' : '未上传' }}</span>
+          <el-tag :type="getBuildStateTagType(scope.row.buildState)">{{ getBuildStateLabel(scope.row.buildState) }}</el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="发布时间" align="center" prop="releaseTime" width="120">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.releaseTime, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="软件包数" prop="softwarePackageCount" width="80" align="center"/>
+      <el-table-column label="依赖数" prop="dependencyCount" width="80" align="center"/>
+      <el-table-column label="测试报告数" prop="testReportCount" width="90" align="center"/>
+      <el-table-column label="适配矩阵数" prop="adaptationCount" width="90" align="center"/>
       <el-table-column label="软件来源" prop="softwareSource" width="80" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.softwareSource === 1 ? 'BOM' : 'OTA' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="适配的总成零件号" prop="adaptiveAssemblyPn" width="130"/>
-      <el-table-column label="发布日期" align="center" prop="releaseDate" width="120">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.releaseDate, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="软件包数" prop="softwarePackageCount" width="80" align="center"/>
-      <el-table-column label="依赖数" prop="dependencyCount" width="80" align="center"/>
-      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width" fixed="right">
+      <el-table-column label="操作" align="center" width="180" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -125,22 +126,18 @@
             v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
           >修改
           </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleSoftwareBuildVersionPackage(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:query']"
-          >关联
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleSoftwareBuildVersionDependency(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:query']"
-          >依赖
-          </el-button>
+          <el-dropdown @command="(command) => handleMoreCommand(command, scope.row)">
+            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="package" icon="el-icon-document" v-hasPermi="['ota:baseline:softwareBuildVersion:query']">关联</el-dropdown-item>
+              <el-dropdown-item command="dependency" icon="el-icon-connection" v-hasPermi="['ota:baseline:softwareBuildVersion:query']">依赖</el-dropdown-item>
+              <el-dropdown-item command="testReport" icon="el-icon-tickets" v-hasPermi="['ota:pota:softwareBuildVersion:list']">测试报告</el-dropdown-item>
+              <el-dropdown-item command="adaptation" icon="el-icon-s-grid" v-hasPermi="['ota:pota:softwareBuildVersion:list']">适配矩阵</el-dropdown-item>
+              <el-dropdown-item divided v-if="scope.row.buildState === 'DRAFT' || scope.row.buildState === 'TESTING'" command="release" icon="el-icon-upload2" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">发布</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.buildState === 'RELEASED'" command="deprecate" icon="el-icon-warning" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">停用</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.buildState === 'DEPRECATED'" command="retire" icon="el-icon-circle-close" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">退役</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
           <el-button
             size="mini"
             type="text"
@@ -223,26 +220,8 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="软件测试报告" prop="softwareReport">
-          <el-input v-model="form.softwareReport" placeholder="请输入软件测试报告"/>
-        </el-form-item>
-        <el-form-item label="软件说明" prop="softwareDesc">
-          <el-input v-model="form.softwareDesc" type="textarea" placeholder="请输入软件说明"/>
-        </el-form-item>
-        <el-form-item label="适配的总成零件号" prop="adaptiveAssemblyPn">
-          <el-input v-model="form.adaptiveAssemblyPn" placeholder="请输入适配的总成零件号"/>
-        </el-form-item>
-        <el-form-item label="适配的软件零件号" prop="adaptiveSoftwarePn">
-          <el-input v-model="form.adaptiveSoftwarePn" placeholder="请输入适配的总成软件零件号"/>
-        </el-form-item>
-        <el-form-item label="发布日期" prop="releaseDate">
-          <el-date-picker
-            v-model="form.releaseDate"
-            type="date"
-            placeholder="请选择发布日期"
-            value-format="timestamp"
-          >
-          </el-date-picker>
+        <el-form-item label="技术变更说明" prop="changeNote">
+          <el-input v-model="form.changeNote" type="textarea" placeholder="请输入技术变更说明"/>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
@@ -262,7 +241,10 @@ import {
   delSoftwareBuildVersion,
   getSoftwareBuildVersion,
   listSoftwareBuildVersion,
-  updateSoftwareBuildVersion
+  updateSoftwareBuildVersion,
+  releaseSoftwareBuildVersion,
+  deprecateSoftwareBuildVersion,
+  retireSoftwareBuildVersion
 } from "@/api/iov/ota/softwarebuildversion";
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import {listPart} from "@/api/mdm/part";
@@ -317,12 +299,6 @@ export default {
         ],
         softwareSource: [
           {required: true, message: "软件来源不能为空", trigger: "blur"}
-        ],
-        adaptiveAssemblyPn: [
-          {required: true, message: "适配的总成零件号不能为空", trigger: "blur"}
-        ],
-        releaseDate: [
-          {required: true, message: "发布日期不能为空", trigger: "blur"}
         ]
       },
       softwarePnSelected: false,
@@ -388,14 +364,9 @@ export default {
       this.form = {
         deviceCode: undefined,
         softwarePn: undefined,
-        softwarePartVer: undefined,
         softwareBuildVer: undefined,
-        softwareReport: undefined,
-        softwareDesc: undefined,
         softwareSource: undefined,
-        adaptiveHardwarePn: undefined,
-        adaptiveSoftwarePn: undefined,
-        releaseDate: undefined,
+        changeNote: undefined,
         description: undefined
       };
       this.resetForm("form");
@@ -423,7 +394,8 @@ export default {
       this.open = true;
       this.title = "添加软件内部版本信息";
       this.form = {
-        softwareSource: "OTA"
+        softwareSource: "OTA",
+        buildState: "DRAFT"
       };
     },
     /** 修改按钮操作 */
@@ -489,11 +461,76 @@ export default {
         query: { id: row.id }
       });
     },
+    handleTestReport(row) {
+      this.$router.push({
+        path: "/iov/ota/softwareBuildVersionTestReport",
+        query: { id: row.id }
+      });
+    },
+    handleAdaptation(row) {
+      this.$router.push({
+        path: "/iov/ota/softwareBuildVersionAdaptation",
+        query: { id: row.id }
+      });
+    },
     /** 导出按钮操作 */
     handleExport() {
       this.download('ota-baseline/softwareBuildVersion/export', {
         ...this.queryParams
       }, `software_build_version_${new Date().getTime()}.xlsx`)
+    },
+    /** 获取发布状态标签类型 */
+    getBuildStateTagType(buildState) {
+      const stateMap = {
+        'DRAFT': 'info',
+        'TESTING': 'warning',
+        'RELEASED': 'success',
+        'DEPRECATED': 'danger',
+        'RETIRED': ''
+      };
+      return stateMap[buildState] || 'info';
+    },
+    /** 获取发布状态文本 */
+    getBuildStateLabel(buildState) {
+      const stateMap = {
+        'DRAFT': '草稿',
+        'TESTING': '测试中',
+        'RELEASED': '已发布',
+        'DEPRECATED': '已停用',
+        'RETIRED': '已退役'
+      };
+      return stateMap[buildState] || buildState;
+    },
+    /** 更多命令处理 */
+    handleMoreCommand(command, row) {
+      const actions = {
+        package: () => this.handleSoftwareBuildVersionPackage(row),
+        dependency: () => this.handleSoftwareBuildVersionDependency(row),
+        testReport: () => this.handleTestReport(row),
+        adaptation: () => this.handleAdaptation(row),
+        release: () => this.handleStatusCommand('release', row),
+        deprecate: () => this.handleStatusCommand('deprecate', row),
+        retire: () => this.handleStatusCommand('retire', row)
+      };
+      const action = actions[command];
+      if (action) action();
+    },
+    /** 状态流转命令处理 */
+    handleStatusCommand(command, row) {
+      const softwareBuildVersionId = row.id;
+      const actions = {
+        release: { api: releaseSoftwareBuildVersion, msg: '发布' },
+        deprecate: { api: deprecateSoftwareBuildVersion, msg: '停用' },
+        retire: { api: retireSoftwareBuildVersion, msg: '退役' }
+      };
+      const action = actions[command];
+      if (!action) return;
+      this.$modal.confirm('是否确认' + action.msg + '软件内部版本ID为"' + softwareBuildVersionId + '"的数据项？').then(function () {
+        return action.api(softwareBuildVersionId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess(action.msg + "成功");
+      }).catch(() => {});
     },
   }
 };
