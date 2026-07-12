@@ -73,6 +73,11 @@
           <span>{{ scope.row.forceUpgrade ? '是' : '否' }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="关键版本" prop="critical" width="80" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.critical ? 'danger' : 'info'" size="small">{{ scope.row.critical ? '是' : '否' }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button

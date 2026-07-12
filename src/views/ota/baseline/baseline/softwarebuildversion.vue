@@ -265,7 +265,7 @@ import {
   updateBaselineSoftwareBuildVersionCritical,
   updateBaselineSoftwareBuildVersionOta
 } from "@/api/ota/baseline/baseline";
-import {listSoftwareBuildVersion} from "@/api/ota/pota/softwarebuildversion"
+import {listSoftwareBuildVersion} from "@/api/iov/ota/softwarebuildversion"
 import {listAllVehicleNode} from "@/api/mdm/vehicleNode";
 import Sortable from 'sortablejs'
 

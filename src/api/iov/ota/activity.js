@@ -174,3 +174,171 @@ export function resortSoftwareBuildVersion(activityId, data) {
     data: data
   })
 }
+
+// 修改关联的软件内部版本
+export function editActivitySoftwareBuildVersion(activityId, softwareBuildVersionIds, sorts, groups) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/editSoftwareBuildVersion/' + softwareBuildVersionIds,
+    method: 'post',
+    params: { sorts, groups }
+  })
+}
+
+// 查询活动多级审批记录
+export function listActivityApproval(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listApproval',
+    method: 'get'
+  })
+}
+
+// 多级审批
+export function approveActivity(activityId, approvalStage, result, comment) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/approve',
+    method: 'post',
+    params: { approvalStage, result, comment }
+  })
+}
+
+// 型式批准影响评估
+export function impactAssessment(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/impactAssessment',
+    method: 'post'
+  })
+}
+
+// ==================== 目标版本组合 ====================
+
+// 查询目标版本组合
+export function listTargetVersion(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listTargetVersion',
+    method: 'get'
+  })
+}
+
+// 保存目标版本组合
+export function saveTargetVersion(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveTargetVersion',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除目标版本
+export function deleteTargetVersion(activityId, id) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteTargetVersion/' + id,
+    method: 'delete'
+  })
+}
+
+// ==================== 安装顺序 ====================
+
+// 查询安装顺序
+export function listInstallOrder(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listInstallOrder',
+    method: 'get'
+  })
+}
+
+// 保存安装顺序
+export function saveInstallOrder(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveInstallOrder',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除安装顺序
+export function deleteInstallOrder(activityId, id) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteInstallOrder/' + id,
+    method: 'delete'
+  })
+}
+
+// ==================== 同升同降依赖组 ====================
+
+// 查询同升同降依赖组
+export function listDependencyGroup(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listDependencyGroup',
+    method: 'get'
+  })
+}
+
+// 保存同升同降依赖组
+export function saveDependencyGroup(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveDependencyGroup',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除同升同降依赖组
+export function deleteDependencyGroup(activityId, id) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteDependencyGroup/' + id,
+    method: 'delete'
+  })
+}
+
+// ==================== 型批版本组合快照 ====================
+
+// 查询型批版本组合快照
+export function listManifest(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listManifest',
+    method: 'get'
+  })
+}
+
+// 查询型批版本组合快照详情
+export function getManifest(activityId, manifestId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/manifest/' + manifestId,
+    method: 'get'
+  })
+}
+
+// ==================== 监管备案 ====================
+
+// 查询监管备案
+export function listRegulatoryFiling(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listRegulatoryFiling',
+    method: 'get'
+  })
+}
+
+// 查询监管备案详情
+export function getRegulatoryFiling(activityId, filingId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/regulatoryFiling/' + filingId,
+    method: 'get'
+  })
+}
+
+// 保存监管备案
+export function saveRegulatoryFiling(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveRegulatoryFiling',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除监管备案
+export function deleteRegulatoryFiling(activityId, filingId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteRegulatoryFiling/' + filingId,
+    method: 'delete'
+  })
+}

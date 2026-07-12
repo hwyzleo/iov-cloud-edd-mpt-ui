@@ -466,7 +466,7 @@ import {
 import {
   listActivity,
   getActivity
-} from "@/api/ota/fota/activity";
+} from "@/api/iov/ota/activity";
 
 export default {
   name: "Task",

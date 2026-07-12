@@ -95,7 +95,18 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" fixed="left"/>
       <el-table-column label="活动名称" prop="name" min-width="150" show-overflow-tooltip fixed="left"/>
+      <el-table-column label="活动编码" prop="activityCode" width="150" show-overflow-tooltip/>
       <el-table-column label="活动版本" prop="version" width="80" fixed="left"/>
+      <el-table-column label="升级目的" prop="upgradePurpose" width="100" align="center">
+        <template slot-scope="scope">
+          <span v-if="scope.row.upgradePurpose === 1">缺陷修复</span>
+          <span v-else-if="scope.row.upgradePurpose === 2">功能新增</span>
+          <span v-else-if="scope.row.upgradePurpose === 3">安全补丁</span>
+          <span v-else-if="scope.row.upgradePurpose === 4">合规整改</span>
+          <span v-else-if="scope.row.upgradePurpose === 9">其他</span>
+          <span v-else>未知</span>
+        </template>
+      </el-table-column>
       <el-table-column label="活动开始时间" align="center" prop="startTime" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d} {h}:{i}') }}</span>
@@ -106,29 +117,37 @@
           <span>{{ parseTime(scope.row.endTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="活动发布时间" align="center" prop="releaseTime" width="140">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.releaseTime, '{y}-{m}-{d} {h}:{i}') }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="活动状态" prop="state" width="80" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.state === 1">待提交</span>
-          <span v-else-if="scope.row.state === 2">待审核</span>
-          <span v-else-if="scope.row.state === 3">已审核</span>
-          <span v-else-if="scope.row.state === 4">未通过</span>
-          <span v-else-if="scope.row.state === 5">已发布</span>
-          <span v-else-if="scope.row.state === 6">已结束</span>
-          <span v-else-if="scope.row.state === 7">已取消</span>
+          <el-tag v-if="scope.row.state === 1" type="info" size="small">待提交</el-tag>
+          <el-tag v-else-if="scope.row.state === 2" type="warning" size="small">待审核</el-tag>
+          <el-tag v-else-if="scope.row.state === 3" type="success" size="small">已审核</el-tag>
+          <el-tag v-else-if="scope.row.state === 4" type="danger" size="small">未通过</el-tag>
+          <el-tag v-else-if="scope.row.state === 5" type="primary" size="small">已发布</el-tag>
+          <el-tag v-else-if="scope.row.state === 6" size="small">已结束</el-tag>
+          <el-tag v-else-if="scope.row.state === 7" type="info" size="small">已取消</el-tag>
+          <el-tag v-else size="small">未知</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="是否基线" align="center" prop="baseline" width="80">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.baseline ? 'success' : 'info'" size="small">{{ scope.row.baseline ? '是' : '否' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="型批相关" align="center" prop="isTypeApprovalRelevant" width="90">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isTypeApprovalRelevant ? 'warning' : 'info'" size="small">{{ scope.row.isTypeApprovalRelevant ? '是' : '否' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="型批评估" align="center" prop="typeApprovalAssessmentState" width="90">
+        <template slot-scope="scope">
+          <span v-if="scope.row.typeApprovalAssessmentState === 0 || scope.row.typeApprovalAssessmentState == null">未评估</span>
+          <el-tag v-else-if="scope.row.typeApprovalAssessmentState === 1" type="success" size="small">通过</el-tag>
+          <el-tag v-else-if="scope.row.typeApprovalAssessmentState === 2" type="danger" size="small">阻断</el-tag>
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否基线活动" align="center" prop="baseline" width="100">
-        <template slot-scope="scope">
-          <span>{{ scope.row.baseline ? '是' : '否'  }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="软件内部版本数" prop="softwareBuildVersionCount" width="120" align="center"/>
+      <el-table-column label="版本数" prop="softwareBuildVersionCount" width="70" align="center"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
@@ -178,7 +197,7 @@
             icon="el-icon-zoom-out"
             @click="handleCancel(scope.row)"
             v-if="scope.row.state === 5"
-            v-hasPermi="['ota:fota:activity:cancel']"
+            v-hasPermi="['ota:fota:task:cancel']"
           >取消
           </el-button>
           <el-button
@@ -190,13 +209,38 @@
             v-hasPermi="['ota:fota:activity:remove']"
           >删除
           </el-button>
-          <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['ota:fota:activity:edit']">
-            <el-button size="mini" type="text" icon="el-icon-d-arrow-right" v-if="scope.row.state < 2">更多</el-button>
+          <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)">
+            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="handleActivityCompatiblePn" icon="el-icon-edit"
+                                v-if="scope.row.state < 2"
                                 v-hasPermi="['ota:fota:activity:edit']">关联兼容零件号</el-dropdown-item>
               <el-dropdown-item command="handleActivityFixedConfigWord" icon="el-icon-edit"
+                                v-if="scope.row.state < 2"
                                 v-hasPermi="['ota:fota:activity:edit']">关联固定配置字</el-dropdown-item>
+              <el-dropdown-item command="handleActivityTargetVersion" icon="el-icon-aim"
+                                v-if="scope.row.state < 2"
+                                v-hasPermi="['ota:fota:activity:edit']">目标版本组合</el-dropdown-item>
+              <el-dropdown-item command="handleActivityInstallOrder" icon="el-icon-sort"
+                                v-if="scope.row.state < 2"
+                                v-hasPermi="['ota:fota:activity:edit']">安装顺序</el-dropdown-item>
+              <el-dropdown-item command="handleActivityDependencyGroup" icon="el-icon-connection"
+                                v-if="scope.row.state < 2"
+                                v-hasPermi="['ota:fota:activity:edit']">同升同降依赖组</el-dropdown-item>
+              <el-dropdown-item command="handleApprovalRecord" icon="el-icon-document"
+                                v-if="scope.row.state >= 2"
+                                v-hasPermi="['ota:fota:activity:list']">审批记录</el-dropdown-item>
+              <el-dropdown-item command="handleApprove" icon="el-icon-finished"
+                                v-if="scope.row.state === 2"
+                                v-hasPermi="['ota:fota:activity:audit']">多级审批</el-dropdown-item>
+              <el-dropdown-item command="handleImpactAssessment" icon="el-icon-warning-outline"
+                                v-if="scope.row.state === 3"
+                                v-hasPermi="['ota:fota:activity:audit']">型式批准影响评估</el-dropdown-item>
+              <el-dropdown-item command="handleActivityManifest" icon="el-icon-view"
+                                v-if="scope.row.state >= 2"
+                                v-hasPermi="['ota:fota:activity:list']">型批版本快照</el-dropdown-item>
+              <el-dropdown-item command="handleActivityRegulatoryFiling" icon="el-icon-tickets"
+                                v-hasPermi="['ota:fota:filing:list']">监管备案</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
         </template>
@@ -212,11 +256,20 @@
     />
 
     <!-- 添加或修改升级活动对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="900px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="130px">
-        <el-form-item label="活动名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入活动名称" :disabled="form.state === 2"/>
-        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="活动名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入活动名称" :disabled="form.state === 2"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="活动编码" prop="activityCode">
+              <el-input v-model="form.activityCode" placeholder="系统自动生成" disabled/>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row>
           <el-col :span="12">
             <el-form-item label="活动版本" prop="version">
@@ -224,8 +277,14 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="总文件大小(MB)" prop="totalFileSize">
-              <el-input-number v-model="form.totalFileSize" controls-position="right" :min="0" :disabled="form.state === 2"/>
+            <el-form-item label="升级目的" prop="upgradePurpose">
+              <el-select v-model="form.upgradePurpose" placeholder="请选择升级目的" :disabled="form.state === 2" style="width: 100%">
+                <el-option label="缺陷修复" :value="1"/>
+                <el-option label="功能新增" :value="2"/>
+                <el-option label="安全补丁" :value="3"/>
+                <el-option label="合规整改" :value="4"/>
+                <el-option label="其他" :value="9"/>
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -280,6 +339,23 @@
             </el-autocomplete>
           </div>
         </el-form-item>
+        <el-form-item label="发行说明" prop="releaseNoteArticleTitle">
+          <div>
+            <el-autocomplete
+              v-model="form.releaseNoteArticleTitle"
+              :fetch-suggestions="queryReleaseNote"
+              placeholder="请查询发行说明"
+              :trigger-on-focus="false"
+              clearable
+              @select="handleReleaseNoteSelect"
+              :disabled="form.state === 2"
+            >
+              <template #default="{ item }">
+                <div>{{ item.title }}</div>
+              </template>
+            </el-autocomplete>
+          </div>
+        </el-form-item>
         <el-row>
           <el-col :span="12">
             <el-form-item label="活动开始时间" prop="startTime">
@@ -306,9 +382,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="升级目的">
-          <el-input v-model="form.upgradePurpose" type="textarea" placeholder="请输入升级目的" :disabled="form.state === 2"></el-input>
-        </el-form-item>
         <el-form-item label="升级功能项">
           <el-input v-model="form.upgradeFunction" type="textarea" placeholder="请输入升级功能项" :disabled="form.state === 2"></el-input>
         </el-form-item>
@@ -316,21 +389,23 @@
           <el-input v-model="form.statement" type="textarea" placeholder="请输入活动说明" :disabled="form.state === 2"></el-input>
         </el-form-item>
         <el-row>
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="是否基线活动" prop="baseline">
               <el-radio-group v-model="form.baseline" :disabled="form.state === 2">
-                <el-radio
-                  :label="true"
-                >是
-                </el-radio>
-                <el-radio
-                  :label="false"
-                >否
-                </el-radio>
+                <el-radio :label="true">是</el-radio>
+                <el-radio :label="false">否</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="form.baseline">
+          <el-col :span="8">
+            <el-form-item label="型批相关" prop="isTypeApprovalRelevant">
+              <el-radio-group v-model="form.isTypeApprovalRelevant" :disabled="form.state === 2">
+                <el-radio :label="true">是</el-radio>
+                <el-radio :label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8" v-if="form.baseline">
             <el-form-item label="基线代码" prop="baselineCode">
               <el-autocomplete
                 v-model="form.baselineCode"
@@ -346,6 +421,24 @@
                   <div> {{item.name}} - {{item.value}} </div>
                 </template>
               </el-autocomplete>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-divider content-position="left">同意选项配置</el-divider>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item label="须知需同意" prop="noticeConsentRequired">
+              <el-switch v-model="form.noticeConsentRequired" :disabled="form.state === 2"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="条款需同意" prop="termsConsentRequired">
+              <el-switch v-model="form.termsConsentRequired" :disabled="form.state === 2"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="隐私需同意" prop="privacyConsentRequired">
+              <el-switch v-model="form.privacyConsentRequired" :disabled="form.state === 2"/>
             </el-form-item>
           </el-col>
         </el-row>
@@ -376,6 +469,63 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 审批记录对话框 -->
+    <el-dialog title="审批记录" :visible.sync="openApprovalRecord" width="800px" append-to-body>
+      <el-table v-loading="loadingApproval" :data="approvalList">
+        <el-table-column label="审批阶段" prop="approvalStage" width="120" align="center">
+          <template slot-scope="scope">
+            <span v-if="scope.row.approvalStage === 'QUALITY'">质量审批</span>
+            <span v-else-if="scope.row.approvalStage === 'PRODUCT'">产品审批</span>
+            <span v-else-if="scope.row.approvalStage === 'SECURITY'">安全审批</span>
+            <span v-else>{{ scope.row.approvalStage }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="审批结果" prop="result" width="100" align="center">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.result === 'PASS' ? 'success' : 'danger'" size="small">
+              {{ scope.row.result === 'PASS' ? '通过' : '拒绝' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="审批人" prop="approver" width="120" align="center"/>
+        <el-table-column label="审批意见" prop="comment" show-overflow-tooltip/>
+        <el-table-column label="审批时间" align="center" prop="createTime" width="160">
+          <template slot-scope="scope">
+            <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openApprovalRecord = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 多级审批对话框 -->
+    <el-dialog title="多级审批" :visible.sync="openApprove" width="500px" append-to-body>
+      <el-form ref="approveForm" :model="approveForm" :rules="approveRules" label-width="100px">
+        <el-form-item label="审批阶段" prop="approvalStage">
+          <el-select v-model="approveForm.approvalStage" placeholder="请选择审批阶段" style="width: 100%">
+            <el-option label="质量审批" value="QUALITY"/>
+            <el-option label="产品审批" value="PRODUCT"/>
+            <el-option label="安全审批" value="SECURITY"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="审批结果" prop="result">
+          <el-radio-group v-model="approveForm.result">
+            <el-radio label="PASS">通过</el-radio>
+            <el-radio label="REJECT">拒绝</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="审批意见" prop="comment">
+          <el-input v-model="approveForm.comment" type="textarea" placeholder="请输入审批意见"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitApproveForm">确 定</el-button>
+        <el-button @click="openApprove = false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -390,7 +540,10 @@ import {
   submitActivity,
   auditActivity,
   releaseActivity,
-  cancelActivity
+  cancelActivity,
+  listActivityApproval,
+  approveActivity,
+  impactAssessment
 } from "@/api/iov/ota/activity";
 import {listArticle,} from "@/api/iov/ota/article";
 import {listBaseline} from "@/api/iov/ota/baseline";
@@ -419,6 +572,25 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 审批记录对话框
+      openApprovalRecord: false,
+      loadingApproval: false,
+      approvalList: [],
+      // 多级审批对话框
+      openApprove: false,
+      approveForm: {
+        approvalStage: undefined,
+        result: 'PASS',
+        comment: undefined
+      },
+      approveRules: {
+        approvalStage: [
+          { required: true, message: "审批阶段不能为空", trigger: "change" }
+        ],
+        result: [
+          { required: true, message: "审批结果不能为空", trigger: "change" }
+        ]
+      },
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -617,6 +789,29 @@ export default {
     handlePrivacyAgreementSelect(item) {
       this.form.privacyAgreementArticleId = item.id;
     },
+    queryReleaseNote(queryString, cb) {
+      listArticle({
+        title: queryString,
+        type: 4
+      }).then(response => {
+        if (response.data && response.data.items && response.data.items.length > 0) {
+          const suggestions = response.data.items.map(item => {
+            return {
+              value: item.title,
+              ...item
+            };
+          });
+          cb(suggestions);
+        } else {
+          cb([]);
+        }
+      }).catch(() => {
+        cb([]);
+      });
+    },
+    handleReleaseNoteSelect(item) {
+      this.form.releaseNoteArticleId = item.id;
+    },
     handleActivitySoftwareBuildVersion(row) {
       this.$router.push({
         path: "/iov/ota/activitySoftwareBuildVersion",
@@ -700,6 +895,54 @@ export default {
       }).catch(() => {
       });
     },
+    /** 审批记录按钮操作 */
+    handleApprovalRecord(row) {
+      this.loadingApproval = true;
+      this.openApprovalRecord = true;
+      listActivityApproval(row.id).then(response => {
+        this.approvalList = response.data;
+        this.loadingApproval = false;
+      }).catch(() => {
+        this.loadingApproval = false;
+      });
+    },
+    /** 多级审批按钮操作 */
+    handleApprove(row) {
+      this.approveForm = {
+        activityId: row.id,
+        approvalStage: undefined,
+        result: 'PASS',
+        comment: undefined
+      };
+      this.openApprove = true;
+    },
+    /** 提交多级审批 */
+    submitApproveForm() {
+      this.$refs["approveForm"].validate(valid => {
+        if (valid) {
+          approveActivity(
+            this.approveForm.activityId,
+            this.approveForm.approvalStage,
+            this.approveForm.result,
+            this.approveForm.comment
+          ).then(response => {
+            this.$modal.msgSuccess("审批成功");
+            this.openApprove = false;
+            this.getList();
+          });
+        }
+      });
+    },
+    /** 型式批准影响评估按钮操作 */
+    handleImpactAssessment(row) {
+      this.$modal.confirm('是否确认对该升级活动进行型式批准影响评估？').then(() => {
+        impactAssessment(row.id).then(response => {
+          this.$modal.msgSuccess("评估完成: " + response.data.label);
+          this.getList();
+        });
+      }).catch(() => {
+      });
+    },
     queryBaseline(queryString, cb) {
       listBaseline({
         key: queryString  // 根据实际接口参数调整
@@ -732,9 +975,63 @@ export default {
         case "handleActivityFixedConfigWord":
           this.handleActivityFixedConfigWord(row);
           break;
+        case "handleActivityTargetVersion":
+          this.handleActivityTargetVersion(row);
+          break;
+        case "handleActivityInstallOrder":
+          this.handleActivityInstallOrder(row);
+          break;
+        case "handleActivityDependencyGroup":
+          this.handleActivityDependencyGroup(row);
+          break;
+        case "handleApprovalRecord":
+          this.handleApprovalRecord(row);
+          break;
+        case "handleApprove":
+          this.handleApprove(row);
+          break;
+        case "handleImpactAssessment":
+          this.handleImpactAssessment(row);
+          break;
+        case "handleActivityManifest":
+          this.handleActivityManifest(row);
+          break;
+        case "handleActivityRegulatoryFiling":
+          this.handleActivityRegulatoryFiling(row);
+          break;
         default:
           break;
       }
+    },
+    handleActivityTargetVersion(row) {
+      this.$router.push({
+        path: "/iov/ota/activityTargetVersion",
+        query: { id: row.id }
+      });
+    },
+    handleActivityInstallOrder(row) {
+      this.$router.push({
+        path: "/iov/ota/activityInstallOrder",
+        query: { id: row.id }
+      });
+    },
+    handleActivityDependencyGroup(row) {
+      this.$router.push({
+        path: "/iov/ota/activityDependencyGroup",
+        query: { id: row.id }
+      });
+    },
+    handleActivityManifest(row) {
+      this.$router.push({
+        path: "/iov/ota/activityManifest",
+        query: { id: row.id }
+      });
+    },
+    handleActivityRegulatoryFiling(row) {
+      this.$router.push({
+        path: "/iov/ota/activityRegulatoryFiling",
+        query: { id: row.id }
+      });
     },
   }
 };
