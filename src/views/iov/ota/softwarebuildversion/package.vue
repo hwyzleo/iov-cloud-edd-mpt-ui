@@ -122,8 +122,8 @@
             </template>
           </el-table-column>
           <el-table-column label="软件包来源" prop="packageSource" width="100" align="center" />
-          <el-table-column label="基础软件零件号" prop="baseSoftwarePn" width="150"/>
-          <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="150" align="center">
+          <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
+          <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
             <template slot-scope="scope">
               <span v-if="scope.row.packageAdaptiveLevel === 1">基础版本及以下</span>
               <span v-else-if="scope.row.packageAdaptiveLevel === 2">基础版本及以上</span>
@@ -131,12 +131,12 @@
               <span v-else>未知</span>
             </template>
           </el-table-column>
-          <el-table-column label="是否OTA包" prop="ota" width="120" align="center">
+          <el-table-column label="是否OTA包" prop="ota" width="100" align="center">
             <template slot-scope="scope">
               <span>{{ scope.row.ota ? '是' : '否' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+          <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
             <template slot-scope="scope">
               <el-button
                 size="mini"

@@ -94,7 +94,7 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="设备" prop="deviceCode" width="100" fixed="left"/>
+      <el-table-column label="设备" prop="deviceCode" width="150" fixed="left"/>
       <el-table-column label="软件零件号" prop="softwarePn" width="120" fixed="left"/>
       <el-table-column label="软件零件名称" prop="softwarePartName" min-width="120" fixed="left"/>
       <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100" fixed="left"/>
