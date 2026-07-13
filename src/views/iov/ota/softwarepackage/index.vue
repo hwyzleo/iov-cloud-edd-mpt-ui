@@ -87,6 +87,11 @@
           <span v-if="scope.row.packageType==='DELTA'">差分</span>
         </template>
       </el-table-column>
+      <el-table-column label="软件包状态" prop="packageState" width="90" align="center" fixed="left">
+        <template slot-scope="scope">
+          <el-tag :type="getPackageStateTagType(scope.row.packageState)">{{ getPackageStateLabel(scope.row.packageState) }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
       <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
         <template slot-scope="scope">
@@ -589,6 +594,26 @@ export default {
       this.download('ota-baseline/softwarePackage/export', {
         ...this.queryParams
       }, `software_package_${new Date().getTime()}.xlsx`)
+    },
+    /** 获取软件包状态标签类型 */
+    getPackageStateTagType(packageState) {
+      const stateMap = {
+        1: 'success',
+        2: 'warning',
+        3: 'danger',
+        4: 'info'
+      }
+      return stateMap[packageState] || 'info'
+    },
+    /** 获取软件包状态文本 */
+    getPackageStateLabel(packageState) {
+      const stateMap = {
+        1: '可用',
+        2: '停用',
+        3: '吊销',
+        4: '退役'
+      }
+      return stateMap[packageState] || '未知'
     },
     /** 状态流转命令处理 */
     handleStatusCommand(command, row) {

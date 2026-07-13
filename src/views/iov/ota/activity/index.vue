@@ -95,8 +95,7 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" fixed="left"/>
       <el-table-column label="活动名称" prop="name" min-width="150" show-overflow-tooltip fixed="left"/>
-      <el-table-column label="活动编码" prop="activityCode" width="150" show-overflow-tooltip/>
-      <el-table-column label="活动版本" prop="version" width="80" fixed="left"/>
+      <el-table-column label="活动编码" prop="activityCode" width="200" fixed="left"/>
       <el-table-column label="升级目的" prop="upgradePurpose" width="100" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.upgradePurpose === 1">缺陷修复</span>
@@ -134,7 +133,7 @@
           <el-tag :type="scope.row.baseline ? 'success' : 'info'" size="small">{{ scope.row.baseline ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="型批相关" align="center" prop="isTypeApprovalRelevant" width="90">
+      <el-table-column label="型批相关" align="center" prop="isTypeApprovalRelevant" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.isTypeApprovalRelevant ? 'warning' : 'info'" size="small">{{ scope.row.isTypeApprovalRelevant ? '是' : '否' }}</el-tag>
         </template>
@@ -272,11 +271,6 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="活动版本" prop="version">
-              <el-input v-model="form.version" placeholder="请输入活动版本" :disabled="form.state === 2"/>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="升级目的" prop="upgradePurpose">
               <el-select v-model="form.upgradePurpose" placeholder="请选择升级目的" :disabled="form.state === 2" style="width: 100%">
                 <el-option label="缺陷修复" :value="1"/>
@@ -285,6 +279,12 @@
                 <el-option label="合规整改" :value="4"/>
                 <el-option label="其他" :value="9"/>
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="预估总文件大小" prop="totalFileSize">
+              <el-input-number v-model="form.totalFileSize" :min="0" controls-position="right" placeholder="请输入预估总文件大小" :disabled="form.state === 2" style="width: 80%"/>
+              <span style="margin-left: 8px">M</span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -602,14 +602,26 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        version: [
-          {required: true, message: "活动版本不能为空", trigger: "blur"}
-        ],
         name: [
           {required: true, message: "活动名称不能为空", trigger: "blur"}
         ],
         totalFileSize: [
-          {required: true, message: "总文件大小不能为空", trigger: "blur"}
+          {required: true, message: "预估总文件大小不能为空", trigger: "blur"}
+        ],
+        startTime: [
+          {required: true, message: "活动开始时间不能为空", trigger: "blur"}
+        ],
+        endTime: [
+          {required: true, message: "活动结束时间不能为空", trigger: "blur"}
+        ],
+        baselineCode: [
+          {validator: (rule, value, callback) => {
+            if (this.form.baseline && !value) {
+              callback(new Error("基线代码不能为空"));
+            } else {
+              callback();
+            }
+          }, trigger: "blur"}
         ]
       },
     };
@@ -703,7 +715,7 @@ export default {
     reset() {
       this.form = {
         name: undefined,
-        version: undefined,
+        totalFileSize: undefined,
       };
       this.resetForm("form");
     },

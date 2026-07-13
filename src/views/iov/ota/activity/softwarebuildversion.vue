@@ -53,21 +53,14 @@
           <i class="el-icon-rank" style="cursor: move; margin-right: 5px;"></i>
         </template>
       </el-table-column>
+      <el-table-column label="设备" prop="deviceCode" width="100" align="center"/>
       <el-table-column label="软件零件号" prop="softwarePn" width="130" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.softwarePn + scope.row.softwarePartVer }}</span>
+          <span>{{ scope.row.softwarePn }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="设备" prop="deviceCode" width="80" align="center"/>
       <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100"/>
       <el-table-column label="软件零件名称" prop="softwarePartName"/>
-      <el-table-column label="软件来源" prop="softwareSource" width="120" align="center">
-        <template slot-scope="scope">
-          <span v-if="scope.row.softwareSource === 1">BOM</span>
-          <span v-else-if="scope.row.softwareSource === 2">OTA</span>
-          <span v-else>未知</span>
-        </template>
-      </el-table-column>
       <el-table-column label="强制升级" prop="forceUpgrade" width="80" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.forceUpgrade ? '是' : '否' }}</span>
@@ -78,7 +71,7 @@
           <el-tag :type="scope.row.critical ? 'danger' : 'info'" size="small">{{ scope.row.critical ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
