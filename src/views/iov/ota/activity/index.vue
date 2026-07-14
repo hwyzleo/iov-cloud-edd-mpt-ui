@@ -146,7 +146,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="版本数" prop="softwareBuildVersionCount" width="70" align="center"/>
+      <el-table-column label="升级对象数" prop="upgradeTargetCount" width="90" align="center"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>

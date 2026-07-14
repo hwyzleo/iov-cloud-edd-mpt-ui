@@ -211,24 +211,18 @@
             placeholder="请选择受管软件系统"
             clearable
             filterable
-            style="width: 220px"
+            style="width: 300px"
           >
             <el-option
               v-for="item in vehicleNodeOptions"
-              :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
-              :value="item.code"
+              :key="item.nodeCode"
+              :label="item.name + ' (' + item.nodeCode + ')'"
+              :value="item.nodeCode"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="型式批准相关">
           <el-switch v-model="bindForm.isTypeApprovalRelevant" />
-        </el-form-item>
-        <el-form-item label="批准软件基线">
-          <el-input v-model="bindForm.approvedSoftwareBaseline" placeholder="请输入批准软件基线" style="width: 180px" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="bindForm.remark" placeholder="请输入备注" style="width: 180px" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-plus" @click="handleBind">绑定</el-button>
@@ -244,8 +238,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="批准软件基线" prop="approvedSoftwareBaseline" width="180"/>
-        <el-table-column label="备注" prop="remark"/>
+        <el-table-column label="批准软件基线" prop="approvedSoftwareBaseline" min-width="180"/>
         <el-table-column label="操作" align="center" width="100">
           <template slot-scope="scope">
             <el-button
@@ -356,9 +349,7 @@ export default {
       currentSwinCode: '',
       bindForm: {
         vehicleNodeCode: undefined,
-        isTypeApprovalRelevant: true,
-        approvedSoftwareBaseline: undefined,
-        remark: undefined
+        isTypeApprovalRelevant: false
       },
       rules: {
         swinCode: [
@@ -544,9 +535,7 @@ export default {
       this.currentSwinCode = row.swinCode
       this.bindForm = {
         vehicleNodeCode: undefined,
-        isTypeApprovalRelevant: true,
-        approvedSoftwareBaseline: undefined,
-        remark: undefined
+        isTypeApprovalRelevant: false
       }
       this.managedSystemOpen = true
       this.loadManagedSystems()
@@ -567,21 +556,18 @@ export default {
       }
       const data = {
         vehicleNodeCode: this.bindForm.vehicleNodeCode,
-        isTypeApprovalRelevant: this.bindForm.isTypeApprovalRelevant,
-        approvedSoftwareBaseline: this.bindForm.approvedSoftwareBaseline,
-        remark: this.bindForm.remark
+        isTypeApprovalRelevant: this.bindForm.isTypeApprovalRelevant
       }
       bindManagedSystem(this.currentSwinCode, data).then(() => {
         this.$modal.msgSuccess('绑定成功')
         this.bindForm.vehicleNodeCode = undefined
-        this.bindForm.approvedSoftwareBaseline = undefined
-        this.bindForm.remark = undefined
+        this.bindForm.isTypeApprovalRelevant = false
         this.loadManagedSystems()
       })
     },
     handleUnbind(row) {
       this.$modal.confirm('是否确认解绑受管系统"' + row.vehicleNodeCode + '"？').then(() => {
-        return unbindManagedSystem(this.currentSwinCode, { vehicleNodeCode: row.vehicleNodeCode })
+        return unbindManagedSystem(this.currentSwinCode, row.vehicleNodeCode)
       }).then(() => {
         this.$modal.msgSuccess('解绑成功')
         this.loadManagedSystems()

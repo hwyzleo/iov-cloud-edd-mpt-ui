@@ -63,18 +63,17 @@ export function deactivateSwinDefinition(swinCode) {
 // 绑定受管系统
 export function bindManagedSystem(swinCode, data) {
   return request({
-    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems/bind',
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems',
     method: 'post',
     data: data
   })
 }
 
 // 解绑受管系统
-export function unbindManagedSystem(swinCode, data) {
+export function unbindManagedSystem(swinCode, vehicleNodeCode) {
   return request({
-    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems/unbind',
-    method: 'post',
-    data: data
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/managedSystems/' + vehicleNodeCode,
+    method: 'delete'
   })
 }
 
