@@ -94,13 +94,6 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="关键版本" prop="critical" width="80" align="center">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.critical ? 'danger' : 'info'" size="small">
-            {{ scope.row.critical ? '是' : '否' }}
-          </el-tag>
-        </template>
-      </el-table-column>
       <el-table-column label="强制升级" prop="forceUpgrade" width="80" align="center">
         <template slot-scope="scope">
           <el-switch
@@ -356,24 +349,24 @@ export default {
     initSortable() {
       const el = this.$refs.upgradeTargetTable.$el.querySelector('.el-table__body-wrapper tbody');
       if (!el) return;
-      
+
       Sortable.create(el, {
         animation: 150,
         handle: '.el-table__row',
         onEnd: (evt) => {
           const { oldIndex, newIndex } = evt;
           if (oldIndex === newIndex) return;
-          
+
           // 更新数组顺序
           const movedItem = this.list.splice(oldIndex, 1)[0];
           this.list.splice(newIndex, 0, movedItem);
-          
+
           // 构建排序数据
           const data = this.list.map((item, index) => ({
             id: item.id,
             installSeq: index + 1
           }));
-          
+
           // 调用重排序接口
           resortUpgradeTarget(this.activityId, data).then(response => {
             this.$modal.msgSuccess("排序成功");

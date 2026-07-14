@@ -168,32 +168,6 @@ export function deleteGroupPolicy(activityId, id) {
   })
 }
 
-// ==================== 兼容零件号管理 ====================
-
-// 列出升级活动下兼容零件号
-export function listActivityCompatiblePn(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listCompatiblePn',
-    method: 'get'
-  })
-}
-
-// 新增关联的兼容零件号
-export function addActivityCompatiblePn(activityId, compatiblePnIds) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addCompatiblePn/' + compatiblePnIds,
-    method: 'post'
-  })
-}
-
-// 删除关联的兼容零件号
-export function delActivityCompatiblePn(activityId, compatiblePnIds) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/removeCompatiblePn/' + compatiblePnIds,
-    method: 'post'
-  })
-}
-
 // ==================== 固定配置字管理 ====================
 
 // 列出升级活动下固定配置字

@@ -211,9 +211,6 @@
           <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)">
             <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="handleActivityCompatiblePn" icon="el-icon-edit"
-                                v-if="scope.row.state < 2"
-                                v-hasPermi="['ota:fota:activity:edit']">关联兼容零件号</el-dropdown-item>
           <el-dropdown-item command="handleActivityFixedConfigWord" icon="el-icon-edit"
                             v-if="scope.row.state < 2"
                             v-hasPermi="['ota:fota:activity:edit']">关联固定配置字</el-dropdown-item>
@@ -280,72 +277,68 @@
           </el-col>
         </el-row>
         <el-form-item label="升级须知" prop="upgradeNoticeArticleTitle">
-          <div>
-            <el-autocomplete
-              v-model="form.upgradeNoticeArticleTitle"
-              :fetch-suggestions="queryUpgradeNotice"
-              placeholder="请查询升级须知"
-              :trigger-on-focus="false"
-              clearable
-              @select="handleUpgradeNoticeSelect"
-              :disabled="form.state === 2"
-            >
-              <template #default="{ item }">
-                <div>{{ item.title }}</div>
-              </template>
-            </el-autocomplete>
-          </div>
+          <el-autocomplete
+            v-model="form.upgradeNoticeArticleTitle"
+            :fetch-suggestions="queryUpgradeNotice"
+            placeholder="请查询升级须知"
+            :trigger-on-focus="false"
+            clearable
+            @select="handleUpgradeNoticeSelect"
+            :disabled="form.state === 2"
+            style="width: 100%"
+          >
+            <template #default="{ item }">
+              <div>{{ item.title }}</div>
+            </template>
+          </el-autocomplete>
         </el-form-item>
         <el-form-item label="活动条款" prop="activityTermArticleTitle">
-          <div>
-            <el-autocomplete
-              v-model="form.activityTermArticleTitle"
-              :fetch-suggestions="queryActivityTerm"
-              placeholder="请查询活动条款"
-              :trigger-on-focus="false"
-              clearable
-              @select="handleActivityTermSelect"
-              :disabled="form.state === 2"
-            >
-              <template #default="{ item }">
-                <div>{{ item.title }}</div>
-              </template>
-            </el-autocomplete>
-          </div>
+          <el-autocomplete
+            v-model="form.activityTermArticleTitle"
+            :fetch-suggestions="queryActivityTerm"
+            placeholder="请查询活动条款"
+            :trigger-on-focus="false"
+            clearable
+            @select="handleActivityTermSelect"
+            :disabled="form.state === 2"
+            style="width: 100%"
+          >
+            <template #default="{ item }">
+              <div>{{ item.title }}</div>
+            </template>
+          </el-autocomplete>
         </el-form-item>
         <el-form-item label="隐私协议" prop="privacyAgreementArticleTitle">
-          <div>
-            <el-autocomplete
-              v-model="form.privacyAgreementArticleTitle"
-              :fetch-suggestions="queryPrivacyAgreement"
-              placeholder="请查询隐私协议"
-              :trigger-on-focus="false"
-              clearable
-              @select="handlePrivacyAgreementSelect"
-              :disabled="form.state === 2"
-            >
-              <template #default="{ item }">
-                <div>{{ item.title }}</div>
-              </template>
-            </el-autocomplete>
-          </div>
+          <el-autocomplete
+            v-model="form.privacyAgreementArticleTitle"
+            :fetch-suggestions="queryPrivacyAgreement"
+            placeholder="请查询隐私协议"
+            :trigger-on-focus="false"
+            clearable
+            @select="handlePrivacyAgreementSelect"
+            :disabled="form.state === 2"
+            style="width: 100%"
+          >
+            <template #default="{ item }">
+              <div>{{ item.title }}</div>
+            </template>
+          </el-autocomplete>
         </el-form-item>
         <el-form-item label="发行说明" prop="releaseNoteArticleTitle">
-          <div>
-            <el-autocomplete
-              v-model="form.releaseNoteArticleTitle"
-              :fetch-suggestions="queryReleaseNote"
-              placeholder="请查询发行说明"
-              :trigger-on-focus="false"
-              clearable
-              @select="handleReleaseNoteSelect"
-              :disabled="form.state === 2"
-            >
-              <template #default="{ item }">
-                <div>{{ item.title }}</div>
-              </template>
-            </el-autocomplete>
-          </div>
+          <el-autocomplete
+            v-model="form.releaseNoteArticleTitle"
+            :fetch-suggestions="queryReleaseNote"
+            placeholder="请查询发行说明"
+            :trigger-on-focus="false"
+            clearable
+            @select="handleReleaseNoteSelect"
+            :disabled="form.state === 2"
+            style="width: 100%"
+          >
+            <template #default="{ item }">
+              <div>{{ item.title }}</div>
+            </template>
+          </el-autocomplete>
         </el-form-item>
         <el-row>
           <el-col :span="12">
@@ -823,12 +816,7 @@ export default {
         query: { id: row.id }
       });
     },
-    handleActivityCompatiblePn(row) {
-      this.$router.push({
-        path: "/iov/ota/activityCompatiblePn",
-        query: { id: row.id }
-      });
-    },
+
     handleActivityFixedConfigWord(row) {
       this.$router.push({
         path: "/iov/ota/activityFixedConfigWord",
@@ -973,9 +961,6 @@ export default {
     },
     handleCommand(command, row) {
       switch (command) {
-        case "handleActivityCompatiblePn":
-          this.handleActivityCompatiblePn(row);
-          break;
         case "handleActivityFixedConfigWord":
           this.handleActivityFixedConfigWord(row);
           break;
