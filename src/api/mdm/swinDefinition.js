@@ -94,3 +94,20 @@ export function exportSwinDefinition(query) {
     responseType: 'blob'
   })
 }
+
+// 单条补发SWIN定义事件
+export function republishSwinDefinition(swinCode) {
+  return request({
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/' + swinCode + '/action/republish',
+    method: 'post'
+  })
+}
+
+// 批量补发SWIN定义事件
+export function republishBatchSwinDefinition(data) {
+  return request({
+    url: '/edd-mdm/api/mpt/swinDefinition/v1/action/republish:batch',
+    method: 'post',
+    data: data
+  })
+}

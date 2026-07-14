@@ -42,3 +42,20 @@ export function delTypeApprovalBaseline(code, forceDelete) {
     params: { forceDelete: forceDelete || false }
   })
 }
+
+// 单条补发型式批准基线事件
+export function republishTypeApprovalBaseline(code) {
+  return request({
+    url: '/edd-mdm/api/mpt/typeApprovalBaseline/v1/' + code + '/action/republish',
+    method: 'post'
+  })
+}
+
+// 批量补发型式批准基线事件
+export function republishBatchTypeApprovalBaseline(data) {
+  return request({
+    url: '/edd-mdm/api/mpt/typeApprovalBaseline/v1/action/republish:batch',
+    method: 'post',
+    data: data
+  })
+}

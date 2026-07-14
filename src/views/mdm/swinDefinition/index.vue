@@ -78,13 +78,23 @@
           v-hasPermi="['mdm:eead:swin:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="el-icon-refresh-right"
+          size="mini"
+          @click="handleBatchRepublish"
+          v-hasPermi="['mdm:eead:swin:republish']"
+        >批量补发</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="swinDefinitionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="SWIN编号" prop="swinCode" width="150"/>
-      <el-table-column label="名称" prop="name"/>
+      <el-table-column label="SWIN编号" prop="swinCode" width="150" fixed="left"/>
+      <el-table-column label="名称" prop="name" min-width="250" fixed="left"/>
       <el-table-column label="编码方案" prop="schemeCode" width="250"/>
       <el-table-column label="型式锚点类型" prop="typeRefType" width="120">
         <template slot-scope="scope">
@@ -99,7 +109,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="350" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -108,6 +118,14 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['mdm:eead:swin:edit']"
           >修改</el-button>
+          <el-button
+            v-if="scope.row.status === 'ACTIVE'"
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-right"
+            @click="handleRepublish(scope.row)"
+            v-hasPermi="['mdm:eead:swin:republish']"
+          >补发</el-button>
           <el-button
             v-if="scope.row.status === 'ACTIVE'"
             size="mini"
@@ -288,7 +306,9 @@ import {
   deactivateSwinDefinition,
   bindManagedSystem,
   unbindManagedSystem,
-  swinDefinitionHistory
+  swinDefinitionHistory,
+  republishSwinDefinition,
+  republishBatchSwinDefinition
 } from '@/api/mdm/swinDefinition'
 import { listAllSwinScheme } from '@/api/mdm/swinScheme'
 import { listVariant } from '@/api/mdm/variant'
@@ -577,6 +597,34 @@ export default {
       this.download('edd-mdm/api/mpt/swinDefinition/v1/export', {
         ...this.queryParams
       }, `swinDefinition_${new Date().getTime()}.xlsx`)
+    },
+    handleRepublish(row) {
+      this.$modal.confirm('是否确认补发SWIN定义"' + row.swinCode + '"？补发将重新发送SWIN定义消息到下游系统。').then(() => {
+        return republishSwinDefinition(row.swinCode)
+      }).then((response) => {
+        if (response.data.republished) {
+          this.$modal.msgSuccess('补发成功')
+        } else {
+          this.$modal.msgWarning('该SWIN定义未处于启用状态，无法补发')
+        }
+        this.getList()
+      }).catch(() => {})
+    },
+    handleBatchRepublish() {
+      if (this.swinCodes.length === 0) {
+        this.$modal.msgWarning('请先选择要补发的SWIN定义')
+        return
+      }
+      this.$modal.confirm('是否确认批量补发选中的 ' + this.swinCodes.length + ' 条SWIN定义？').then(() => {
+        return republishBatchSwinDefinition({
+          swinCodes: this.swinCodes,
+          all: false
+        })
+      }).then((response) => {
+        const result = response.data
+        this.$modal.msgSuccess('批量补发完成，命中: ' + result.hitCount + '，成功: ' + result.publishedCount + '，失败: ' + result.failedCount)
+        this.getList()
+      }).catch(() => {})
     }
   }
 }

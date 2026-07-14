@@ -33,6 +33,9 @@
       <el-col :span="1.5">
         <el-button v-hasPermi="['mdm:ee:typeApprovalBaseline:remove']" type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleBatchDelete">批量删除</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button v-hasPermi="['mdm:ee:typeApprovalBaseline:republish']" type="success" plain icon="el-icon-refresh-right" size="mini" @click="handleBatchRepublish">批量补发</el-button>
+      </el-col>
       <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -56,10 +59,11 @@
       <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span></template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="260" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button v-hasPermi="['mdm:ee:typeApprovalBaseline:query']" size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)">详情</el-button>
           <el-button v-if="scope.row.status === 'DRAFT'" v-hasPermi="['mdm:ee:typeApprovalBaseline:release']" size="mini" type="text" icon="el-icon-open" @click="handleRelease(scope.row)">发布</el-button>
+          <el-button v-if="scope.row.status === 'RELEASED'" v-hasPermi="['mdm:ee:typeApprovalBaseline:republish']" size="mini" type="text" icon="el-icon-refresh-right" @click="handleRepublish(scope.row)">补发</el-button>
           <el-button v-if="scope.row.status === 'RELEASED'" v-hasPermi="['mdm:ee:typeApprovalBaseline:freeze']" size="mini" type="text" icon="el-icon-lock" @click="handleFreeze(scope.row)">冻结</el-button>
           <el-button v-if="scope.row.status === 'DRAFT'" v-hasPermi="['mdm:ee:typeApprovalBaseline:remove']" size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
           <el-button v-if="scope.row.status !== 'DRAFT'" v-hasPermi="['mdm:ee:typeApprovalBaseline:remove']" size="mini" type="text" icon="el-icon-delete-solid" @click="handleForceDelete(scope.row)">强制删除</el-button>
@@ -128,7 +132,9 @@ import {
   projectTypeApprovalBaseline,
   releaseTypeApprovalBaseline,
   freezeTypeApprovalBaseline,
-  delTypeApprovalBaseline
+  delTypeApprovalBaseline,
+  republishTypeApprovalBaseline,
+  republishBatchTypeApprovalBaseline
 } from '@/api/mdm/typeApprovalBaseline'
 import { listSwinDefinition } from '@/api/mdm/swinDefinition'
 
@@ -321,6 +327,34 @@ export default {
       this.detailLoading = true
       this.detail = row
       this.detailLoading = false
+    },
+    handleRepublish(row) {
+      this.$modal.confirm('是否确认补发型式批准基线"' + row.taBaselineCode + '"？补发将重新发送基线消息到下游系统。').then(() => {
+        return republishTypeApprovalBaseline(row.taBaselineCode)
+      }).then((response) => {
+        if (response.data.republished) {
+          this.$modal.msgSuccess('补发成功')
+        } else {
+          this.$modal.msgWarning('该基线未处于已发布状态，无法补发')
+        }
+        this.getList()
+      }).catch(() => {})
+    },
+    handleBatchRepublish() {
+      if (this.codes.length === 0) {
+        this.$modal.msgWarning('请先选择要补发的基线')
+        return
+      }
+      this.$modal.confirm('是否确认批量补发选中的 ' + this.codes.length + ' 条型式批准基线？').then(() => {
+        return republishBatchTypeApprovalBaseline({
+          codes: this.codes,
+          all: false
+        })
+      }).then((response) => {
+        const result = response.data
+        this.$modal.msgSuccess('批量补发完成，命中: ' + result.hitCount + '，成功: ' + result.publishedCount + '，失败: ' + result.failedCount)
+        this.getList()
+      }).catch(() => {})
     }
   }
 }
