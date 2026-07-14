@@ -38,8 +38,8 @@
 
     <el-table v-loading="loading" :data="baselineList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="基线编码" prop="taBaselineCode" width="200" show-overflow-tooltip />
-      <el-table-column label="SWIN编码" prop="swinCode" width="150" show-overflow-tooltip />
+      <el-table-column label="基线编码" prop="taBaselineCode" width="200" fixed="left" />
+      <el-table-column label="SWIN编码" prop="swinCode" width="150" fixed="left" />
       <el-table-column label="锚定层级" prop="anchorType" width="100" align="center">
         <template slot-scope="scope">{{ getAnchorTypeLabel(scope.row.anchorType) }}</template>
       </el-table-column>
@@ -49,16 +49,14 @@
           <el-tag :type="getStatusTagType(scope.row.status)">{{ getStatusLabel(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="投影摘要" prop="projectionDigest" min-width="120" show-overflow-tooltip />
       <el-table-column label="生效时间" align="center" width="140">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.effectiveFrom, "{y}-{m}-{d} {h}:{i}") }}</span></template>
       </el-table-column>
       <el-table-column label="版本" prop="version" width="60" align="center" />
-      <el-table-column label="创建人" prop="createBy" width="100" />
       <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span></template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button v-hasPermi="['mdm:ee:typeApprovalBaseline:query']" size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)">详情</el-button>
           <el-button v-if="scope.row.status === 'DRAFT'" v-hasPermi="['mdm:ee:typeApprovalBaseline:release']" size="mini" type="text" icon="el-icon-open" @click="handleRelease(scope.row)">发布</el-button>
