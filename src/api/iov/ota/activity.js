@@ -1,5 +1,7 @@
 import request from '@/utils/request'
 
+// ==================== 升级活动基础 ====================
+
 // 查询升级活动列表
 export function listActivity(query) {
   return request({
@@ -13,30 +15,6 @@ export function listActivity(query) {
 export function listAllActivityState() {
   return request({
     url: '/iov-ota/api/mpt/activity/v1/listAllActivityState',
-    method: 'get'
-  })
-}
-
-// 列出升级活动下软件内部版本
-export function listActivitySoftwareBuildVersion(activityId, group) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listSoftwareBuildVersion?group=' + group,
-    method: 'get'
-  })
-}
-
-// 列出升级活动下兼容零件号
-export function listActivityCompatiblePn(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listCompatiblePn',
-    method: 'get'
-  })
-}
-
-// 列出升级活动下固定配置字
-export function listActivityFixedConfigWord(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listFixedConfigWord',
     method: 'get'
   })
 }
@@ -55,30 +33,6 @@ export function addActivity(data) {
     url: '/iov-ota/api/mpt/activity/v1',
     method: 'post',
     data: data
-  })
-}
-
-// 新增关联的软件内部版本
-export function addActivitySoftwareBuildVersion(activityId, softwareBuildVersionIds) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addSoftwareBuildVersion/' + softwareBuildVersionIds,
-    method: 'post'
-  })
-}
-
-// 新增关联的兼容零件号
-export function addActivityCompatiblePn(activityId, compatiblePnIds) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addCompatiblePn/' + compatiblePnIds,
-    method: 'post'
-  })
-}
-
-// 新增关联的固定配置字
-export function addActivityFixedConfigWord(activityId, fixedConfigWordIds) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addFixedConfigWord/' + fixedConfigWordIds,
-    method: 'post'
   })
 }
 
@@ -133,10 +87,101 @@ export function delActivity(activityIds) {
   })
 }
 
-// 删除关联的软件内部版本
-export function delActivitySoftwareBuildVersion(activityId, softwareBuildVersionIds) {
+// ==================== 升级对象管理 ====================
+
+// 查询升级对象列表
+export function listUpgradeTarget(activityId, group) {
   return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/removeSoftwareBuildVersion/' + softwareBuildVersionIds,
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listUpgradeTarget',
+    method: 'get',
+    params: { group }
+  })
+}
+
+// 新增升级对象（非基线活动，关联软件版本）
+export function addUpgradeTarget(activityId, softwareBuildVersionIds) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addUpgradeTarget/' + softwareBuildVersionIds,
+    method: 'post'
+  })
+}
+
+// 删除升级对象
+export function removeUpgradeTarget(activityId, softwareBuildVersionIds) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/removeUpgradeTarget/' + softwareBuildVersionIds,
+    method: 'post'
+  })
+}
+
+// 调整升级对象分组
+export function regroupUpgradeTarget(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/regroupUpgradeTarget',
+    method: 'post',
+    data: data
+  })
+}
+
+// 重排序升级对象
+export function resortUpgradeTarget(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/resortUpgradeTarget',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改升级对象（目标软件版本、强制升级等）
+export function editUpgradeTarget(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/editUpgradeTarget',
+    method: 'post',
+    data: data
+  })
+}
+
+// ==================== 组策略管理 ====================
+
+// 查询组策略列表
+export function listGroupPolicy(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listGroupPolicy',
+    method: 'get'
+  })
+}
+
+// 保存组策略
+export function saveGroupPolicy(activityId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveGroupPolicy',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除组策略
+export function deleteGroupPolicy(activityId, id) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteGroupPolicy/' + id,
+    method: 'delete'
+  })
+}
+
+// ==================== 兼容零件号管理 ====================
+
+// 列出升级活动下兼容零件号
+export function listActivityCompatiblePn(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listCompatiblePn',
+    method: 'get'
+  })
+}
+
+// 新增关联的兼容零件号
+export function addActivityCompatiblePn(activityId, compatiblePnIds) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addCompatiblePn/' + compatiblePnIds,
     method: 'post'
   })
 }
@@ -149,6 +194,24 @@ export function delActivityCompatiblePn(activityId, compatiblePnIds) {
   })
 }
 
+// ==================== 固定配置字管理 ====================
+
+// 列出升级活动下固定配置字
+export function listActivityFixedConfigWord(activityId) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listFixedConfigWord',
+    method: 'get'
+  })
+}
+
+// 新增关联的固定配置字
+export function addActivityFixedConfigWord(activityId, fixedConfigWordIds) {
+  return request({
+    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/addFixedConfigWord/' + fixedConfigWordIds,
+    method: 'post'
+  })
+}
+
 // 删除关联的固定配置字
 export function delActivityFixedConfigWord(activityId, fixedConfigWordIds) {
   return request({
@@ -157,32 +220,7 @@ export function delActivityFixedConfigWord(activityId, fixedConfigWordIds) {
   })
 }
 
-// 更新关联的软件内部版本组
-export function regroupSoftwareBuildVersion(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/regroupSoftwareBuildVersion',
-    method: 'post',
-    data: data
-  })
-}
-
-// 重排序关联的软件内部版本
-export function resortSoftwareBuildVersion(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/resortSoftwareBuildVersion',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改关联的软件内部版本
-export function editActivitySoftwareBuildVersion(activityId, softwareBuildVersionIds, sorts, groups) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/editSoftwareBuildVersion/' + softwareBuildVersionIds,
-    method: 'post',
-    params: { sorts, groups }
-  })
-}
+// ==================== 审批管理 ====================
 
 // 查询活动多级审批记录
 export function listActivityApproval(activityId) {
@@ -206,87 +244,6 @@ export function impactAssessment(activityId) {
   return request({
     url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/impactAssessment',
     method: 'post'
-  })
-}
-
-// ==================== 目标版本组合 ====================
-
-// 查询目标版本组合
-export function listTargetVersion(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listTargetVersion',
-    method: 'get'
-  })
-}
-
-// 保存目标版本组合
-export function saveTargetVersion(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveTargetVersion',
-    method: 'post',
-    data: data
-  })
-}
-
-// 删除目标版本
-export function deleteTargetVersion(activityId, id) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteTargetVersion/' + id,
-    method: 'delete'
-  })
-}
-
-// ==================== 安装顺序 ====================
-
-// 查询安装顺序
-export function listInstallOrder(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listInstallOrder',
-    method: 'get'
-  })
-}
-
-// 保存安装顺序
-export function saveInstallOrder(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveInstallOrder',
-    method: 'post',
-    data: data
-  })
-}
-
-// 删除安装顺序
-export function deleteInstallOrder(activityId, id) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteInstallOrder/' + id,
-    method: 'delete'
-  })
-}
-
-// ==================== 同升同降依赖组 ====================
-
-// 查询同升同降依赖组
-export function listDependencyGroup(activityId) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/listDependencyGroup',
-    method: 'get'
-  })
-}
-
-// 保存同升同降依赖组
-export function saveDependencyGroup(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/saveDependencyGroup',
-    method: 'post',
-    data: data
-  })
-}
-
-// 删除同升同降依赖组
-export function deleteDependencyGroup(activityId, id) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/deleteDependencyGroup/' + id,
-    method: 'delete'
   })
 }
 

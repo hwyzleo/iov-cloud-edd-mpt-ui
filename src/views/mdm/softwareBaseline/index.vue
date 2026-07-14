@@ -27,6 +27,9 @@
       <el-col :span="1.5">
         <el-button v-hasPermi="['mdm:material:softwareBaseline:export']" type="warning" plain icon="el-icon-download" size="mini" :loading="exportLoading" @click="handleExport">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button v-hasPermi="['mdm:material:softwareBaseline:republish']" type="success" plain icon="el-icon-refresh-right" size="mini" @click="handleBatchRepublish">批量补发</el-button>
+      </el-col>
       <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -48,11 +51,12 @@
       <el-table-column label="发布时间" align="center" width="140">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.releasedAt, "{y}-{m}-{d} {h}:{i}") }}</span></template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="380" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="320" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button v-if="scope.row.baselineStatus === 'DRAFT'" v-hasPermi="['mdm:material:softwareBaseline:edit']" size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">修改</el-button>
           <el-button v-hasPermi="['mdm:material:softwareBaseline:query']" size="mini" type="text" icon="el-icon-connection" @click="handleManageItems(scope.row)">基线项</el-button>
           <el-button v-if="scope.row.baselineStatus === 'DRAFT'" v-hasPermi="['mdm:material:softwareBaseline:release']" size="mini" type="text" icon="el-icon-open" @click="handleRelease(scope.row)">发布</el-button>
+          <el-button v-if="scope.row.baselineStatus === 'RELEASED'" v-hasPermi="['mdm:material:softwareBaseline:republish']" size="mini" type="text" icon="el-icon-refresh-right" @click="handleRepublish(scope.row)">补发</el-button>
           <el-button v-if="scope.row.baselineStatus === 'RELEASED'" v-hasPermi="['mdm:material:softwareBaseline:edit']" size="mini" type="text" icon="el-icon-sort" @click="handleSupersede(scope.row)">取代</el-button>
           <el-button v-if="scope.row.baselineStatus === 'DRAFT'" v-hasPermi="['mdm:material:softwareBaseline:remove']" size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
           <el-button v-if="scope.row.baselineStatus !== 'DRAFT'" v-hasPermi="['mdm:material:softwareBaseline:remove:force']" size="mini" type="text" icon="el-icon-delete-solid" @click="handleForceDelete(scope.row)">强制删除</el-button>
@@ -210,7 +214,9 @@ import {
   releaseSoftwareBaseline,
   supersedeSoftwareBaseline,
   listSoftwareBaselineHistory,
-  exportSoftwareBaseline
+  exportSoftwareBaseline,
+  republishSoftwareBaseline,
+  republishBatchSoftwareBaseline
 } from '@/api/mdm/softwareBaseline'
 import { listConfiguration } from '@/api/mdm/configuration'
 import { listVariant } from '@/api/mdm/variant'
@@ -617,6 +623,34 @@ export default {
       }).catch(() => {
         this.exportLoading = false
       })
+    },
+    handleRepublish(row) {
+      this.$modal.confirm('是否确认补发软件基线"' + row.code + '"？补发将重新发送基线消息到下游系统。').then(() => {
+        return republishSoftwareBaseline(row.code)
+      }).then((response) => {
+        if (response.data.republished) {
+          this.$modal.msgSuccess('补发成功')
+        } else {
+          this.$modal.msgWarning('该基线未处于已发布状态，无法补发')
+        }
+        this.getList()
+      }).catch(() => {})
+    },
+    handleBatchRepublish() {
+      if (this.codes.length === 0) {
+        this.$modal.msgWarning('请先选择要补发的基线')
+        return
+      }
+      this.$modal.confirm('是否确认批量补发选中的 ' + this.codes.length + ' 条基线？').then(() => {
+        return republishBatchSoftwareBaseline({
+          codes: this.codes,
+          all: false
+        })
+      }).then((response) => {
+        const result = response.data
+        this.$modal.msgSuccess('批量补发完成，命中: ' + result.hitCount + '，成功: ' + result.publishedCount + '，失败: ' + result.failedCount)
+        this.getList()
+      }).catch(() => {})
     }
   }
 }

@@ -170,7 +170,7 @@
             @click="handleActivitySoftwareBuildVersion(scope.row)"
             v-if="scope.row.state < 2"
             v-hasPermi="['ota:fota:activity:edit']"
-          >关联版本
+          >升级对象
           </el-button>
           <el-button
             size="mini"
@@ -214,18 +214,9 @@
               <el-dropdown-item command="handleActivityCompatiblePn" icon="el-icon-edit"
                                 v-if="scope.row.state < 2"
                                 v-hasPermi="['ota:fota:activity:edit']">关联兼容零件号</el-dropdown-item>
-              <el-dropdown-item command="handleActivityFixedConfigWord" icon="el-icon-edit"
-                                v-if="scope.row.state < 2"
-                                v-hasPermi="['ota:fota:activity:edit']">关联固定配置字</el-dropdown-item>
-              <el-dropdown-item command="handleActivityTargetVersion" icon="el-icon-aim"
-                                v-if="scope.row.state < 2"
-                                v-hasPermi="['ota:fota:activity:edit']">目标版本组合</el-dropdown-item>
-              <el-dropdown-item command="handleActivityInstallOrder" icon="el-icon-sort"
-                                v-if="scope.row.state < 2"
-                                v-hasPermi="['ota:fota:activity:edit']">安装顺序</el-dropdown-item>
-              <el-dropdown-item command="handleActivityDependencyGroup" icon="el-icon-connection"
-                                v-if="scope.row.state < 2"
-                                v-hasPermi="['ota:fota:activity:edit']">同升同降依赖组</el-dropdown-item>
+          <el-dropdown-item command="handleActivityFixedConfigWord" icon="el-icon-edit"
+                            v-if="scope.row.state < 2"
+                            v-hasPermi="['ota:fota:activity:edit']">关联固定配置字</el-dropdown-item>
               <el-dropdown-item command="handleApprovalRecord" icon="el-icon-document"
                                 v-if="scope.row.state >= 2"
                                 v-hasPermi="['ota:fota:activity:list']">审批记录</el-dropdown-item>
@@ -389,7 +380,7 @@
           <el-input v-model="form.statement" type="textarea" placeholder="请输入活动说明" :disabled="form.state === 2"></el-input>
         </el-form-item>
         <el-row>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="是否基线活动" prop="baseline">
               <el-radio-group v-model="form.baseline" :disabled="form.state === 2">
                 <el-radio :label="true">是</el-radio>
@@ -397,7 +388,7 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="型批相关" prop="isTypeApprovalRelevant">
               <el-radio-group v-model="form.isTypeApprovalRelevant" :disabled="form.state === 2">
                 <el-radio :label="true">是</el-radio>
@@ -405,7 +396,9 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="8" v-if="form.baseline">
+        </el-row>
+        <el-row v-if="form.baseline">
+          <el-col :span="24">
             <el-form-item label="基线代码" prop="baselineCode">
               <el-autocomplete
                 v-model="form.baselineCode"
@@ -418,7 +411,7 @@
                 style="width: 100%"
               >
                 <template #default="{ item }">
-                  <div> {{item.name}} - {{item.value}} </div>
+                  <div> {{item.baselineCode}} - {{item.name}} </div>
                 </template>
               </el-autocomplete>
             </el-form-item>
@@ -826,7 +819,7 @@ export default {
     },
     handleActivitySoftwareBuildVersion(row) {
       this.$router.push({
-        path: "/iov/ota/activitySoftwareBuildVersion",
+        path: "/iov/ota/activityUpgradeTarget",
         query: { id: row.id }
       });
     },
@@ -957,16 +950,16 @@ export default {
     },
     queryBaseline(queryString, cb) {
       listBaseline({
-        key: queryString  // 根据实际接口参数调整
+        baselineCode: queryString
       }).then(response => {
         if (response.data && response.data.items && response.data.items.length > 0) {
           const suggestions = response.data.items.map(item => {
-          return {
-            value: item.code,  // 基线代码字段名根据实际调整
-            ...item
-          };
+            return {
+              value: item.baselineCode,
+              ...item
+            };
           });
-        cb(suggestions);
+          cb(suggestions);
         } else {
           cb([]);
         }
@@ -975,9 +968,8 @@ export default {
       });
     },
     handleBaselineSelect(item) {
-      // 如果需要保存基线ID或其他信息
       this.form.baselineId = item.id;
-      this.form.baselineCode = item.code;
+      this.form.baselineCode = item.baselineCode;
     },
     handleCommand(command, row) {
       switch (command) {
@@ -986,15 +978,6 @@ export default {
           break;
         case "handleActivityFixedConfigWord":
           this.handleActivityFixedConfigWord(row);
-          break;
-        case "handleActivityTargetVersion":
-          this.handleActivityTargetVersion(row);
-          break;
-        case "handleActivityInstallOrder":
-          this.handleActivityInstallOrder(row);
-          break;
-        case "handleActivityDependencyGroup":
-          this.handleActivityDependencyGroup(row);
           break;
         case "handleApprovalRecord":
           this.handleApprovalRecord(row);
@@ -1014,24 +997,6 @@ export default {
         default:
           break;
       }
-    },
-    handleActivityTargetVersion(row) {
-      this.$router.push({
-        path: "/iov/ota/activityTargetVersion",
-        query: { id: row.id }
-      });
-    },
-    handleActivityInstallOrder(row) {
-      this.$router.push({
-        path: "/iov/ota/activityInstallOrder",
-        query: { id: row.id }
-      });
-    },
-    handleActivityDependencyGroup(row) {
-      this.$router.push({
-        path: "/iov/ota/activityDependencyGroup",
-        query: { id: row.id }
-      });
     },
     handleActivityManifest(row) {
       this.$router.push({

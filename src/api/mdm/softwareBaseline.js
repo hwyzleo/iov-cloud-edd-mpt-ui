@@ -104,3 +104,20 @@ export function exportSoftwareBaseline() {
     method: 'get'
   })
 }
+
+// 单条补发
+export function republishSoftwareBaseline(code) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/softwareBaseline/v1/' + code + '/republish',
+    method: 'post'
+  })
+}
+
+// 批量补发
+export function republishBatchSoftwareBaseline(data) {
+  return request({
+    url: '/edd-mdm/api/mpt/material/softwareBaseline/v1/republish:batch',
+    method: 'post',
+    data: data
+  })
+}

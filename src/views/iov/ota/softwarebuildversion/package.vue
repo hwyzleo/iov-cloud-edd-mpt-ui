@@ -36,7 +36,7 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="软件包名称" prop="packageName" min-width="200" />
-      <el-table-column label="设备" prop="deviceCode" width="100"/>
+      <el-table-column label="设备" prop="deviceCode" width="150"/>
       <el-table-column label="软件包类型" prop="packageType" width="100" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.packageType==='FULL'">全量</span>

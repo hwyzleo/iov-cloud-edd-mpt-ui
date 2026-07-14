@@ -127,6 +127,14 @@
             v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
           >修改
           </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            @click="handleDelete(scope.row)"
+            v-hasPermi="['ota:baseline:softwareBuildVersion:remove']"
+          >删除
+          </el-button>
           <el-dropdown @command="(command) => handleMoreCommand(command, scope.row)">
             <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
             <el-dropdown-menu slot="dropdown">
@@ -139,14 +147,6 @@
               <el-dropdown-item v-if="scope.row.buildState === 'DEPRECATED'" command="retire" icon="el-icon-circle-close" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">退役</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:remove']"
-          >删除
-          </el-button>
         </template>
       </el-table-column>
     </el-table>
