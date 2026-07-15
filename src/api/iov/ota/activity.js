@@ -54,15 +54,6 @@ export function submitActivity(activityId, data) {
   })
 }
 
-// 审核升级任务
-export function auditActivity(activityId, data) {
-  return request({
-    url: '/iov-ota/api/mpt/activity/v1/' + activityId + '/action/audit',
-    method: 'post',
-    data: data
-  })
-}
-
 // 发布升级活动
 export function releaseActivity(activityId) {
   return request({

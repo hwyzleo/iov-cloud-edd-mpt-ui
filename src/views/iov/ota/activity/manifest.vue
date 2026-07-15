@@ -5,7 +5,7 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column label="快照编码" prop="manifestCode" width="180"/>
       <el-table-column label="SWIN编码" prop="swinCode" width="150"/>
-      <el-table-column label="RXSWIN值" prop="rxswinValue" width="150"/>
+      <el-table-column label="RXSWIN值" prop="rxswinValue" min-width="170"/>
       <el-table-column label="快照状态" prop="manifestStatus" width="120" align="center">
         <template slot-scope="scope">
           <el-tag :type="scope.row.manifestStatus === 'APPROVED' ? 'success' : 'info'" size="small">

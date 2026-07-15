@@ -175,15 +175,6 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-finished"
-            @click="handleAudit(scope.row)"
-            v-if="scope.row.state === 2"
-            v-hasPermi="['ota:fota:activity:audit']"
-          >审核
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
             icon="el-icon-s-flag"
             @click="handleRelease(scope.row)"
             v-if="scope.row.state === 3"
@@ -221,7 +212,7 @@
                                 v-if="scope.row.state === 2"
                                 v-hasPermi="['ota:fota:activity:audit']">多级审批</el-dropdown-item>
               <el-dropdown-item command="handleImpactAssessment" icon="el-icon-warning-outline"
-                                v-if="scope.row.state === 3"
+                                v-if="scope.row.state === 3 && scope.row.typeApprovalAssessmentState !== 1"
                                 v-hasPermi="['ota:fota:activity:audit']">型式批准影响评估</el-dropdown-item>
               <el-dropdown-item command="handleActivityManifest" icon="el-icon-view"
                                 v-if="scope.row.state >= 2"
@@ -431,27 +422,10 @@
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容" :disabled="form.state === 2"></el-input>
         </el-form-item>
-        <el-form-item label="审核结果" prop="audit" v-if="title === '审核升级活动'">
-          <el-radio-group v-model="form.audit">
-            <el-radio
-              :label="true"
-            >通过
-            </el-radio>
-            <el-radio
-              :label="false"
-            >拒绝
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="拒绝理由" prop="reason" v-if="title === '审核升级活动' && form.audit === false">
-          <el-input v-model="form.reason" type="textarea" placeholder="请输入拒绝理由"></el-input>
-        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm" v-if="!form.state || form.state === 1">确 定</el-button>
         <el-button type="success" @click="handleSubmit" v-if="form.state === 1">提 交</el-button>
-        <el-button type="success" @click="submitAuditForm" v-if="title === '审核升级活动' && form.state === 2">审 核
-        </el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -524,7 +498,6 @@ import {
   listAllActivityState,
   updateActivity,
   submitActivity,
-  auditActivity,
   releaseActivity,
   cancelActivity,
   listActivityApproval,
@@ -828,31 +801,6 @@ export default {
         this.$refs["form"].validate(valid => {
           if (valid && this.form.id !== undefined) {
             submitActivity(this.form.id, this.form).then(response => {
-              this.$modal.msgSuccess("提交成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        });
-      }).catch(() => {
-      });
-    },
-    /** 审核按钮操作 */
-    handleAudit(row) {
-      this.reset();
-      const activityId = row.id || this.ids
-      getActivity(activityId).then(response => {
-        this.form = response.data;
-        this.$set(this.form, 'audit', true);
-        this.open = true;
-      });
-      this.title = "审核升级活动";
-    },
-    submitAuditForm() {
-      this.$modal.confirm('是否确认提交该升级活动审核结果？').then(() => {
-        this.$refs["form"].validate(valid => {
-          if (valid && this.form.id !== undefined) {
-            auditActivity(this.form.id, this.form).then(response => {
               this.$modal.msgSuccess("提交成功");
               this.open = false;
               this.getList();

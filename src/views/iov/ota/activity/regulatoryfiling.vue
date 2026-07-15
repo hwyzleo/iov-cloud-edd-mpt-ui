@@ -17,10 +17,10 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="备案类型" prop="filingType" width="120" align="center">
+      <el-table-column label="备案类型" prop="filingType" width="180" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.filingType === 'TYPE_APPROVAL'">型式批准</span>
-          <span v-else-if="scope.row.filingType === 'REGULATORY'">监管备案</span>
+          <span v-if="scope.row.filingType === 'TYPE_APPROVAL'">型式批准相关备案</span>
+          <span v-else-if="scope.row.filingType === 'REGULATORY'">一般软件更新备案</span>
           <span v-else>{{ scope.row.filingType }}</span>
         </template>
       </el-table-column>
@@ -58,11 +58,8 @@
 
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="140px">
-        <el-form-item label="备案类型" prop="filingType">
-          <el-select v-model="form.filingType" placeholder="请选择备案类型" style="width: 100%">
-            <el-option label="型式批准" value="TYPE_APPROVAL"/>
-            <el-option label="监管备案" value="REGULATORY"/>
-          </el-select>
+        <el-form-item label="备案类型">
+          <el-input :value="filingTypeLabel" disabled/>
         </el-form-item>
         <el-form-item label="备案编号" prop="filingNo">
           <el-input v-model="form.filingNo" placeholder="请输入备案编号"/>
@@ -93,7 +90,8 @@
 import {
   listRegulatoryFiling,
   saveRegulatoryFiling,
-  deleteRegulatoryFiling
+  deleteRegulatoryFiling,
+  getActivity
 } from "@/api/iov/ota/activity";
 
 export default {
@@ -106,22 +104,31 @@ export default {
       title: "",
       open: false,
       activityId: undefined,
+      isTypeApprovalRelevant: false,
       form: {},
       rules: {
-        filingType: [
-          { required: true, message: "备案类型不能为空", trigger: "change" }
-        ],
         filingNo: [
           { required: true, message: "备案编号不能为空", trigger: "blur" }
         ]
       }
     };
   },
+  computed: {
+    filingTypeLabel() {
+      return this.isTypeApprovalRelevant ? '型式批准相关备案' : '一般软件更新备案';
+    }
+  },
   created() {
     this.activityId = this.$route.query.id;
+    this.getActivityInfo();
     this.getList();
   },
   methods: {
+    getActivityInfo() {
+      getActivity(this.activityId).then(response => {
+        this.isTypeApprovalRelevant = response.data.isTypeApprovalRelevant || false;
+      });
+    },
     getList() {
       this.loading = true;
       listRegulatoryFiling(this.activityId).then(response => {
@@ -139,7 +146,7 @@ export default {
     reset() {
       this.form = {
         id: undefined,
-        filingType: undefined,
+        filingType: this.isTypeApprovalRelevant ? 'TYPE_APPROVAL' : 'REGULATORY',
         filingNo: undefined,
         swContentRef: undefined,
         releaseNoteRef: undefined,
