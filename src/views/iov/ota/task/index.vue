@@ -94,7 +94,7 @@
 
     <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="任务名称" prop="name"/>
+      <el-table-column label="任务名称" prop="name" min-width="150"/>
       <el-table-column label="车辆模式" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="getTargetMode(scope.row.target) === 'LIST'">手动选择</span>
@@ -111,22 +111,22 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="任务开始时间" align="center" prop="startTime" width="180">
+      <el-table-column label="任务开始时间" align="center" prop="startTime" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.startTime) }}</span>
+          <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="任务结束时间" align="center" prop="endTime" width="180">
+      <el-table-column label="任务结束时间" align="center" prop="endTime" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.endTime) }}</span>
+          <span>{{ parseTime(scope.row.endTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="任务发布时间" align="center" prop="releaseTime" width="180">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.releaseTime) }}</span>
+          <span>{{ parseTime(scope.row.releaseTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="升级模式" prop="upgradeMode" width="120" align="center">
+      <el-table-column label="升级模式" prop="upgradeMode" width="100" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.upgradeMode === 1">普通</span>
           <span v-else-if="scope.row.upgradeMode === 2">强制</span>
@@ -136,7 +136,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="任务状态" prop="state" width="120" align="center">
+      <el-table-column label="任务状态" prop="state" width="100" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.state === 1">草稿</span>
           <span v-else-if="scope.row.state === 2">待审批</span>
@@ -152,7 +152,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"

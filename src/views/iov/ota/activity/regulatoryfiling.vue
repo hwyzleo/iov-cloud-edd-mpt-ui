@@ -24,7 +24,7 @@
           <span v-else>{{ scope.row.filingType }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备案编号" prop="filingNo" width="150"/>
+      <el-table-column label="备案编号" prop="filingNo" width="160"/>
       <el-table-column label="软件内容引用" prop="swContentRef" show-overflow-tooltip/>
       <el-table-column label="ReleaseNote引用" prop="releaseNoteRef" show-overflow-tooltip/>
       <el-table-column label="备案状态" prop="filingStatus" width="120" align="center">
