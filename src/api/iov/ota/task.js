@@ -46,7 +46,7 @@ export function updateTask(data) {
 // 提交升级任务
 export function submitTask(taskId, data) {
   return request({
-    url: '/iov-ota/mpt/task/v1/' + taskId + '/action/submit',
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/submit',
     method: 'post',
     data: data
   })
@@ -58,6 +58,14 @@ export function auditTask(taskId, data) {
     url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/audit',
     method: 'post',
     data: data
+  })
+}
+
+// 查询任务多级审批记录
+export function listTaskApproval(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/listApproval',
+    method: 'get'
   })
 }
 
@@ -77,6 +85,15 @@ export function pauseTask(taskId) {
   })
 }
 
+// 带原因暂停升级任务
+export function pauseTaskWithReason(taskId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/pauseWithReason',
+    method: 'post',
+    data: data
+  })
+}
+
 // 恢复升级任务
 export function resumeTask(taskId) {
   return request({
@@ -89,6 +106,48 @@ export function resumeTask(taskId) {
 export function cancelTask(taskId) {
   return request({
     url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/cancel',
+    method: 'post'
+  })
+}
+
+// 带原因取消升级任务
+export function cancelTaskWithReason(taskId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/cancelWithReason',
+    method: 'post',
+    data: data
+  })
+}
+
+// 排程升级任务
+export function scheduleTask(taskId, releaseTime) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/schedule',
+    method: 'post',
+    data: { releaseTime: releaseTime }
+  })
+}
+
+// 取消排程升级任务
+export function unscheduleTask(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/unschedule',
+    method: 'post'
+  })
+}
+
+// 取代升级任务
+export function supersedeTask(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/supersede',
+    method: 'post'
+  })
+}
+
+// 结束升级任务
+export function finishTask(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/finish',
     method: 'post'
   })
 }

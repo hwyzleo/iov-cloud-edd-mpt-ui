@@ -61,6 +61,14 @@ export function auditTask(taskId, data) {
   })
 }
 
+// 查询任务多级审批记录
+export function listTaskApproval(taskId) {
+  return request({
+    url: '/ota-fota/mpt/task/' + taskId + '/listApproval',
+    method: 'get'
+  })
+}
+
 // 发布升级任务
 export function releaseTask(taskId) {
   return request({

@@ -175,6 +175,15 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-document"
+            @click="handleApprovalRecord(scope.row)"
+            v-if="scope.row.state === 2 || scope.row.state === 3"
+            v-hasPermi="['ota:fota:task:list']"
+          >审批记录
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-s-flag"
             @click="handleRelease(scope.row)"
             v-if="scope.row.state === 3"
@@ -421,20 +430,21 @@
         <el-form-item label="排除基线" prop="excludedBaseline">
           <el-input v-model="form.excludedBaseline" placeholder="请输入排除基线" :disabled="form.state === 2"/>
         </el-form-item>
-        <el-form-item label="审核结果" prop="audit" v-if="title === '审核升级任务'">
-          <el-radio-group v-model="form.audit">
-            <el-radio
-              :label="true"
-            >通过
-            </el-radio>
-            <el-radio
-              :label="false"
-            >拒绝
-            </el-radio>
+        <el-form-item label="审批级别" prop="approvalLevel" v-if="title === '审核升级任务'">
+          <el-select v-model="form.approvalLevel" placeholder="请选择审批级别" style="width: 100%">
+            <el-option label="质量审批" value="QUALITY"/>
+            <el-option label="产品审批" value="PRODUCT"/>
+            <el-option label="安全审批" value="SECURITY"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="审批结果" prop="result" v-if="title === '审核升级任务'">
+          <el-radio-group v-model="form.result">
+            <el-radio label="APPROVED">通过</el-radio>
+            <el-radio label="REJECTED">拒绝</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="拒绝理由" prop="reason" v-if="title === '审核升级任务' && form.audit === false">
-          <el-input v-model="form.reason" type="textarea" placeholder="请输入拒绝理由"></el-input>
+        <el-form-item label="审批意见" prop="comment" v-if="title === '审核升级任务' && form.result === 'REJECTED'">
+          <el-input v-model="form.comment" type="textarea" placeholder="请输入审批意见"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -443,6 +453,37 @@
         <el-button type="success" @click="submitAuditForm" v-if="title === '审核升级任务' && form.state === 2">审 核
         </el-button>
         <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 审批记录对话框 -->
+    <el-dialog title="审批记录" :visible.sync="openApprovalRecord" width="800px" append-to-body>
+      <el-table v-loading="loadingApproval" :data="approvalList">
+        <el-table-column label="审批级别" prop="level" width="120" align="center">
+          <template slot-scope="scope">
+            <span v-if="scope.row.level === 'QUALITY'">质量审批</span>
+            <span v-else-if="scope.row.level === 'PRODUCT'">产品审批</span>
+            <span v-else-if="scope.row.level === 'SECURITY'">安全审批</span>
+            <span v-else>{{ scope.row.level }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="审批结果" prop="result" width="100" align="center">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.result === 'APPROVED' ? 'success' : 'danger'" size="small">
+              {{ scope.row.result === 'APPROVED' ? '通过' : '拒绝' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="审批人" prop="approver" width="120" align="center"/>
+        <el-table-column label="审批意见" prop="comment" show-overflow-tooltip/>
+        <el-table-column label="审批时间" align="center" prop="decidedAt" width="160">
+          <template slot-scope="scope">
+            <span>{{ parseTime(scope.row.decidedAt, '{y}-{m}-{d} {h}:{i}') }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openApprovalRecord = false">关 闭</el-button>
       </div>
     </el-dialog>
   </div>
@@ -461,7 +502,8 @@ import {
   releaseTask,
   pauseTask,
   resumeTask,
-  cancelTask
+  cancelTask,
+  listTaskApproval
 } from "@/api/ota/fota/task";
 import {
   listActivity,
@@ -492,6 +534,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 审批记录对话框
+      openApprovalRecord: false,
+      loadingApproval: false,
+      approvalList: [],
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -533,11 +579,11 @@ export default {
         lvSoc: [
           {required: true, message: "低压电量不能为空", trigger: "blur"}
         ],
-        audit: [{
+        approvalLevel: [{
           validator: (rule, value, callback) => {
             if (this.form.state === 2) {
-              if (value === undefined || value === null) {
-                callback(new Error('审核结果不能为空'));
+              if (!value) {
+                callback(new Error('审批级别不能为空'));
               } else {
                 callback();
               }
@@ -545,13 +591,27 @@ export default {
               callback();
             }
           },
-          trigger: "blur"
+          trigger: "change"
         }],
-        reason: [{
+        result: [{
           validator: (rule, value, callback) => {
-            if (this.form.state === 2 && this.form.audit === false) {
+            if (this.form.state === 2) {
+              if (!value) {
+                callback(new Error('审批结果不能为空'));
+              } else {
+                callback();
+              }
+            } else {
+              callback();
+            }
+          },
+          trigger: "change"
+        }],
+        comment: [{
+          validator: (rule, value, callback) => {
+            if (this.form.state === 2 && this.form.result === 'REJECTED') {
               if (!value || value.trim() === '') {
-                callback(new Error('拒绝理由不能为空'));
+                callback(new Error('审批意见不能为空'));
               } else {
                 callback();
               }
@@ -662,7 +722,8 @@ export default {
       const taskId = row.id || this.ids
       getTask(taskId).then(response => {
         this.form = response.data;
-        this.$set(this.form, 'audit', true);
+        this.$set(this.form, 'approvalLevel', 'QUALITY');
+        this.$set(this.form, 'result', 'APPROVED');
         getActivity(this.form.activityId).then(response2 => {
           this.form.activityName = response2.data.name;
           this.open = true;
@@ -781,7 +842,12 @@ export default {
       this.$modal.confirm('是否确认提交该升级任务审核结果？').then(() => {
         this.$refs["form"].validate(valid => {
           if (valid && this.form.id !== undefined) {
-            auditTask(this.form.id, this.form).then(response => {
+            auditTask(this.form.id, {
+              id: this.form.id,
+              approvalLevel: this.form.approvalLevel,
+              result: this.form.result,
+              comment: this.form.comment
+            }).then(response => {
               this.$modal.msgSuccess("提交成功");
               this.open = false;
               this.getList();
@@ -789,6 +855,17 @@ export default {
           }
         });
       }).catch(() => {
+      });
+    },
+    /** 审批记录按钮操作 */
+    handleApprovalRecord(row) {
+      this.loadingApproval = true;
+      this.openApprovalRecord = true;
+      listTaskApproval(row.id).then(response => {
+        this.approvalList = response.data;
+        this.loadingApproval = false;
+      }).catch(() => {
+        this.loadingApproval = false;
       });
     },
   }
