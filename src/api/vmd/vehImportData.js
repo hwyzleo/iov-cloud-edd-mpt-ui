@@ -42,3 +42,21 @@ export function delVehImportData(ids) {
     method: 'delete'
   })
 }
+
+// 补发车辆导入数据消息
+export function republishVehImportData(id, data) {
+  return request({
+    url: '/edd-vmd/api/mpt/vehImportData/v1/' + id + '/replayEvent',
+    method: 'post',
+    data: data
+  })
+}
+
+// 批量补发车辆导入数据消息
+export function republishBatchVehImportData(data) {
+  return request({
+    url: '/edd-vmd/api/mpt/vehImportData/v1/replayEvent/batch',
+    method: 'post',
+    data: data
+  })
+}

@@ -44,24 +44,27 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="车辆" prop="vin" width="180"/>
-      <el-table-column label="基线" prop="baselineCode"/>
-      <el-table-column label="基线是否对齐" prop="baselineAlignment" width="120" align="center"/>
-      <el-table-column label="上报时间" align="center" prop="reportTime" width="180">
+      <el-table-column label="车辆" prop="vin" min-width="170"/>
+      <el-table-column label="品牌" prop="brandCode" width="80"/>
+      <el-table-column label="平台" prop="platformCode" width="80"/>
+      <el-table-column label="车系" prop="carLineCode" width="80"/>
+      <el-table-column label="车型" prop="modelCode" width="120"/>
+      <el-table-column label="变型" prop="variantCode" width="150"/>
+      <el-table-column label="配置代码" prop="configurationCode" width="180"/>
+      <el-table-column label="工厂代码" prop="plantCode" width="100"/>
+      <el-table-column label="生产时间" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.reportTime) }}</span>
+          <span>{{ parseTime(scope.row.productionTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="最后同步时间" align="center" width="140">
         <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-tickets"
-            @click="handleProcess(scope.row)"
-            v-hasPermi="['ota:fota:task:edit']"
-          >升级过程
-          </el-button>
+          <span>{{ parseTime(scope.row.lastSyncTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" width="140">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -146,8 +149,8 @@ export default {
     getList() {
       this.loading = true;
       listVehicle(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.list = response.rows;
-          this.total = response.total;
+          this.list = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

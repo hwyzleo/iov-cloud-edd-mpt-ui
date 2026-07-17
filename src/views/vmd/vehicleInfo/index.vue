@@ -79,7 +79,7 @@
 
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="车架号" fixed="left" width="170" prop="vin" />
+      <el-table-column label="车架号" fixed="left" min-width="170" prop="vin" />
       <el-table-column label="工厂代码" prop="plantCode" align="center" width="80" />
       <el-table-column label="品牌代码" prop="brandCode" align="center" width="80" />
       <el-table-column label="平台代码" prop="platformCode" align="center" width="80" />
@@ -89,7 +89,7 @@
       <el-table-column label="配置代码" prop="configurationCode" width="180" />
       <el-table-column label="车辆下线时间" align="center" prop="eolTime" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.eolTime) }}</span>
+          <span>{{ parseTime(scope.row.eolTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="280" class-name="small-padding fixed-width">

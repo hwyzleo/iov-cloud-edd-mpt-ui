@@ -94,17 +94,19 @@
 
     <el-table v-loading="loading" :data="partImportDataList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="批次号" prop="batchNum"/>
-      <el-table-column label="零件代码" prop="partCode" width="200"/>
-      <el-table-column label="数据版本" prop="version" align="center" width="150"/>
-      <el-table-column label="是否已处理" align="center" width="150">
+      <el-table-column label="批次号" prop="batchNum" width="140" fixed="left"/>
+      <el-table-column label="零件代码" prop="partCode" width="130" fixed="left"/>
+      <el-table-column label="零件名称" prop="partName" min-width="200"/>
+      <el-table-column label="车载节点" prop="vehicleNodeCode" width="150"/>
+      <el-table-column label="数据版本" prop="version" align="center" width="100"/>
+      <el-table-column label="是否已处理" align="center" width="120">
         <template slot-scope="scope">
           <span>{{ scope.row.handle ? '是' : '否' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">

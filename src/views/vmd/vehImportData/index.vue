@@ -100,12 +100,24 @@
         >导出
         </el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="el-icon-refresh-right"
+          size="mini"
+          :disabled="multiple"
+          @click="handleBatchRepublish"
+          v-hasPermi="['completeVehicle:vehicle:importData:republish']"
+        >批量补发
+        </el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="vehImportDataList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="批次号" prop="batchNum"/>
+      <el-table-column label="批次号" prop="batchNum" min-width="150" fixed="left"/>
       <el-table-column label="数据类型" prop="type" align="center" width="150">
         <template slot-scope="scope">
           <span>{{ getTypeLabel(scope.row.type) }}</span>
@@ -117,9 +129,9 @@
           <span>{{ scope.row.handle ? '是' : '否' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
@@ -140,6 +152,14 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['completeVehicle:vehicle:importData:remove']"
           >删除
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-right"
+            @click="handleRepublish(scope.row)"
+            v-hasPermi="['completeVehicle:vehicle:importData:republish']"
+          >补发
           </el-button>
         </template>
       </el-table-column>
@@ -199,7 +219,9 @@ import {
   getVehImportData,
   addVehImportData,
   updateVehImportData,
-  delVehImportData
+  delVehImportData,
+  republishVehImportData,
+  republishBatchVehImportData
 } from "@/api/vmd/vehImportData";
 
 export default {
@@ -371,6 +393,25 @@ export default {
       this.download('edd-vmd/api/mpt/vehImportData/v1/export', {
         ...this.queryParams
       }, `veh_import_data_${new Date().getTime()}.xlsx`)
+    },
+    /** 补发按钮操作 */
+    handleRepublish(row) {
+      this.$modal.confirm('是否确认补发车辆导入数据"' + row.batchNum + '"？补发将重新发送导入消息到下游系统。').then(() => {
+        return republishVehImportData(row.id)
+      }).then(() => {
+        this.$modal.msgSuccess("补发成功")
+        this.getList()
+      }).catch(() => {})
+    },
+    /** 批量补发按钮操作 */
+    handleBatchRepublish() {
+      this.$modal.confirm('是否确认批量补发选中的 ' + this.ids.length + ' 条车辆导入数据？').then(() => {
+        const promises = this.ids.map(id => republishVehImportData(id))
+        return Promise.all(promises)
+      }).then(() => {
+        this.$modal.msgSuccess("批量补发成功")
+        this.getList()
+      }).catch(() => {})
     }
   }
 };

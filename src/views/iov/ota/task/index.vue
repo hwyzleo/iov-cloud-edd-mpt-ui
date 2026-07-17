@@ -94,7 +94,7 @@
 
     <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="任务名称" prop="name" min-width="150"/>
+      <el-table-column label="任务名称" prop="name" min-width="200"/>
       <el-table-column label="车辆模式" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="getTargetMode(scope.row.target) === 'LIST'">手动选择</span>
@@ -152,7 +152,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width" fixed="right">
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
