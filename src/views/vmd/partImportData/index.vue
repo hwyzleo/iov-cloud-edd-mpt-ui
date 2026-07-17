@@ -123,6 +123,14 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
+            v-if="scope.row.handle === true"
+          >详情
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
             v-hasPermi="['vmd:importData:remove']"
@@ -177,6 +185,53 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 零件导入数据详情对话框 -->
+    <el-dialog title="零件导入数据详情" :visible.sync="detailOpen" width="800px" append-to-body>
+      <el-form :model="detailForm" label-width="120px">
+        <el-form-item label="批次号">
+          <el-input v-model="detailForm.batchNum" disabled/>
+        </el-form-item>
+        <el-form-item label="零件代码">
+          <el-select
+            v-model="detailForm.partCode"
+            disabled
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in partList"
+              :key="item.code"
+              :label="item.code + ' - ' + item.name"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="零件名称">
+          <el-input v-model="detailForm.partName" disabled/>
+        </el-form-item>
+        <el-form-item label="车载节点">
+          <el-input v-model="detailForm.vehicleNodeCode" disabled/>
+        </el-form-item>
+        <el-form-item label="数据版本">
+          <el-input v-model="detailForm.version" disabled/>
+        </el-form-item>
+        <el-form-item label="是否已处理">
+          <el-input :value="detailForm.handle ? '是' : '否'" disabled/>
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-input :value="parseTime(detailForm.createTime, '{y}-{m}-{d} {h}:{i}:{s}')" disabled/>
+        </el-form-item>
+        <el-form-item label="零件数据">
+          <el-input v-model="detailForm.data" type="textarea" disabled :rows="15"/>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="detailForm.description" type="textarea" disabled/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -215,6 +270,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 是否显示详情弹出层
+      detailOpen: false,
+      // 详情表单参数
+      detailForm: {},
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -366,6 +425,14 @@ export default {
       this.download('edd-vmd/api/partImportData/v1/export', {
         ...this.queryParams
       }, `part_import_data_${new Date().getTime()}.xlsx`)
+    },
+    /** 详情按钮操作 */
+    handleDetail(row) {
+      const partImportDataId = row.id || this.ids;
+      getPartImportData(partImportDataId).then(response => {
+        this.detailForm = response.data;
+        this.detailOpen = true;
+      });
     }
   }
 };

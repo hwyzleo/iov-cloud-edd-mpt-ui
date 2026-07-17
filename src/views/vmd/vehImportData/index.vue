@@ -148,10 +148,10 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['completeVehicle:vehicle:importData:remove']"
-          >删除
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
+            v-if="scope.row.handle === true"
+          >详情
           </el-button>
           <el-button
             size="mini"
@@ -160,6 +160,14 @@
             @click="handleRepublish(scope.row)"
             v-hasPermi="['completeVehicle:vehicle:importData:republish']"
           >补发
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            @click="handleDelete(scope.row)"
+            v-hasPermi="['completeVehicle:vehicle:importData:remove']"
+          >删除
           </el-button>
         </template>
       </el-table-column>
@@ -210,6 +218,47 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 车辆导入数据详情对话框 -->
+    <el-dialog title="车辆导入数据详情" :visible.sync="detailOpen" width="800px" append-to-body>
+      <el-form :model="detailForm" label-width="120px">
+        <el-form-item label="批次号">
+          <el-input v-model="detailForm.batchNum" disabled/>
+        </el-form-item>
+        <el-form-item label="数据类型">
+          <el-select
+            v-model="detailForm.type"
+            disabled
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in typeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="数据版本">
+          <el-input v-model="detailForm.version" disabled/>
+        </el-form-item>
+        <el-form-item label="是否已处理">
+          <el-input :value="detailForm.handle ? '是' : '否'" disabled/>
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-input :value="parseTime(detailForm.createTime, '{y}-{m}-{d} {h}:{i}:{s}')" disabled/>
+        </el-form-item>
+        <el-form-item label="车辆数据">
+          <el-input v-model="detailForm.data" type="textarea" disabled :rows="15"/>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="detailForm.description" type="textarea" disabled/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -252,6 +301,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 是否显示详情弹出层
+      detailOpen: false,
+      // 详情表单参数
+      detailForm: {},
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -412,6 +465,14 @@ export default {
         this.$modal.msgSuccess("批量补发成功")
         this.getList()
       }).catch(() => {})
+    },
+    /** 详情按钮操作 */
+    handleDetail(row) {
+      const vehImportDataId = row.id || this.ids;
+      getVehImportData(vehImportDataId).then(response => {
+        this.detailForm = response.data;
+        this.detailOpen = true;
+      });
     }
   }
 };
