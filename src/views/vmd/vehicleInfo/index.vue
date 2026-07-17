@@ -79,7 +79,14 @@
 
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="车架号" fixed="left" min-width="170" prop="vin" />
+      <el-table-column label="车架号" fixed="left" min-width="170" prop="vin">
+        <template slot-scope="scope">
+          <span>{{ scope.row.vin }}</span>
+          <el-tooltip v-if="!isValidVin(scope.row.vin)" content="VIN格式错误" placement="top">
+            <i class="el-icon-warning" style="color: #E6A23C; margin-left: 5px;" />
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <el-table-column label="工厂代码" prop="plantCode" align="center" width="80" />
       <el-table-column label="品牌代码" prop="brandCode" align="center" width="80" />
       <el-table-column label="平台代码" prop="platformCode" align="center" width="80" />
@@ -516,6 +523,33 @@ export default {
         this.loading = false
       }
       )
+    },
+    /** 验证VIN号格式 */
+    isValidVin(vin) {
+      if (!vin) return false
+      // VIN号必须是17位
+      if (vin.length !== 17) return false
+      // 只能包含数字和大写字母（I、O、Q不能使用）
+      const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/
+      if (!vinRegex.test(vin)) return false
+      // 校验位验证（第9位）
+      const transliterate = {
+        A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8,
+        J: 1, K: 2, L: 3, M: 4, N: 5, P: 7, R: 9,
+        S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+        '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '0': 0
+      }
+      const weights = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2]
+      let sum = 0
+      for (let i = 0; i < 17; i++) {
+        const char = vin[i]
+        const value = transliterate[char]
+        if (value === undefined) return false
+        sum += value * weights[i]
+      }
+      const remainder = sum % 11
+      const checkDigit = remainder === 10 ? 'X' : String(remainder)
+      return vin[8] === checkDigit
     },
     /** 查询车辆列表（生命周期） */
     getListLifecycle(vin) {
