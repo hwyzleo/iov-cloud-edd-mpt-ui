@@ -332,9 +332,16 @@ import {
 
 export default {
   name: 'VehicleInfo',
-  dicts: ['iov_vehicle_lifecycle'],
   data() {
     return {
+      // 生命周期节点类型映射
+      lifecycleNodeTypes: {
+        'PRODUCE': '车辆生产',
+        'TOL': '总装上线',
+        'EOL': '电检下线',
+        'CERTIFICATE': '打印合格证',
+        'POWER_DOWN': '车辆下电'
+      },
       // 遮罩层
       loading: true,
       // 遮罩层（生命周期列表）
@@ -451,13 +458,7 @@ export default {
     },
     // 获取生命周期节点类型
     getNodeType(lifecycleNodeCode) {
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_lifecycle) {
-        return lifecycleNodeCode
-      }
-      const item = this.dict.type.iov_vehicle_lifecycle.find(
-        dict => dict.value === lifecycleNodeCode
-      )
-      return item ? item.label : lifecycleNodeCode
+      return this.lifecycleNodeTypes[lifecycleNodeCode] || lifecycleNodeCode
     },
     /** 取消按钮 */
     cancel() {
