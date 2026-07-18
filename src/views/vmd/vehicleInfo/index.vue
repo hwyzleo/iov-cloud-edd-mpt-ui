@@ -252,7 +252,7 @@
     </el-dialog>
 
     <!-- 零件管理对话框 -->
-    <el-dialog :title="title" :visible.sync="openPartManagement" width="900px" append-to-body @close="closePartManagement">
+    <el-dialog :title="title" :visible.sync="openPartManagement" width="1000px" append-to-body @close="closePartManagement">
       <el-form v-show="showSearch" ref="partQueryForm" :model="partQueryParams" size="small" :inline="true">
         <el-form-item label="零件号" prop="pn">
           <el-input
@@ -332,9 +332,9 @@
 
       <el-table v-loading="partLoading" :data="partList" @selection-change="handlePartSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="零件号" prop="partCode" width="110" />
-        <el-table-column label="序列号" prop="sn" />
-        <el-table-column label="车载节点" prop="vehicleNodeCode" width="120" align="center" />
+        <el-table-column label="零件号" prop="partCode" width="120" fixed="left" />
+        <el-table-column label="序列号" prop="sn" width="180" fixed="left" />
+        <el-table-column label="车载节点" prop="vehicleNodeCode" width="150" align="center" />
         <el-table-column label="设备项" prop="deviceItem" width="100" align="center" />
         <el-table-column label="绑定状态" prop="bindState" width="80" align="center">
           <template slot-scope="scope">
