@@ -105,8 +105,8 @@
 
     <el-table v-loading="loading" :data="partList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="零件编码" prop="code" width="110" />
-      <el-table-column label="零件名称" prop="name" min-width="250" />
+      <el-table-column label="零件编码" prop="code" width="110" fixed="left" />
+      <el-table-column label="零件名称" prop="name" min-width="250" fixed="left" />
       <el-table-column label="物料分类" prop="categoryCode" width="80" align="center" />
       <el-table-column label="零件类型" prop="partType" width="80" align="center">
         <template slot-scope="scope">

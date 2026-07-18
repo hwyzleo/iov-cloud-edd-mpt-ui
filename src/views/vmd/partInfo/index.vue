@@ -106,11 +106,12 @@
     <!-- 数据表格 -->
     <el-table v-loading="loading" :data="partInfoList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="零件编码" prop="partCode" width="130" fixed="left" />
+      <el-table-column label="总成零件编码" prop="partCode" width="130" fixed="left" />
       <el-table-column label="零件名称" prop="partName" min-width="250" fixed="left" />
       <el-table-column label="序列号" prop="sn" min-width="180" fixed="left" />
       <el-table-column label="供应商编码" prop="supplierCode" width="120" />
       <el-table-column label="批次号" prop="batchNum" width="130" />
+      <el-table-column label="硬件零件号" prop="hardwarePn" width="130" />
       <el-table-column label="硬件版本" prop="hardwareVer" width="80" align="center" />
       <el-table-column label="软件版本" prop="softwareVer" width="80" align="center" />
       <el-table-column label="零件状态" prop="instanceState" width="80" align="center">

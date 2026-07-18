@@ -95,7 +95,7 @@
     <el-table v-loading="loading" :data="partImportDataList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="批次号" prop="batchNum" width="140" fixed="left"/>
-      <el-table-column label="零件代码" prop="partCode" width="130" fixed="left"/>
+      <el-table-column label="硬件零件号" prop="partCode" width="130" fixed="left"/>
       <el-table-column label="零件名称" prop="partName" min-width="250"/>
       <el-table-column label="车载节点" prop="vehicleNodeCode" width="150" align="center"/>
       <el-table-column label="数据版本" prop="version" align="center" width="80"/>
@@ -154,10 +154,10 @@
         <el-form-item label="批次号" prop="batchNum">
           <el-input v-model="form.batchNum" placeholder="请输入批次号"/>
         </el-form-item>
-        <el-form-item label="零件代码" prop="partCode">
+        <el-form-item label="硬件零件号" prop="partCode">
           <el-select
             v-model="form.partCode"
-            placeholder="零件代码"
+            placeholder="硬件零件号"
             clearable
             filterable
             style="width: 100%"
