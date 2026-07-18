@@ -63,10 +63,11 @@ export function deactivatePart(code, modifyBy) {
 }
 
 // 查询所有ACTIVE零件
-export function listAllParts() {
+export function listAllParts(query) {
   return request({
     url: '/edd-mdm/api/mpt/material/part/v1/listAll',
-    method: 'get'
+    method: 'get',
+    params: query
   })
 }
 

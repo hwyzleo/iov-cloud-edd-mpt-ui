@@ -79,7 +79,7 @@
 
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="车架号" fixed="left" min-width="170" prop="vin">
+      <el-table-column label="车架号" fixed="left" min-width="200" prop="vin">
         <template slot-scope="scope">
           <span>{{ scope.row.vin }}</span>
           <el-tooltip v-if="!isValidVin(scope.row.vin)" content="VIN格式错误" placement="top">

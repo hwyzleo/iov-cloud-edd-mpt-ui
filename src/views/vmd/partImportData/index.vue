@@ -96,10 +96,10 @@
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="批次号" prop="batchNum" width="140" fixed="left"/>
       <el-table-column label="零件代码" prop="partCode" width="130" fixed="left"/>
-      <el-table-column label="零件名称" prop="partName" min-width="200"/>
-      <el-table-column label="车载节点" prop="vehicleNodeCode" width="150"/>
-      <el-table-column label="数据版本" prop="version" align="center" width="100"/>
-      <el-table-column label="是否已处理" align="center" width="120">
+      <el-table-column label="零件名称" prop="partName" min-width="250"/>
+      <el-table-column label="车载节点" prop="vehicleNodeCode" width="150" align="center"/>
+      <el-table-column label="数据版本" prop="version" align="center" width="80"/>
+      <el-table-column label="是否已处理" align="center" width="100">
         <template slot-scope="scope">
           <span>{{ scope.row.handle ? '是' : '否' }}</span>
         </template>
@@ -323,9 +323,9 @@ export default {
       const item = this.partList.find(part => part.code === dataType);
       return item ? item.code + ' - ' + item.name : dataType;
     },
-    // 加载零件列表
+    // 加载零件列表（只获取硬件总成零件）
     loadPartList() {
-      listAllParts().then(response => {
+      listAllParts({ isSoftware: false, isAssembly: true }).then(response => {
         this.partList = response.data || [];
       });
     },
