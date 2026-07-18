@@ -29,7 +29,7 @@ export function getVehicle(vin) {
 // 查询车辆生命周期列表
 export function listVehicleLifecycle(vin) {
   return request({
-    url: '/edd-vmd/api/mpt/vehicle/v1/' + vin + '/lifecycle',
+    url: '/edd-vmd/api/mpt/vehicleLifecycle/v1/' + vin + '/timeline',
     method: 'get'
   })
 }
@@ -43,45 +43,10 @@ export function addVehicle(data) {
   })
 }
 
-// 新增车辆生命周期
-export function addVehicleLifecycle(data) {
-  return request({
-    url: '/edd-vmd/api/mpt/vehicle/v1/' + data.vin + '/lifecycle',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改车辆
-export function updateVehicle(data) {
-  return request({
-    url: '/edd-vmd/api/mpt/vehicle/v1/' + data.vin + '/lifecycle',
-    method: 'put',
-    data: data
-  })
-}
-
-// 修改车辆生命周期
-export function updateVehicleLifecycle(data) {
-  return request({
-    url: '/edd-vmd/api/mpt/vehicle/v1/' + data.vin + '/lifecycle',
-    method: 'put',
-    data: data
-  })
-}
-
 // 删除车辆
 export function delVehicle(vehicleIds) {
   return request({
     url: '/edd-vmd/api/mpt/vehicle/v1/' + vehicleIds,
-    method: 'delete'
-  })
-}
-
-// 删除车辆生命周期
-export function delVehicleLifecycle(vin, lifecycleId) {
-  return request({
-    url: '/edd-vmd/api/mpt/vehicle/v1/' + vin + '/lifecycle/' + lifecycleId,
     method: 'delete'
   })
 }

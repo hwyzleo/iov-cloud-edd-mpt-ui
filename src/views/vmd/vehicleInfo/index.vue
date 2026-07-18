@@ -41,18 +41,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['completeVehicle:vehicle:info:edit']"
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-        >修改
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           v-hasPermi="['completeVehicle:vehicle:info:remove']"
           type="danger"
           plain
@@ -118,14 +106,6 @@
           >零件管理
           </el-button>
           <el-button
-            v-hasPermi="['completeVehicle:vehicle:info:edit']"
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-          >修改
-          </el-button>
-          <el-button
             v-hasPermi="['completeVehicle:vehicle:info:remove']"
             size="mini"
             type="text"
@@ -175,79 +155,10 @@
               <span>{{ parseTime(scope.row.reachTime) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="排序" prop="sort" width="60" />
-          <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-            <template slot-scope="scope">
-              <span>{{ parseTime(scope.row.createTime) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
-            <template slot-scope="scope">
-              <el-button
-                v-hasPermi="['vehicle:vehicle:vehicle:edit']"
-                size="mini"
-                type="text"
-                icon="el-icon-edit"
-                @click="handleUpdateLifecycle(scope.row)"
-              >修改
-              </el-button>
-              <el-button
-                v-hasPermi="['vehicle:vehicle:vehicle:edit']"
-                size="mini"
-                type="text"
-                icon="el-icon-delete"
-                @click="handleDeleteLifecycle(scope.row)"
-              >删除
-              </el-button>
-            </template>
-          </el-table-column>
         </el-table>
       </div>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="handleAddLifecycle(form.vin)">新 增</el-button>
         <el-button @click="cancelLifecycleList">关 闭</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 添加或修改生命周期对话框 -->
-    <el-dialog :title="title2" :visible.sync="openLifecycle" width="500px" append-to-body>
-      <el-form ref="formLifecycle" :model="formLifecycle" :rules="rulesLifecycle" label-width="120px">
-        <el-form-item label="车架号" prop="vin">
-          <el-input v-model="formLifecycle.vin" readonly placeholder="请输入车架号" />
-        </el-form-item>
-        <el-form-item label="节点类型" prop="node">
-          <el-select
-            v-model="formLifecycle.node"
-            placeholder="节点类型"
-            clearable
-          >
-            <el-option
-              v-for="dict in dict.type.iov_vehicle_lifecycle"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="触达时间" prop="reachTime">
-          <el-date-picker
-            v-model="formLifecycle.reachTime"
-            type="datetime"
-            placeholder="选择日期时间"
-            value-format="timestamp"
-            format="yyyy-MM-dd HH:mm:ss"
-          />
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="formLifecycle.sort" controls-position="right" :min="0" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="formLifecycle.description" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitFormLifecycle">确 定</el-button>
-        <el-button @click="cancelLifecycle">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -408,13 +319,8 @@
 import {
   listVehicle,
   listVehicleLifecycle,
-  getVehicle,
   addVehicle,
-  addVehicleLifecycle,
-  updateVehicle,
-  updateVehicleLifecycle,
-  delVehicle,
-  delVehicleLifecycle
+  delVehicle
 } from '@/api/vmd/vehicleInfo'
 import {
   listVehiclePart,
@@ -449,13 +355,10 @@ export default {
       lifecycleList: [],
       // 弹出层标题
       title: '',
-      title2: '',
       // 是否显示弹出层
       open: false,
       // 是否显示弹出层（生命周期列表）
       openLifecycleList: false,
-      // 是否显示弹出层（生命周期）
-      openLifecycle: false,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -465,27 +368,10 @@ export default {
       },
       // 表单参数
       form: {},
-      // 表单参数（生命周期）
-      formLifecycle: {},
       // 表单校验
       rules: {
         vin: [
           { required: true, message: '车架号不能为空', trigger: 'blur' }
-        ]
-      },
-      // 表单校验（生命周期）
-      rulesLifecycle: {
-        vin: [
-          { required: true, message: '车架号不能为空', trigger: 'blur' }
-        ],
-        node: [
-          { required: true, message: '节点类型不能为空', trigger: 'blur' }
-        ],
-        reachTime: [
-          { required: true, message: '触达时间不能为空', trigger: 'blur' }
-        ],
-        sort: [
-          { required: true, message: '排序不能为空', trigger: 'blur' }
         ]
       },
       // 零件管理相关
@@ -555,7 +441,7 @@ export default {
     getListLifecycle(vin) {
       this.loadingLifecycle = true
       listVehicleLifecycle(vin).then(response => {
-        this.lifecycleList = response
+        this.lifecycleList = response.data
         this.form = {
           vin: vin
         }
@@ -582,24 +468,10 @@ export default {
     cancelLifecycleList() {
       this.openLifecycleList = false
     },
-    /** 取消按钮（生命周期） */
-    cancelLifecycle() {
-      this.openLifecycle = false
-    },
     /** 表单重置 */
     reset() {
       this.form = {
         vin: undefined
-      }
-      this.resetForm('form')
-    },
-    /** 表单重置（生命周期） */
-    resetLifecycle() {
-      this.formLifecycle = {
-        vin: undefined,
-        node: undefined,
-        reachTime: undefined,
-        sort: 0
       }
       this.resetForm('form')
     },
@@ -627,33 +499,6 @@ export default {
       this.title = '添加车辆'
       this.form = {}
     },
-    /** 新增按钮操作（生命周期） */
-    handleAddLifecycle() {
-      this.resetLifecycle()
-      this.openLifecycle = true
-      this.title2 = '添加车辆生命周期'
-      this.formLifecycle = {
-        vin: this.form.vin,
-        sort: 0
-      }
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset()
-      const vehicleId = row.id || this.ids
-      getVehicle(vehicleId).then(response => {
-        this.form = response.data
-        this.open = true
-      })
-      this.title = '修改车辆'
-    },
-    /** 修改按钮操作（生命周期） */
-    handleUpdateLifecycle(row) {
-      this.resetLifecycle()
-      this.formLifecycle = row
-      this.openLifecycle = true
-      this.title2 = '修改车辆生命周期'
-    },
     /** 生命周期按钮操作 */
     handleLifecycle(row) {
       this.openLifecycleList = true
@@ -664,39 +509,11 @@ export default {
     submitForm: function() {
       this.$refs['form'].validate(valid => {
         if (valid) {
-          if (this.form.id !== undefined) {
-            updateVehicle(this.form).then(response => {
-              this.$modal.msgSuccess('修改成功')
-              this.open = false
-              this.getList()
-            })
-          } else {
-            addVehicle(this.form).then(response => {
-              this.$modal.msgSuccess('新增成功')
-              this.open = false
-              this.getList()
-            })
-          }
-        }
-      })
-    },
-    /** 提交按钮（生命周期） */
-    submitFormLifecycle: function() {
-      this.$refs['formLifecycle'].validate(valid => {
-        if (valid) {
-          if (this.formLifecycle.id !== undefined) {
-            updateVehicleLifecycle(this.formLifecycle).then(response => {
-              this.$modal.msgSuccess('修改成功')
-              this.openLifecycle = false
-              this.getListLifecycle(this.formLifecycle.vin)
-            })
-          } else {
-            addVehicleLifecycle(this.formLifecycle).then(response => {
-              this.$modal.msgSuccess('新增成功')
-              this.openLifecycle = false
-              this.getListLifecycle(this.formLifecycle.vin)
-            })
-          }
+          addVehicle(this.form).then(response => {
+            this.$modal.msgSuccess('新增成功')
+            this.open = false
+            this.getList()
+          })
         }
       })
     },
@@ -707,16 +524,6 @@ export default {
         return delVehicle(vehicleIds)
       }).then(() => {
         this.getList()
-        this.$modal.msgSuccess('删除成功')
-      }).catch(() => {
-      })
-    },
-    /** 删除按钮操作（生命周期） */
-    handleDeleteLifecycle(row) {
-      this.$modal.confirm('是否确认删除车辆生命周期ID为"' + row.id + '"的数据项？').then(function() {
-        return delVehicleLifecycle(row.vin, row.id)
-      }).then(() => {
-        this.getListLifecycle(row.vin)
         this.$modal.msgSuccess('删除成功')
       }).catch(() => {
       })
