@@ -152,7 +152,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width" fixed="right">
+      <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -244,6 +244,29 @@
             v-hasPermi="['ota:fota:task:remove']"
           >删除
           </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-document-checked"
+            @click="handleConsent(scope.row)"
+            v-hasPermi="['ota:fota:task:query']"
+          >授权
+          </el-button>
+          <el-dropdown
+            trigger="click"
+            @command="(command) => handleOperateCommand(command, scope.row)"
+            style="margin-left: 8px;"
+            v-hasPermi="['ota:fota:task:query']"
+          >
+            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多<i class="el-icon-arrow-down el-icon--right"></i></el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="stateLogs" icon="el-icon-document-copy">状态审计</el-dropdown-item>
+              <el-dropdown-item command="metricReport" icon="el-icon-data-analysis">指标/报告</el-dropdown-item>
+              <el-dropdown-item command="releaseGate" icon="el-icon-unlock">放行门禁</el-dropdown-item>
+              <el-dropdown-item command="supersede" icon="el-icon-refresh-right" v-if="scope.row.state === 6 || scope.row.state === 7 || scope.row.state === 11" v-hasPermi="['ota:fota:task:supersede']">取代</el-dropdown-item>
+              <el-dropdown-item command="finish" icon="el-icon-circle-check" v-if="scope.row.state === 6 || scope.row.state === 7 || scope.row.state === 11" v-hasPermi="['ota:fota:task:finish']">结束</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -708,6 +731,171 @@
         <el-button @click="openSchedule = false">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 授权汇总对话框 -->
+    <el-dialog title="任务授权汇总" :visible.sync="openConsent" width="920px" append-to-body>
+      <div v-loading="consentLoading">
+        <el-form label-width="80px" size="small">
+          <el-form-item label="授权分布">
+            <template v-if="Object.keys(consentSummary).length">
+              <el-tag
+                v-for="(count, state) in consentSummary"
+                :key="state"
+                :type="consentStateType(state)"
+                style="margin-right: 10px; margin-bottom: 6px;"
+              >{{ consentStateLabel(state) }}：{{ count }}
+              </el-tag>
+            </template>
+            <span v-else>暂无授权数据</span>
+          </el-form-item>
+        </el-form>
+        <el-table :data="consentVehicleList" height="400">
+          <el-table-column label="车辆" prop="vinMasked" width="190" show-overflow-tooltip/>
+          <el-table-column label="授权状态" prop="consentState" width="110" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="consentStateType(scope.row.consentState)">{{ consentStateLabel(scope.row.consentState) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="当前凭据ID" prop="currentReceiptId" min-width="170" show-overflow-tooltip/>
+          <el-table-column label="条款版本" prop="articleVersion" width="100" align="center"/>
+          <el-table-column label="更新时间" prop="consentUpdatedAt" width="160" align="center">
+            <template slot-scope="scope">{{ parseTime(scope.row.consentUpdatedAt) }}</template>
+          </el-table-column>
+          <el-table-column label="无效原因" prop="invalidReason" min-width="120" show-overflow-tooltip/>
+        </el-table>
+        <div style="text-align: right; margin-top: 10px;">
+          <el-button size="mini" :disabled="consentQueryParams.pageNum <= 1" @click="consentPageChange(-1)">上一页</el-button>
+          <span style="margin: 0 12px; font-size: 13px;">第 {{ consentQueryParams.pageNum }} 页</span>
+          <el-button size="mini" :disabled="consentVehicleList.length < consentQueryParams.pageSize" @click="consentPageChange(1)">下一页</el-button>
+        </div>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openConsent = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 状态迁移审计对话框 -->
+    <el-dialog title="任务状态迁移审计" :visible.sync="openStateLogs" width="900px" append-to-body>
+      <el-form :model="stateLogsQueryParams" size="small" :inline="true">
+        <el-form-item label="操作时间">
+          <el-date-picker
+            v-model="stateLogsDateRange"
+            style="width: 240px"
+            value-format="yyyy-MM-dd"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="stateLogsQueryParams.pageNum = 1; loadStateLogs()">搜索</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table v-loading="stateLogsLoading" :data="stateLogsList">
+        <el-table-column label="原状态" prop="fromState" width="120" align="center"/>
+        <el-table-column label="目标状态" prop="toState" width="120" align="center"/>
+        <el-table-column label="动作" prop="action" width="130" align="center"/>
+        <el-table-column label="操作人" prop="operator" width="120" align="center"/>
+        <el-table-column label="原因" prop="reason" min-width="150" show-overflow-tooltip/>
+        <el-table-column label="决定时间" prop="decidedAt" width="170" align="center">
+          <template slot-scope="scope">{{ parseTime(scope.row.decidedAt) }}</template>
+        </el-table-column>
+      </el-table>
+      <pagination v-show="stateLogsTotal>0" :total="stateLogsTotal" :page.sync="stateLogsQueryParams.pageNum" :limit.sync="stateLogsQueryParams.pageSize" @pagination="loadStateLogs"/>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openStateLogs = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 指标/报告对话框 -->
+    <el-dialog title="任务健康指标与报告" :visible.sync="openMetricReport" width="820px" append-to-body>
+      <div v-loading="metricReportLoading">
+        <el-descriptions title="健康指标" :column="3" border size="small">
+          <el-descriptions-item label="总数">{{ metricData.totalCnt != null ? metricData.totalCnt : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="成功">{{ metricData.successCnt != null ? metricData.successCnt : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="失败">{{ metricData.failCnt != null ? metricData.failCnt : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="超时">{{ metricData.timeoutCnt != null ? metricData.timeoutCnt : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="完成率">{{ metricData.completeRate != null ? metricData.completeRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="成功率">{{ metricData.successRate != null ? metricData.successRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="失败率">{{ metricData.failRate != null ? metricData.failRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="门禁阈值">{{ metricData.gateThreshold != null ? metricData.gateThreshold + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="门禁状态">{{ metricData.gateState || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <el-divider/>
+        <el-descriptions title="任务报告" :column="2" border size="small">
+          <el-descriptions-item label="报告版本">{{ reportData.reportVersion != null ? reportData.reportVersion : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="临时统计">{{ reportData.provisional ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="任务状态">{{ reportData.taskState || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="生成时间">{{ parseTime(reportData.genTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="完成率">{{ reportData.completeRate != null ? reportData.completeRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="成功率">{{ reportData.successRate != null ? reportData.successRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="失败分布" :span="2">{{ reportData.failCaseDist || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openMetricReport = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 放行门禁对话框 -->
+    <el-dialog title="放行门禁" :visible.sync="openReleaseGate" width="760px" append-to-body>
+      <div v-loading="releaseGateLoading">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="门禁类型">{{ releaseGateData.gateType || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="门禁状态">{{ releaseGateData.gateState || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="前序任务">{{ releaseGateData.previousTaskId != null ? releaseGateData.previousTaskId : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="下一任务">{{ releaseGateData.nextTaskId != null ? releaseGateData.nextTaskId : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="阈值快照">{{ releaseGateData.gateThresholdSnapshot || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="报告引用">{{ releaseGateData.reportRef || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="是否人工放行">{{ releaseGateData.override ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="审批引用">{{ releaseGateData.approvalRef || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="决定人">{{ releaseGateData.decidedBy || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="决定时间">{{ parseTime(releaseGateData.decidedAt) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="说明" :span="2">{{ releaseGateData.description || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <el-divider/>
+        <div class="drawer-title">人工放行（需原因与审批引用）</div>
+        <el-form :model="releaseGateForm" label-width="110px" size="small">
+          <el-form-item label="放行原因" required>
+            <el-input v-model="releaseGateForm.reason" type="textarea" :rows="2" placeholder="请输入放行原因"/>
+          </el-form-item>
+          <el-form-item label="审批引用">
+            <el-input v-model="releaseGateForm.approvalRef" placeholder="请输入审批引用（可选）"/>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitReleaseGateOverride" v-hasPermi="['ota:fota:task:edit']">人工放行</el-button>
+        <el-button @click="openReleaseGate = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 暂停原因对话框 -->
+    <el-dialog title="暂停升级任务" :visible.sync="openPauseReason" width="500px" append-to-body>
+      <el-form :model="pauseReasonForm" label-width="100px">
+        <el-form-item label="暂停原因">
+          <el-input v-model="pauseReasonForm.pauseReason" type="textarea" :rows="3" placeholder="请输入暂停原因（可选）"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitPauseReason">确 定</el-button>
+        <el-button @click="openPauseReason = false">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 取消原因对话框 -->
+    <el-dialog title="取消升级任务" :visible.sync="openCancelReason" width="500px" append-to-body>
+      <el-form :model="cancelReasonForm" label-width="100px">
+        <el-form-item label="取消原因">
+          <el-input v-model="cancelReasonForm.cancelReason" type="textarea" :rows="3" placeholder="请输入取消原因（可选）"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitCancelReason">确 定</el-button>
+        <el-button @click="openCancelReason = false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -727,7 +915,17 @@ import {
   pauseTask,
   resumeTask,
   cancelTask,
-  listTaskApproval
+  listTaskApproval,
+  listTaskConsents,
+  listTaskStateLogs,
+  getTaskMetric,
+  getTaskReport,
+  getTaskReleaseGate,
+  overrideTaskReleaseGate,
+  supersedeTask,
+  finishTask,
+  pauseTaskWithReason,
+  cancelTaskWithReason
 } from "@/api/iov/ota/task";
 import {
   listActivity,
@@ -773,6 +971,53 @@ export default {
       openApprovalRecord: false,
       loadingApproval: false,
       approvalList: [],
+      // 授权汇总对话框
+      openConsent: false,
+      consentLoading: false,
+      consentSummary: {},
+      consentVehicleList: [],
+      consentTaskId: undefined,
+      consentQueryParams: {
+        pageNum: 1,
+        pageSize: 10
+      },
+      // 状态迁移审计对话框
+      openStateLogs: false,
+      stateLogsLoading: false,
+      stateLogsList: [],
+      stateLogsTotal: 0,
+      stateLogsTaskId: undefined,
+      stateLogsDateRange: [],
+      stateLogsQueryParams: {
+        pageNum: 1,
+        pageSize: 10
+      },
+      // 指标/报告对话框
+      openMetricReport: false,
+      metricReportLoading: false,
+      metricData: {},
+      reportData: {},
+      // 放行门禁对话框
+      openReleaseGate: false,
+      releaseGateLoading: false,
+      releaseGateData: {},
+      releaseGateTaskId: undefined,
+      releaseGateForm: {
+        reason: undefined,
+        approvalRef: undefined
+      },
+      // 暂停原因对话框
+      openPauseReason: false,
+      pauseReasonForm: {
+        taskId: undefined,
+        pauseReason: undefined
+      },
+      // 取消原因对话框
+      openCancelReason: false,
+      cancelReasonForm: {
+        taskId: undefined,
+        cancelReason: undefined
+      },
       // 定时发布对话框
       openSchedule: false,
       scheduleForm: {
@@ -1085,13 +1330,18 @@ export default {
     /** 暂停按钮操作 */
     handlePause(row) {
       const taskId = row.id || this.ids
-      this.$modal.confirm('是否确认暂停该升级任务？').then(() => {
-        if (taskId !== undefined) {
-          pauseTask(taskId).then(response => {
-            this.$modal.msgSuccess("暂停成功");
-            this.getList();
-          });
-        }
+      this.pauseReasonForm = { taskId: taskId, pauseReason: undefined }
+      this.openPauseReason = true
+    },
+    /** 提交暂停（支持原因） */
+    submitPauseReason() {
+      const taskId = this.pauseReasonForm.taskId
+      const reason = this.pauseReasonForm.pauseReason
+      const action = reason ? pauseTaskWithReason(taskId, { pauseReason: reason }) : pauseTask(taskId)
+      action.then(response => {
+        this.$modal.msgSuccess("暂停成功");
+        this.openPauseReason = false;
+        this.getList();
       }).catch(() => {
       });
     },
@@ -1111,13 +1361,18 @@ export default {
     /** 取消按钮操作 */
     handleCancel(row) {
       const taskId = row.id || this.ids
-      this.$modal.confirm('是否确认取消该升级任务？').then(() => {
-        if (taskId !== undefined) {
-          cancelTask(taskId).then(response => {
-            this.$modal.msgSuccess("取消成功");
-            this.getList();
-          });
-        }
+      this.cancelReasonForm = { taskId: taskId, cancelReason: undefined }
+      this.openCancelReason = true
+    },
+    /** 提交取消（支持原因） */
+    submitCancelReason() {
+      const taskId = this.cancelReasonForm.taskId
+      const reason = this.cancelReasonForm.cancelReason
+      const action = reason ? cancelTaskWithReason(taskId, { cancelReason: reason }) : cancelTask(taskId)
+      action.then(response => {
+        this.$modal.msgSuccess("取消成功");
+        this.openCancelReason = false;
+        this.getList();
       }).catch(() => {
       });
     },
@@ -1154,7 +1409,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-fota/task/export', {
+      this.download('/iov-ota/api/mpt/task/v1/export', {
         ...this.queryParams
       }, `task_${new Date().getTime()}.xlsx`)
     },
@@ -1288,6 +1543,162 @@ export default {
         this.loadingApproval = false;
       }).catch(() => {
         this.loadingApproval = false;
+      });
+    },
+    /** 授权汇总按钮操作 */
+    handleConsent(row) {
+      this.consentTaskId = row.id
+      this.consentSummary = {}
+      this.consentVehicleList = []
+      this.consentQueryParams.pageNum = 1
+      this.openConsent = true
+      this.loadTaskConsents()
+    },
+    /** 加载任务授权汇总 */
+    loadTaskConsents() {
+      if (!this.consentTaskId) return
+      this.consentLoading = true
+      listTaskConsents(this.consentTaskId, this.consentQueryParams).then(response => {
+        const data = response.data || {}
+        this.consentSummary = data.consentStateSummary || {}
+        this.consentVehicleList = data.vehicles || []
+        this.consentLoading = false
+      }).catch(() => {
+        this.consentLoading = false
+      })
+    },
+    /** 授权汇总分页切换 */
+    consentPageChange(step) {
+      this.consentQueryParams.pageNum += step
+      this.loadTaskConsents()
+    },
+    /** 授权状态标签类型 */
+    consentStateType(state) {
+      const map = {
+        NOT_REQUIRED: 'info',
+        PENDING: 'warning',
+        GRANTED: 'success',
+        REJECTED: 'danger',
+        REVOKED: 'warning',
+        EXPIRED: 'info',
+        INVALIDATED: 'danger'
+      }
+      return map[state] || 'info'
+    },
+    /** 授权状态文本 */
+    consentStateLabel(state) {
+      const map = {
+        NOT_REQUIRED: '无需授权',
+        PENDING: '待授权',
+        GRANTED: '已同意',
+        REJECTED: '已拒绝',
+        REVOKED: '已撤回',
+        EXPIRED: '已过期',
+        INVALIDATED: '已失效'
+      }
+      return map[state] || state
+    },
+    /** 运营下拉命令 */
+    handleOperateCommand(command, row) {
+      const actions = {
+        stateLogs: () => this.handleStateLogs(row),
+        metricReport: () => this.handleMetricReport(row),
+        releaseGate: () => this.handleReleaseGate(row),
+        supersede: () => this.handleSupersede(row),
+        finish: () => this.handleFinish(row)
+      }
+      const action = actions[command]
+      if (action) action()
+    },
+    /** 状态迁移审计 */
+    handleStateLogs(row) {
+      this.stateLogsTaskId = row.id
+      this.stateLogsDateRange = []
+      this.stateLogsQueryParams = { pageNum: 1, pageSize: 10 }
+      this.openStateLogs = true
+      this.loadStateLogs()
+    },
+    /** 加载状态迁移审计 */
+    loadStateLogs() {
+      if (!this.stateLogsTaskId) return
+      this.stateLogsLoading = true
+      const query = this.addDateRange(this.stateLogsQueryParams, this.stateLogsDateRange)
+      listTaskStateLogs(this.stateLogsTaskId, query).then(response => {
+        this.stateLogsList = response.data.items || []
+        this.stateLogsTotal = response.data.total || 0
+        this.stateLogsLoading = false
+      }).catch(() => {
+        this.stateLogsLoading = false
+      })
+    },
+    /** 健康指标与报告 */
+    handleMetricReport(row) {
+      this.openMetricReport = true
+      this.metricReportLoading = true
+      this.metricData = {}
+      this.reportData = {}
+      getTaskMetric(row.id).then(response => {
+        this.metricData = response.data || {}
+      })
+      getTaskReport(row.id).then(response => {
+        this.reportData = response.data || {}
+      }).finally(() => {
+        this.metricReportLoading = false
+      })
+    },
+    /** 放行门禁 */
+    handleReleaseGate(row) {
+      this.releaseGateTaskId = row.id
+      this.releaseGateForm = { reason: undefined, approvalRef: undefined }
+      this.openReleaseGate = true
+      this.loadReleaseGate()
+    },
+    /** 加载放行门禁 */
+    loadReleaseGate() {
+      if (!this.releaseGateTaskId) return
+      this.releaseGateLoading = true
+      getTaskReleaseGate(this.releaseGateTaskId).then(response => {
+        this.releaseGateData = response.data || {}
+        this.releaseGateLoading = false
+      }).catch(() => {
+        this.releaseGateLoading = false
+      })
+    },
+    /** 人工放行 */
+    submitReleaseGateOverride() {
+      if (!this.releaseGateForm.reason) {
+        this.$modal.msgWarning("请输入放行原因")
+        return
+      }
+      overrideTaskReleaseGate(this.releaseGateTaskId, this.releaseGateForm).then(response => {
+        this.$modal.msgSuccess("人工放行成功")
+        this.loadReleaseGate()
+      })
+    },
+    /** 取代 */
+    handleSupersede(row) {
+      const taskId = row.id || this.ids
+      this.$modal.confirm('是否确认取代该升级任务？').then(() => {
+        if (taskId !== undefined) {
+          supersedeTask(taskId).then(response => {
+            this.$modal.msgSuccess("取代成功");
+            this.getList();
+          });
+        }
+      }).catch(() => {
+      });
+    },
+    /** 结束 */
+    handleFinish(row) {
+      const taskId = row.id || this.ids
+      this.$modal.confirm('是否确认结束该升级任务？').then(() => {
+        if (taskId !== undefined) {
+          finishTask(taskId).then(response => {
+            this.$modal.msgSuccess("结束成功");
+            this.getList();
+          });
+        }
+      }).catch(() => {
       });
     },
     getTargetMode(targetStr) {

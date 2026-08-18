@@ -50,7 +50,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:add']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +62,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >修改
         </el-button>
       </el-col>
@@ -74,7 +74,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:remove']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +85,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:export']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:export']"
         >导出
         </el-button>
       </el-col>
@@ -124,7 +124,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+            v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
           >修改
           </el-button>
           <el-button
@@ -132,19 +132,19 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:remove']"
+            v-hasPermi="['ota:fota:softwareBuildVersion:remove']"
           >删除
           </el-button>
           <el-dropdown @command="(command) => handleMoreCommand(command, scope.row)">
             <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="package" icon="el-icon-document" v-hasPermi="['ota:baseline:softwareBuildVersion:query']">关联</el-dropdown-item>
-              <el-dropdown-item command="dependency" icon="el-icon-connection" v-hasPermi="['ota:baseline:softwareBuildVersion:query']">依赖</el-dropdown-item>
-              <el-dropdown-item command="testReport" icon="el-icon-tickets" v-hasPermi="['ota:pota:softwareBuildVersion:list']">测试报告</el-dropdown-item>
-              <el-dropdown-item command="adaptation" icon="el-icon-s-grid" v-hasPermi="['ota:pota:softwareBuildVersion:list']">适配矩阵</el-dropdown-item>
-              <el-dropdown-item divided v-if="scope.row.buildState === 'DRAFT' || scope.row.buildState === 'TESTING'" command="release" icon="el-icon-upload2" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">发布</el-dropdown-item>
-              <el-dropdown-item v-if="scope.row.buildState === 'RELEASED'" command="deprecate" icon="el-icon-warning" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">停用</el-dropdown-item>
-              <el-dropdown-item v-if="scope.row.buildState === 'DEPRECATED'" command="retire" icon="el-icon-circle-close" v-hasPermi="['ota:pota:softwareBuildVersion:edit']">退役</el-dropdown-item>
+              <el-dropdown-item command="package" icon="el-icon-document" v-hasPermi="['ota:fota:softwareBuildVersion:query']">关联</el-dropdown-item>
+              <el-dropdown-item command="dependency" icon="el-icon-connection" v-hasPermi="['ota:fota:softwareBuildVersion:query']">依赖</el-dropdown-item>
+              <el-dropdown-item command="testReport" icon="el-icon-tickets" v-hasPermi="['ota:fota:softwareBuildVersion:list']">测试报告</el-dropdown-item>
+              <el-dropdown-item command="adaptation" icon="el-icon-s-grid" v-hasPermi="['ota:fota:softwareBuildVersion:list']">适配矩阵</el-dropdown-item>
+              <el-dropdown-item divided v-if="scope.row.buildState === 'DRAFT' || scope.row.buildState === 'TESTING'" command="release" icon="el-icon-upload2" v-hasPermi="['ota:fota:softwareBuildVersion:edit']">发布</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.buildState === 'RELEASED'" command="deprecate" icon="el-icon-warning" v-hasPermi="['ota:fota:softwareBuildVersion:edit']">停用</el-dropdown-item>
+              <el-dropdown-item v-if="scope.row.buildState === 'DEPRECATED'" command="retire" icon="el-icon-circle-close" v-hasPermi="['ota:fota:softwareBuildVersion:edit']">退役</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
         </template>
@@ -476,7 +476,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-baseline/softwareBuildVersion/export', {
+      this.download('/iov-ota/api/mpt/softwareBuildVersion/v1/export', {
         ...this.queryParams
       }, `software_build_version_${new Date().getTime()}.xlsx`)
     },

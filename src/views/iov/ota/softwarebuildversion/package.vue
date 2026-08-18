@@ -27,7 +27,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >查询并添加软件包
         </el-button>
       </el-col>
@@ -65,7 +65,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleRemoveSoftwareBuildVersionPackage(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+            v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
           >删除关联
           </el-button>
         </template>
@@ -103,7 +103,7 @@
               size="mini"
               :disabled="multipleSoftwarePackage"
               @click="handleAddSoftwareBuildVersionPackage"
-              v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+              v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
             >关联
             </el-button>
           </el-col>
@@ -143,7 +143,7 @@
                 type="text"
                 icon="el-icon-edit"
                 @click="handleAddSoftwareBuildVersionPackage(scope.row)"
-                v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+                v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
               >关联
               </el-button>
             </template>

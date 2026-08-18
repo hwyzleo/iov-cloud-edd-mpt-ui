@@ -50,7 +50,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:baseline:compatiblePn:add']"
+          v-hasPermi="['ota:fota:compatiblePn:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +62,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:baseline:compatiblePn:edit']"
+          v-hasPermi="['ota:fota:compatiblePn:edit']"
         >修改
         </el-button>
       </el-col>
@@ -74,7 +74,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:baseline:compatiblePn:remove']"
+          v-hasPermi="['ota:fota:compatiblePn:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +85,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:baseline:compatiblePn:export']"
+          v-hasPermi="['ota:fota:compatiblePn:export']"
         >导出
         </el-button>
       </el-col>
@@ -116,7 +116,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:edit']"
+            v-hasPermi="['ota:fota:compatiblePn:edit']"
           >修改
           </el-button>
           <el-button
@@ -124,7 +124,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:compatiblePn:remove']"
+            v-hasPermi="['ota:fota:compatiblePn:remove']"
           >删除
           </el-button>
         </template>
@@ -345,7 +345,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-baseline/compatiblePn/export', {
+      this.download('/iov-ota/api/mpt/compatiblePn/v1/export', {
         ...this.queryParams
       }, `compatible_pn_${new Date().getTime()}.xlsx`)
     },

@@ -8,7 +8,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >新增适配关系
         </el-button>
       </el-col>
@@ -19,7 +19,7 @@
           icon="el-icon-check"
           size="mini"
           @click="handleSave"
-          v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >保存
         </el-button>
       </el-col>

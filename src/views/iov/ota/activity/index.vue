@@ -747,7 +747,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-fota/activity/export', {
+      this.download('/iov-ota/api/mpt/activity/v1/export', {
         ...this.queryParams
       }, `activity_${new Date().getTime()}.xlsx`)
     },

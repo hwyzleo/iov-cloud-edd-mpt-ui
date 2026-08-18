@@ -159,3 +159,58 @@ export function delTask(taskIds) {
     method: 'delete'
   })
 }
+
+// ==================== 授权汇总（CR-016） ====================
+
+// 查询任务授权汇总（状态分布 + 车辆授权列表）
+export function listTaskConsents(taskId, query) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/consents',
+    method: 'get',
+    params: query
+  })
+}
+
+// ==================== 管理运营闭环（CR-015） ====================
+
+// 查询任务状态迁移审计
+export function listTaskStateLogs(taskId, query) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/stateLogs',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询任务健康指标
+export function getTaskMetric(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/metric',
+    method: 'get'
+  })
+}
+
+// 查询任务报告（临时统计或正式报告）
+export function getTaskReport(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/report',
+    method: 'get'
+  })
+}
+
+// 查询任务对下一任务的放行门禁
+export function getTaskReleaseGate(taskId) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/releaseGate',
+    method: 'get'
+  })
+}
+
+// 人工放行门禁（需权限、原因与审批引用）
+export function overrideTaskReleaseGate(taskId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/task/v1/' + taskId + '/releaseGate/override',
+    method: 'post',
+    data: data
+  })
+}

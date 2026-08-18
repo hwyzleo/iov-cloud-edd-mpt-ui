@@ -28,7 +28,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAddDependency"
-          v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >查询并添加软件零件版本依赖
         </el-button>
       </el-col>
@@ -68,7 +68,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleRemoveSoftwareBuildVersionDependency(scope.row)"
-            v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+            v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
           >删除依赖
           </el-button>
         </template>
@@ -107,7 +107,7 @@
               size="mini"
               :disabled="multipleDependency"
               @click="handleAddSoftwareBuildVersionDependency"
-              v-hasPermi="['ota:baseline:softwareBuildVersion:edit']"
+              v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
             >添加依赖
             </el-button>
           </el-col>
@@ -145,7 +145,7 @@
                 type="text"
                 icon="el-icon-edit"
                 @click="handleAddSoftwareBuildVersionDependency(scope.row)"
-                v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+                v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
                 v-show="checkSelectable(scope.row)"
               >添加依赖
               </el-button>

@@ -8,7 +8,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >新增测试报告
         </el-button>
       </el-col>
@@ -20,7 +20,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+          v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
         >删除
         </el-button>
       </el-col>
@@ -64,7 +64,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:pota:softwareBuildVersion:edit']"
+            v-hasPermi="['ota:fota:softwareBuildVersion:edit']"
           >删除
           </el-button>
         </template>

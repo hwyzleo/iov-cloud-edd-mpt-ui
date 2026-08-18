@@ -35,7 +35,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:pota:softwarePackage:add']"
+          v-hasPermi="['ota:fota:softwarePackage:add']"
         >新增
         </el-button>
       </el-col>
@@ -47,7 +47,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:pota:softwarePackage:edit']"
+          v-hasPermi="['ota:fota:softwarePackage:edit']"
         >修改
         </el-button>
       </el-col>
@@ -59,7 +59,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:pota:softwarePackage:remove']"
+          v-hasPermi="['ota:fota:softwarePackage:remove']"
         >删除
         </el-button>
       </el-col>
@@ -70,7 +70,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:pota:softwarePackage:export']"
+          v-hasPermi="['ota:fota:softwarePackage:export']"
         >导出
         </el-button>
       </el-col>
@@ -120,10 +120,18 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:baseline:softwarePackage:edit']"
+            v-hasPermi="['ota:fota:softwarePackage:edit']"
           >修改
           </el-button>
-          <el-dropdown @command="(command) => handleStatusCommand(command, scope.row)" v-hasPermi="['ota:pota:softwarePackage:edit']">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            @click="handleDelete(scope.row)"
+            v-hasPermi="['ota:fota:softwarePackage:remove']"
+          >删除
+          </el-button>
+          <el-dropdown @command="(command) => handleStatusCommand(command, scope.row)" v-hasPermi="['ota:fota:softwarePackage:edit']">
             <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="deprecate" icon="el-icon-warning">停用</el-dropdown-item>
@@ -131,14 +139,6 @@
               <el-dropdown-item command="retire" icon="el-icon-remove">退役</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:baseline:softwarePackage:remove']"
-          >删除
-          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -591,7 +591,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-baseline/softwarePackage/export', {
+      this.download('/iov-ota/api/mpt/softwarePackage/v1/export', {
         ...this.queryParams
       }, `software_package_${new Date().getTime()}.xlsx`)
     },

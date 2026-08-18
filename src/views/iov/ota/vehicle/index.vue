@@ -35,7 +35,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:fota:task:export']"
+          v-hasPermi="['ota:fota:vehicle:export']"
         >导出
         </el-button>
       </el-col>
@@ -200,7 +200,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-fota/mpt/vehicle/export', {
+      this.download('/iov-ota/api/mpt/vehicle/v1/export', {
         ...this.queryParams
       }, `vehicle_${new Date().getTime()}.xlsx`)
     }

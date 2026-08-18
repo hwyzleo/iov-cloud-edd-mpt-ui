@@ -317,7 +317,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('ota-fota/article/export', {
+      this.download('/iov-ota/api/mpt/article/v1/export', {
         ...this.queryParams
       }, `article_${new Date().getTime()}.xlsx`)
     }

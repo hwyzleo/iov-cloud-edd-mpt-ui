@@ -44,7 +44,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['ota:dota:configWord:add']"
+          v-hasPermi="['ota:fota:configWord:add']"
         >新增
         </el-button>
       </el-col>
@@ -56,7 +56,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['ota:dota:configWord:edit']"
+          v-hasPermi="['ota:fota:configWord:edit']"
         >修改
         </el-button>
       </el-col>
@@ -68,7 +68,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['ota:dota:configWord:remove']"
+          v-hasPermi="['ota:fota:configWord:remove']"
         >删除
         </el-button>
       </el-col>
@@ -79,7 +79,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['ota:dota:configWord:export']"
+          v-hasPermi="['ota:fota:configWord:export']"
         >导出
         </el-button>
       </el-col>
@@ -111,7 +111,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['ota:dota:configWord:edit']"
+            v-hasPermi="['ota:fota:configWord:edit']"
           >修改
           </el-button>
           <el-button
@@ -119,7 +119,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['ota:dota:configWord:remove']"
+            v-hasPermi="['ota:fota:configWord:remove']"
           >删除
           </el-button>
         </template>
