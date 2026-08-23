@@ -21,7 +21,7 @@ pipeline {
         IMAGE_NAME = "${env.REGISTRY_URL}/${env.JOB_BASE_NAME}:${env.BUILD_NUMBER}"
 
         DOCKER_NETWORK = "openiov-management"
-        DOCKERFILE_PATH = "UiDockerfile"
+        DOCKERFILE_PATH = "Dockerfile"
     }
 
     stages {
