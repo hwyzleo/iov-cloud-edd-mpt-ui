@@ -17,8 +17,7 @@ RUN npm ci --legacy-peer-deps
 # 再复制源代码。
 COPY . .
 
-RUN npm run build:prod \
-    && test -f /app/dist/index.html
+RUN npm run build:prod && test -f /app/dist/index.html
 
 FROM nginx:1.27.5-alpine AS runtime
 
@@ -29,8 +28,7 @@ COPY ui-nginx.conf /etc/nginx/conf.d/default.conf
 
 COPY --from=builder /app/dist/ /usr/share/nginx/html/
 
-RUN chown -R nginx:nginx /usr/share/nginx/html
-&& nginx -t
+RUN chown -R nginx:nginx /usr/share/nginx/html && nginx -t
 
 EXPOSE 80
 
