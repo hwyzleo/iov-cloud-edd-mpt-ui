@@ -3,23 +3,22 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '20'))
-        timeout(time: 30, unit: 'MINUTES')
+
+        buildDiscarder(
+            logRotator(numToKeepStr: '20')
+        )
+
+        timeout(
+            time: 30,
+            unit: 'MINUTES'
+        )
+
         skipDefaultCheckout(true)
     }
 
     environment {
-        /*
-         * Jenkins 全局环境变量：
-         * REGISTRY_URL=ccr.ccs.tencentyun.com/你的TCR命名空间
-         */
         PROJECT_NAME = "${env.JOB_BASE_NAME}"
-
-        /*
-         * 每次构建使用唯一版本号，不使用 latest。
-         */
         IMAGE_NAME = "${env.REGISTRY_URL}/${env.JOB_BASE_NAME}:${env.BUILD_NUMBER}"
-
         DOCKER_NETWORK = "openiov-management"
         DOCKERFILE_PATH = "Dockerfile"
     }
@@ -63,7 +62,7 @@ pipeline {
 
                     if [ ! -f "package-lock.json" ]; then
                         echo "错误：项目根目录不存在 package-lock.json"
-                        echo "请提交 package-lock.json，以便 UiDockerfile 使用 npm ci"
+                        echo "请提交 package-lock.json，以便 Dockerfile 使用 npm ci"
                         exit 1
                     fi
 
@@ -95,11 +94,13 @@ pipeline {
                 sh '''
                     set -eu
 
+                    GIT_COMMIT_ID="$(git rev-parse HEAD)"
+
                     docker build \
                         --network "${DOCKER_NETWORK}" \
                         --label "jenkins.job=${JOB_NAME}" \
                         --label "jenkins.build=${BUILD_NUMBER}" \
-                        --label "git.commit=$(git rev-parse HEAD)" \
+                        --label "git.commit=${GIT_COMMIT_ID}" \
                         --build-arg NODE_OPTIONS="--max-old-space-size=4096" \
                         --tag "${IMAGE_NAME}" \
                         --file "${DOCKERFILE_PATH}" \
@@ -119,7 +120,7 @@ pipeline {
 
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'tcr-credentials',
+                        credentialsId: 'tencent-tcr',
                         usernameVariable: 'REGISTRY_USERNAME',
                         passwordVariable: 'REGISTRY_PASSWORD'
                     )
@@ -127,17 +128,32 @@ pipeline {
                     sh '''
                         set -eu
 
-                        # REGISTRY_URL 可能包含命名空间，只截取仓库域名登录。
                         REGISTRY_HOST="${REGISTRY_URL%%/*}"
+
+                        export DOCKER_CONFIG="${WORKSPACE}/.docker-push-auth"
+
+                        rm -rf "${DOCKER_CONFIG}"
+                        mkdir -p "${DOCKER_CONFIG}"
+
+                        cleanup_registry_auth() {
+                            docker logout "${REGISTRY_HOST}" \
+                                >/dev/null 2>&1 || true
+
+                            rm -rf "${DOCKER_CONFIG}"
+                        }
+
+                        trap cleanup_registry_auth EXIT HUP INT TERM
+
+                        echo "登录镜像仓库：${REGISTRY_HOST}"
 
                         echo "${REGISTRY_PASSWORD}" |
                             docker login "${REGISTRY_HOST}" \
                                 --username "${REGISTRY_USERNAME}" \
                                 --password-stdin
 
-                        docker push "${IMAGE_NAME}"
+                        echo "上传镜像：${IMAGE_NAME}"
 
-                        docker logout "${REGISTRY_HOST}"
+                        docker push "${IMAGE_NAME}"
 
                         echo "镜像上传成功：${IMAGE_NAME}"
                     '''
@@ -149,105 +165,68 @@ pipeline {
             steps {
                 echo '================ 部署镜像 ================'
 
-                sh '''
-                    set -eu
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tencent-tcr',
+                        usernameVariable: 'REGISTRY_USERNAME',
+                        passwordVariable: 'REGISTRY_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
 
-                    OLD_IMAGE=""
+                        REGISTRY_HOST="${REGISTRY_URL%%/*}"
 
-                    # 记录旧容器使用的镜像，部署失败时回滚。
-                    if docker container inspect "${PROJECT_NAME}" >/dev/null 2>&1; then
-                        OLD_IMAGE=$(
-                            docker container inspect \
-                                --format '{{.Config.Image}}' \
-                                "${PROJECT_NAME}"
-                        )
+                        export DOCKER_CONFIG="${WORKSPACE}/.docker-pull-auth"
 
-                        echo "当前运行镜像：${OLD_IMAGE}"
-                    else
-                        echo "当前不存在旧容器，本次为首次部署"
-                    fi
+                        rm -rf "${DOCKER_CONFIG}"
+                        mkdir -p "${DOCKER_CONFIG}"
 
-                    echo "拉取目标镜像：${IMAGE_NAME}"
-                    docker pull "${IMAGE_NAME}"
+                        cleanup_registry_auth() {
+                            docker logout "${REGISTRY_HOST}" \
+                                >/dev/null 2>&1 || true
 
-                    echo "停止并删除旧容器..."
-                    docker stop "${PROJECT_NAME}" >/dev/null 2>&1 || true
-                    docker rm "${PROJECT_NAME}" >/dev/null 2>&1 || true
+                            rm -rf "${DOCKER_CONFIG}"
+                        }
 
-                    echo "启动新容器..."
-                    docker run -d \
-                        --name "${PROJECT_NAME}" \
-                        --network "${DOCKER_NETWORK}" \
-                        --restart unless-stopped \
-                        --memory 512m \
-                        --memory-reservation 128m \
-                        --label "jenkins.job=${JOB_NAME}" \
-                        --label "jenkins.build=${BUILD_NUMBER}" \
-                        --label "git.commit=$(git rev-parse HEAD)" \
-                        "${IMAGE_NAME}"
+                        trap cleanup_registry_auth EXIT HUP INT TERM
 
-                    echo "等待容器健康检查..."
+                        echo "登录镜像仓库：${REGISTRY_HOST}"
 
-                    COUNT=0
-                    HEALTHY=false
+                        echo "${REGISTRY_PASSWORD}" |
+                            docker login "${REGISTRY_HOST}" \
+                                --username "${REGISTRY_USERNAME}" \
+                                --password-stdin
 
-                    while [ "${COUNT}" -lt 12 ]; do
-                        RUNNING=$(
-                            docker container inspect \
-                                --format '{{.State.Running}}' \
-                                "${PROJECT_NAME}" 2>/dev/null || echo "false"
-                        )
+                        OLD_IMAGE=""
 
-                        if [ "${RUNNING}" != "true" ]; then
-                            echo "容器已退出"
-                            break
+                        if docker container inspect "${PROJECT_NAME}" \
+                            >/dev/null 2>&1; then
+
+                            OLD_IMAGE=$(
+                                docker container inspect \
+                                    --format '{{.Config.Image}}' \
+                                    "${PROJECT_NAME}"
+                            )
+
+                            echo "当前运行镜像：${OLD_IMAGE}"
+                        else
+                            echo "当前不存在旧容器，本次为首次部署"
                         fi
 
-                        HEALTH_STATUS=$(
-                            docker container inspect \
-                                --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
-                                "${PROJECT_NAME}"
-                        )
+                        echo "从 TCR 拉取目标镜像：${IMAGE_NAME}"
 
-                        echo "健康状态：${HEALTH_STATUS}"
+                        docker pull "${IMAGE_NAME}"
 
-                        if [ "${HEALTH_STATUS}" = "healthy" ]; then
-                            HEALTHY=true
-                            break
-                        fi
+                        echo "停止并删除旧容器..."
 
-                        if [ "${HEALTH_STATUS}" = "unhealthy" ]; then
-                            echo "容器状态已变为 unhealthy"
-                            break
-                        fi
+                        docker stop "${PROJECT_NAME}" \
+                            >/dev/null 2>&1 || true
 
-                        COUNT=$((COUNT + 1))
-                        echo "等待健康检查：${COUNT}/12"
-                        sleep 5
-                    done
+                        docker rm "${PROJECT_NAME}" \
+                            >/dev/null 2>&1 || true
 
-                    if [ "${HEALTHY}" = "true" ]; then
-                        echo "服务健康检查通过"
-                        echo "部署成功：${IMAGE_NAME}"
-                        exit 0
-                    fi
-
-                    echo "服务健康检查失败"
-
-                    echo "================ 容器日志 ================"
-                    docker logs --tail 200 "${PROJECT_NAME}" || true
-
-                    echo "================ 健康检查日志 ================"
-                    docker container inspect \
-                        --format '{{json .State.Health}}' \
-                        "${PROJECT_NAME}" || true
-
-                    echo "删除异常容器..."
-                    docker stop "${PROJECT_NAME}" >/dev/null 2>&1 || true
-                    docker rm "${PROJECT_NAME}" >/dev/null 2>&1 || true
-
-                    if [ -n "${OLD_IMAGE}" ]; then
-                        echo "开始回滚到旧镜像：${OLD_IMAGE}"
+                        echo "启动新容器..."
 
                         docker run -d \
                             --name "${PROJECT_NAME}" \
@@ -255,16 +234,112 @@ pipeline {
                             --restart unless-stopped \
                             --memory 512m \
                             --memory-reservation 128m \
-                            --label "jenkins.rollback=true" \
-                            "${OLD_IMAGE}"
+                            --label "jenkins.job=${JOB_NAME}" \
+                            --label "jenkins.build=${BUILD_NUMBER}" \
+                            --label "git.commit=$(git rev-parse HEAD)" \
+                            "${IMAGE_NAME}"
 
-                        echo "已回滚到旧镜像：${OLD_IMAGE}"
-                    else
-                        echo "首次部署失败，没有旧镜像可以回滚"
-                    fi
+                        echo "等待容器健康检查..."
 
-                    exit 1
-                '''
+                        COUNT=0
+                        HEALTHY=false
+
+                        while [ "${COUNT}" -lt 12 ]; do
+                            RUNNING=$(
+                                docker container inspect \
+                                    --format '{{.State.Running}}' \
+                                    "${PROJECT_NAME}" \
+                                    2>/dev/null || echo "false"
+                            )
+
+                            if [ "${RUNNING}" != "true" ]; then
+                                echo "容器已经退出"
+                                break
+                            fi
+
+                            HEALTH_STATUS=$(
+                                docker container inspect \
+                                    --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+                                    "${PROJECT_NAME}"
+                            )
+
+                            echo "健康状态：${HEALTH_STATUS}"
+
+                            if [ "${HEALTH_STATUS}" = "healthy" ]; then
+                                HEALTHY=true
+                                break
+                            fi
+
+                            if [ "${HEALTH_STATUS}" = "unhealthy" ]; then
+                                echo "容器状态已经变为 unhealthy"
+                                break
+                            fi
+
+                            COUNT=$((COUNT + 1))
+
+                            echo "等待健康检查：${COUNT}/12"
+
+                            sleep 5
+                        done
+
+                        if [ "${HEALTHY}" = "true" ]; then
+                            echo "服务健康检查通过"
+                            echo "部署成功：${IMAGE_NAME}"
+
+                            exit 0
+                        fi
+
+                        echo "服务健康检查失败"
+
+                        echo "================ 容器日志 ================"
+
+                        docker logs \
+                            --tail 200 \
+                            "${PROJECT_NAME}" || true
+
+                        echo "================ 健康检查日志 ================"
+
+                        docker container inspect \
+                            --format '{{json .State.Health}}' \
+                            "${PROJECT_NAME}" || true
+
+                        echo "停止并删除异常容器..."
+
+                        docker stop "${PROJECT_NAME}" \
+                            >/dev/null 2>&1 || true
+
+                        docker rm "${PROJECT_NAME}" \
+                            >/dev/null 2>&1 || true
+
+                        if [ -n "${OLD_IMAGE}" ]; then
+                            echo "准备回滚到旧镜像：${OLD_IMAGE}"
+
+                            if ! docker image inspect "${OLD_IMAGE}" \
+                                >/dev/null 2>&1; then
+
+                                echo "本地不存在旧镜像，尝试重新拉取：${OLD_IMAGE}"
+
+                                docker pull "${OLD_IMAGE}"
+                            fi
+
+                            docker run -d \
+                                --name "${PROJECT_NAME}" \
+                                --network "${DOCKER_NETWORK}" \
+                                --restart unless-stopped \
+                                --memory 512m \
+                                --memory-reservation 128m \
+                                --label "jenkins.rollback=true" \
+                                --label "jenkins.rollback.from=${IMAGE_NAME}" \
+                                "${OLD_IMAGE}"
+
+                            echo "已回滚到旧镜像：${OLD_IMAGE}"
+                        else
+                            echo "首次部署失败，没有旧镜像可以回滚"
+                        fi
+
+                        exit 1
+                    '''
+                }
             }
         }
     }
@@ -279,9 +354,16 @@ pipeline {
         }
 
         always {
+            echo '================ 清理认证目录 ================'
+
+            sh '''
+                rm -rf \
+                    "${WORKSPACE}/.docker-push-auth" \
+                    "${WORKSPACE}/.docker-pull-auth"
+            '''
+
             echo '================ 清理 Workspace ================'
 
-            // Pipeline 内置步骤，不依赖 Workspace Cleanup 插件。
             deleteDir()
         }
     }
