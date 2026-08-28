@@ -54,7 +54,7 @@
 
     <el-table v-loading="loading" :data="familyList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="选项族代码" prop="code" width="160"/>
+      <el-table-column label="选项族代码" prop="code" width="280"/>
       <el-table-column label="选项族名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
       <el-table-column label="商品分类" align="center" width="100">
@@ -62,16 +62,15 @@
           {{ categoryLabel(scope.row.category) }}
         </template>
       </el-table-column>
-      <el-table-column label="描述" prop="description" show-overflow-tooltip/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="版本" prop="version" width="60" align="center"/>
-      <el-table-column label="创建时间" align="center" width="160">
+      <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
