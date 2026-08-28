@@ -231,6 +231,7 @@ pipeline {
                         docker run -d \
                             --name "${PROJECT_NAME}" \
                             --network "${DOCKER_NETWORK}" \
+                            --publish "10.66.0.1:8082:80" \
                             --restart unless-stopped \
                             --memory 512m \
                             --memory-reservation 128m \
@@ -325,6 +326,7 @@ pipeline {
                             docker run -d \
                                 --name "${PROJECT_NAME}" \
                                 --network "${DOCKER_NETWORK}" \
+                                --publish "10.66.0.1:8082:80" \
                                 --restart unless-stopped \
                                 --memory 512m \
                                 --memory-reservation 128m \
