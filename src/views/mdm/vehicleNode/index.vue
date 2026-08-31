@@ -90,12 +90,12 @@
       <el-table-column label="节点编码" prop="nodeCode" width="150" fixed="left" />
       <el-table-column label="节点名称" prop="name" min-width="200" fixed="left" />
       <el-table-column label="本地化名称" prop="nameLocal" min-width="200" />
-      <el-table-column label="节点类型" prop="nodeType" width="120" align="center">
+      <el-table-column label="节点类型" prop="nodeType" width="110" align="center">
         <template slot-scope="scope">
           <el-tag>{{ nodeTypeMap[scope.row.nodeType] || scope.row.nodeType }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="功能域" prop="functionalDomain" width="120" align="center">
+      <el-table-column label="功能域" prop="functionalDomain" width="110" align="center">
         <template slot-scope="scope">
           <el-tag type="warning">{{ functionalDomainMap[scope.row.functionalDomain] || scope.row.functionalDomain }}</el-tag>
         </template>
@@ -105,12 +105,12 @@
           <el-tag :type="scope.row.isCoreNode ? 'danger' : 'info'">{{ scope.row.isCoreNode ? '是' : '否' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="OTA支持类型" prop="otaSupportType" width="120" align="center">
+      <el-table-column label="OTA支持类型" prop="otaSupportType" width="100" align="center">
         <template slot-scope="scope">
           <span>{{ otaSupportTypeMap[scope.row.otaSupportType] || scope.row.otaSupportType }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" prop="status" width="80" align="center">
+      <el-table-column label="状态" prop="status" width="70" align="center">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ statusMap[scope.row.status] || scope.row.status }}
@@ -141,7 +141,6 @@
             v-hasPermi="['mdm:vehicleNode:edit']"
           >停用</el-button>
           <el-button
-            v-if="scope.row.status === 'DRAFT'"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -194,7 +193,7 @@
         </el-form-item>
         <el-form-item label="设备类别" prop="deviceCategory">
           <el-select v-model="form.deviceCategory" placeholder="请选择设备类别" clearable filterable style="width: 100%">
-            <el-option v-for="item in deviceCategoryOptions" :key="item.code" :label="item.name" :value="item.code" />
+            <el-option v-for="item in deviceCategoryOptions" :key="item.code" :label="item.nameLocal + '(' + item.name + ')'" :value="item.code" />
           </el-select>
         </el-form-item>
         <el-form-item label="核心节点" prop="isCoreNode">
