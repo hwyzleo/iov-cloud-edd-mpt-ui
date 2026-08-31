@@ -295,9 +295,11 @@ export default {
       }).catch(() => {})
     },
     handleDelete(row) {
-      const code = row.taBaselineCode || this.codes[0]
-      this.$modal.confirm('是否确认删除型式批准基线"' + code + '"？').then(() => {
-        return delTypeApprovalBaseline(code, false)
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.taBaselineCode) ? [row.taBaselineCode] : (this.codes || [])
+      if (!codes.length) return
+      this.$modal.confirm('是否确认删除型式批准基线"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delTypeApprovalBaseline(code, false)))
       }).then(() => {
         this.getList()
         this.$modal.msgSuccess('删除成功')

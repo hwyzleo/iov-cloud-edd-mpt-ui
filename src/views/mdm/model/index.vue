@@ -6,7 +6,7 @@
           <el-option
             v-for="item in carLineOptions"
             :key="item.code"
-            :label="item.name"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -16,7 +16,7 @@
           <el-option
             v-for="item in platformOptions"
             :key="item.code"
-            :label="item.name"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -71,8 +71,8 @@
       <el-table-column label="车型代码" prop="code" width="140"/>
       <el-table-column label="车型名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
-      <el-table-column label="车系" prop="carLineCode" width="120"/>
-      <el-table-column label="平台" prop="platformCode" width="120"/>
+      <el-table-column label="车系代码" prop="carLineCode" width="100" align="center"/>
+      <el-table-column label="平台代码" prop="platformCode" width="100" align="center"/>
       <el-table-column label="车型年" prop="modelYear" width="80" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
@@ -148,7 +148,7 @@
             <el-option
               v-for="item in carLineOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -158,7 +158,7 @@
             <el-option
               v-for="item in platformOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -399,9 +399,11 @@ export default {
       }).catch(() => {});
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0];
-      this.$modal.confirm('是否确认删除车型"' + code + '"？').then(function() {
-        return delModel(code, '');
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || []);
+      if (!codes.length) return;
+      this.$modal.confirm('是否确认删除车型"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delModel(code, '')));
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

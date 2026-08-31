@@ -399,9 +399,11 @@ export default {
       }).catch(() => {})
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0]
-      this.$modal.confirm('是否确认删除编码方案"' + code + '"？').then(function() {
-        return delSwinScheme(code)
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || [])
+      if (!codes.length) return
+      this.$modal.confirm('是否确认删除编码方案"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delSwinScheme(code)))
       }).then(() => {
         this.getList()
         this.$modal.msgSuccess('删除成功')

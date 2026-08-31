@@ -355,9 +355,11 @@ export default {
       }).catch(() => {})
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0]
-      this.$modal.confirm('是否确认删除物料分类"' + code + '"？').then(function() {
-        return delMaterialCategory(code, '')
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || [])
+      if (!codes.length) return
+      this.$modal.confirm('是否确认删除物料分类"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delMaterialCategory(code, '')))
       }).then(() => {
         this.getList()
         this.$modal.msgSuccess('删除成功')

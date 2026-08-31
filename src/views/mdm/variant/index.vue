@@ -6,7 +6,7 @@
           <el-option
             v-for="item in modelOptions"
             :key="item.code"
-            :label="item.name"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -16,7 +16,7 @@
           <el-option
             v-for="item in carLineOptions"
             :key="item.code"
-            :label="item.name"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -26,7 +26,7 @@
           <el-option
             v-for="item in platformOptions"
             :key="item.code"
-            :label="item.name"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -81,7 +81,7 @@
       <el-table-column label="版本代码" prop="code" width="140"/>
       <el-table-column label="版本名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
-      <el-table-column label="车型" prop="modelCode" width="140"/>
+      <el-table-column label="车型代码" prop="modelCode" width="100" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
@@ -163,7 +163,7 @@
             <el-option
               v-for="item in modelOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -495,9 +495,11 @@ export default {
       }).catch(() => {});
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0];
-      this.$modal.confirm('是否确认删除版本"' + code + '"？').then(function() {
-        return delVariant(code, '');
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || []);
+      if (!codes.length) return;
+      this.$modal.confirm('是否确认删除版本"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delVariant(code, '')));
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

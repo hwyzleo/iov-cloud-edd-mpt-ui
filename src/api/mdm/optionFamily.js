@@ -60,3 +60,11 @@ export function listOptionFamilyHistory(code) {
     method: 'get'
   })
 }
+
+// 标准目录初始化（CR-035）：仅导入 CORE，幂等，不覆盖已有业务数据
+export function bootstrapOptionFamily() {
+  return request({
+    url: '/edd-mdm/api/mpt/optionFamily/v1/bootstrap',
+    method: 'post'
+  })
+}

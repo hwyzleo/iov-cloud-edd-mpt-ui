@@ -6,7 +6,7 @@
           <el-option
             v-for="item in variantOptions"
             :key="item.code"
-            :label="item.name + ' (' + item.code + ')'"
+            :label="item.nameLocal + '(' + item.name + ')'"
             :value="item.code"
           />
         </el-select>
@@ -58,10 +58,10 @@
 
     <el-table v-loading="loading" :data="configurationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="配置代码" prop="code" width="180"/>
+      <el-table-column label="配置代码" prop="code" width="190"/>
       <el-table-column label="配置名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
-      <el-table-column label="版本" prop="variantCode" width="160"/>
+      <el-table-column label="版本代码" prop="variantCode" width="120" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
@@ -143,7 +143,7 @@
             <el-option
               v-for="item in variantOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -189,7 +189,7 @@
             <el-option
               v-for="item in optionFamilyOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -205,7 +205,7 @@
             <el-option
               v-for="item in optionCodeOptionsForBind"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + '(' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -454,9 +454,11 @@ export default {
       }).catch(() => {});
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0];
-      this.$modal.confirm('是否确认删除配置"' + code + '"？').then(function() {
-        return delConfiguration(code, '');
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || []);
+      if (!codes.length) return;
+      this.$modal.confirm('是否确认删除配置"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delConfiguration(code, '')));
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

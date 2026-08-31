@@ -75,8 +75,8 @@ service.interceptors.request.use(config => {
 service.interceptors.response.use(res => {
     // 未设置状态码则默认成功状态
     const code = Number(res.data.code) || 200;
-    // 获取错误信息
-    const msg = errorCode[String(code)] || res.data.msg || errorCode['default']
+    // 获取错误信息（兼容后端 ApiResponse 的 message 字段）
+    const msg = errorCode[String(code)] || res.data.msg || res.data.message || errorCode['default']
     // 二进制数据则直接返回
     if (res.request.responseType ===  'blob' || res.request.responseType ===  'arraybuffer') {
       return res.data
@@ -138,7 +138,7 @@ export function download(url, params, filename, config) {
     } else {
       const resText = await data.text();
       const rspObj = JSON.parse(resText);
-      const errMsg = errorCode[rspObj.code] || rspObj.msg || errorCode['default']
+      const errMsg = errorCode[rspObj.code] || rspObj.msg || rspObj.message || errorCode['default']
       Message.error(errMsg);
     }
     downloadLoadingInstance.close();

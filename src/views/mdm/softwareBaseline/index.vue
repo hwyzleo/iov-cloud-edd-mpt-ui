@@ -482,9 +482,11 @@ export default {
       })
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0]
-      this.$modal.confirm('是否确认删除软件基线"' + code + '"？').then(() => {
-        return delSoftwareBaseline(code, this.$store.state.user.name)
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || [])
+      if (!codes.length) return
+      this.$modal.confirm('是否确认删除软件基线"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delSoftwareBaseline(code, this.$store.state.user.name)))
       }).then(() => {
         this.getList()
         this.$modal.msgSuccess('删除成功')

@@ -49,6 +49,16 @@
           v-hasPermi="['mdm:optionFamily:remove']"
         >删除</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="warning"
+          plain
+          icon="el-icon-refresh"
+          size="mini"
+          @click="handleCatalogBootstrap"
+          v-hasPermi="['mdm:optionFamily:add']"
+        >标准目录初始化</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getFamilyList"></right-toolbar>
     </el-row>
 
@@ -57,7 +67,7 @@
       <el-table-column label="选项族代码" prop="code" width="280"/>
       <el-table-column label="选项族名称" prop="name"/>
       <el-table-column label="本地化名称" prop="nameLocal"/>
-      <el-table-column label="商品分类" align="center" width="100">
+      <el-table-column label="商品分类" align="center" width="150">
         <template slot-scope="scope">
           {{ categoryLabel(scope.row.category) }}
         </template>
@@ -73,7 +83,7 @@
           <span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -98,7 +108,6 @@
             v-hasPermi="['mdm:optionFamily:remove']"
           >停用</el-button>
           <el-button
-            v-if="scope.row.status === 'DRAFT'"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -128,7 +137,7 @@
     <el-dialog :title="familyTitle" :visible.sync="familyOpen" width="600px" append-to-body>
       <el-form ref="familyForm" :model="familyForm" :rules="familyRules" label-width="120px">
         <el-form-item label="选项族代码" prop="code">
-          <el-input v-model="familyForm.code" :readonly="familyForm.id !== undefined" placeholder="请输入选项族代码"/>
+          <el-input v-model="familyForm.code" :readonly="familyForm.id !== undefined" placeholder="请输入选项族代码（OF_分类前缀_语义，企业扩展 OF_前缀_X_语义）" @blur="handleFamilyCodeBlur"/>
         </el-form-item>
         <el-form-item label="选项族名称" prop="name">
           <el-input v-model="familyForm.name" placeholder="请输入选项族名称"/>
@@ -248,7 +257,6 @@
                 v-hasPermi="['mdm:optionCode:remove']"
               >停用</el-button>
               <el-button
-                v-if="scope.row.status === 'DRAFT'"
                 size="mini"
                 type="text"
                 icon="el-icon-delete"
@@ -342,7 +350,8 @@ import {
   updateOptionFamily,
   delOptionFamily,
   deactivateOptionFamily,
-  listOptionFamilyHistory
+  listOptionFamilyHistory,
+  bootstrapOptionFamily
 } from "@/api/mdm/optionFamily";
 import {
   listOptionCode,
@@ -355,6 +364,21 @@ import {
 } from "@/api/mdm/optionCode";
 import HistorySnapshot from "@/components/HistorySnapshot/index.vue";
 
+// CR-035：分类前缀与商品分类固定映射（与后端 OptionFamilyCodePolicy 一致）
+const PREFIX_CATEGORY_MAP = {
+  EXT: 'EXTERIOR',
+  INT: 'INTERIOR',
+  PWR: 'POWERTRAIN',
+  CHS: 'CHASSIS',
+  SMART: 'INTELLIGENT',
+  COMF: 'COMFORT',
+  SAFE: 'SAFETY',
+  ACC: 'ACCESSORY',
+  OTH: 'OTHER'
+};
+// CR-035：标准/扩展 code 格式（全大写字母/数字/下划线）
+const FAMILY_CODE_PATTERN = /^OF_(EXT|INT|PWR|SMART|COMF|SAFE|ACC|OTH|CHS)_(?:X_)?[A-Z0-9]+(?:_[A-Z0-9]+)*$/;
+
 export default {
   name: "MdmOption",
   components: {
@@ -364,14 +388,15 @@ export default {
   data() {
     return {
       categoryOptions: [
-        { value: 'EXTERIOR', label: '外观' },
-        { value: 'INTERIOR', label: '内饰' },
-        { value: 'POWERTRAIN', label: '动力总成' },
-        { value: 'INTELLIGENT', label: '智能化' },
-        { value: 'COMFORT', label: '舒适便利' },
-        { value: 'SAFETY', label: '安全' },
-        { value: 'ACCESSORY', label: '选装附件' },
-        { value: 'OTHER', label: '其他' }
+        { value: 'EXTERIOR', label: '外观(EXTERIOR)' },
+        { value: 'INTERIOR', label: '内饰(INTERIOR)' },
+        { value: 'POWERTRAIN', label: '动力(POWERTRAIN)' },
+        { value: 'CHASSIS', label: '底盘(CHASSIS)' },
+        { value: 'INTELLIGENT', label: '智能(INTELLIGENT)' },
+        { value: 'COMFORT', label: '舒适(COMFORT)' },
+        { value: 'SAFETY', label: '安全(SAFETY)' },
+        { value: 'ACCESSORY', label: '附件(ACCESSORY)' },
+        { value: 'OTHER', label: '其他(OTHER)' }
       ],
       // ===== 选项族 主表 =====
       loading: true,
@@ -392,9 +417,48 @@ export default {
       },
       familyForm: {},
       familyRules: {
-        code: [{ required: true, message: "选项族代码不能为空", trigger: "blur" }],
+        code: [
+          { required: true, message: "选项族代码不能为空", trigger: "blur" },
+          {
+            validator: (rule, value, callback) => {
+              if (!value) return callback();
+              const upper = value.toUpperCase();
+              if (value !== upper) {
+                return callback(new Error("选项族代码需全大写字母/数字/下划线，请使用：" + upper));
+              }
+              if (value.length > 64) {
+                return callback(new Error("选项族代码长度不能超过64位"));
+              }
+              if (!FAMILY_CODE_PATTERN.test(value)) {
+                return callback(new Error("格式应为 OF_分类前缀_语义（企业扩展 OF_前缀_X_语义），仅大写字母/数字/下划线"));
+              }
+              const prefix = value.split("_")[1];
+              if (prefix && this.familyForm.category && PREFIX_CATEGORY_MAP[prefix] && PREFIX_CATEGORY_MAP[prefix] !== this.familyForm.category) {
+                return callback(new Error("分类前缀 " + prefix + " 与所选商品分类不一致，应选「" + this.categoryLabel(PREFIX_CATEGORY_MAP[prefix]) + "」"));
+              }
+              callback();
+            },
+            trigger: "blur"
+          }
+        ],
         name: [{ required: true, message: "选项族名称不能为空", trigger: "blur" }],
-        category: [{ required: true, message: "请选择商品分类", trigger: "change" }]
+        category: [
+          { required: true, message: "请选择商品分类", trigger: "change" },
+          {
+            validator: (rule, value, callback) => {
+              if (!value) return callback();
+              const code = this.familyForm.code;
+              if (code) {
+                const prefix = code.split("_")[1];
+                if (prefix && PREFIX_CATEGORY_MAP[prefix] && PREFIX_CATEGORY_MAP[prefix] !== value) {
+                  return callback(new Error("所选分类与选项族代码前缀 " + prefix + " 不一致，应选「" + this.categoryLabel(PREFIX_CATEGORY_MAP[prefix]) + "」"));
+                }
+              }
+              callback();
+            },
+            trigger: "change"
+          }
+        ]
       },
       // ===== 选项族 历史 =====
       familyHistoryVisible: false,
@@ -536,6 +600,24 @@ export default {
       this.familyOpen = true;
       this.familyTitle = "添加选项族";
     },
+    handleFamilyCodeBlur() {
+      if (this.familyForm.code && this.familyForm.code !== this.familyForm.code.toUpperCase()) {
+        this.familyForm.code = this.familyForm.code.toUpperCase();
+        this.$modal.msgWarning("选项族代码已转为大写");
+      }
+      if (this.$refs["familyForm"]) {
+        this.$refs["familyForm"].validateField("code");
+      }
+    },
+    handleCatalogBootstrap() {
+      this.$modal.confirm('是否执行选项族标准目录初始化？仅导入 Core 核心标准族（幂等，不覆盖已有业务数据），Conditional 不初始化。').then(() => {
+        return bootstrapOptionFamily();
+      }).then((response) => {
+        const r = response.data;
+        this.$modal.msgSuccess("标准目录初始化完成：新建 " + r.created + "，跳过 " + r.skipped + "，冲突 " + r.conflicted + "，失败 " + r.failed);
+        this.getFamilyList();
+      }).catch(() => {});
+    },
     handleFamilyUpdate(row) {
       this.resetFamilyForm();
       const code = (row && row.code) || this.codes[0];
@@ -576,9 +658,11 @@ export default {
       }).catch(() => {});
     },
     handleFamilyDelete(row) {
-      const code = (row && row.code) || this.codes[0];
-      this.$modal.confirm('是否确认删除选项族"' + code + '"？').then(function() {
-        return delOptionFamily(code, '');
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || []);
+      if (!codes.length) return;
+      this.$modal.confirm('是否确认删除选项族"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delOptionFamily(code, '')));
       }).then(() => {
         this.getFamilyList();
         this.$modal.msgSuccess("删除成功");

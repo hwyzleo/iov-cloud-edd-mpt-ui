@@ -6,7 +6,7 @@
           <el-option
             v-for="brand in brandOptions"
             :key="brand.code"
-            :label="brand.name"
+            :label="brand.nameLocal + '(' + brand.name + ')'"
             :value="brand.code"
           />
         </el-select>
@@ -172,7 +172,7 @@
             <el-option
               v-for="brand in brandOptions"
               :key="brand.code"
-              :label="brand.name"
+              :label="brand.nameLocal + '(' + brand.name + ')'"
               :value="brand.code"
             />
           </el-select>
@@ -430,9 +430,11 @@ export default {
       }).catch(() => {});
     },
     handleDelete(row) {
-      const code = row.code || this.codes[0];
-      this.$modal.confirm('是否确认删除车系"' + code + '"？').then(function() {
-        return delSeries(code, '');
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const codes = (row && row.code) ? [row.code] : (this.codes || []);
+      if (!codes.length) return;
+      this.$modal.confirm('是否确认删除车系"' + codes.join('、') + '"？').then(() => {
+        return Promise.all(codes.map(code => delSeries(code, '')));
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

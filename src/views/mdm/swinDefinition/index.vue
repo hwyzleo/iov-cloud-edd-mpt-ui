@@ -522,22 +522,28 @@ export default {
       }).catch(() => {})
     },
     handleDelete(row) {
-      const swinCode = row.swinCode || this.swinCodes[0]
-      this.$modal.confirm('是否确认删除SWIN定义"' + swinCode + '"？').then(function() {
-        return delSwinDefinition(swinCode)
+      // 行内删除：单条；工具栏批量删除：遍历所有勾选项
+      const swinCodes = (row && row.swinCode) ? [row.swinCode] : (this.swinCodes || [])
+      if (!swinCodes.length) return
+      const forceFlag = []
+      const deleteOne = (code) => {
+        return delSwinDefinition(code).catch(error => {
+          if (error.response && error.response.data && error.response.data.code === 812316) {
+            return this.$modal.confirm('该SWIN定义被下游引用，是否强制删除？').then(() => {
+              return forceDelSwinDefinition(code, { reason: '用户强制删除' })
+            }).then(() => {
+              forceFlag.push(code)
+            })
+          }
+          throw error
+        })
+      }
+      this.$modal.confirm('是否确认删除SWIN定义"' + swinCodes.join('、') + '"？').then(() => {
+        return Promise.all(swinCodes.map(code => deleteOne(code)))
       }).then(() => {
         this.getList()
-        this.$modal.msgSuccess('删除成功')
-      }).catch(error => {
-        if (error.response && error.response.data && error.response.data.code === 812316) {
-          this.$modal.confirm('该SWIN定义被下游引用，是否强制删除？').then(() => {
-            return forceDelSwinDefinition(swinCode, { reason: '用户强制删除' })
-          }).then(() => {
-            this.getList()
-            this.$modal.msgSuccess('强制删除成功')
-          }).catch(() => {})
-        }
-      })
+        this.$modal.msgSuccess(forceFlag.length ? '强制删除成功' : '删除成功')
+      }).catch(() => {})
     },
     handleHistory(row) {
       this.historySwinCode = row.swinCode
