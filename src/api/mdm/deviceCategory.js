@@ -60,3 +60,21 @@ export function listDeviceCategoryHistory(code) {
     method: 'get'
   })
 }
+
+// 标准目录预检（CR-037）：返回目录版本、标准设备族数量及冲突
+// GET /api/mpt/deviceCategory/v1/catalog/preview
+export function previewDeviceCategoryCatalog() {
+  return request({
+    url: '/edd-mdm/api/mpt/deviceCategory/v1/catalog/preview',
+    method: 'get'
+  })
+}
+
+// 标准目录初始化（CR-037）：受控幂等导入 24 个标准设备族为 ACTIVE，不覆盖已有业务数据
+// POST /api/mpt/deviceCategory/v1/catalog/bootstrap
+export function bootstrapDeviceCategory() {
+  return request({
+    url: '/edd-mdm/api/mpt/deviceCategory/v1/catalog/bootstrap',
+    method: 'post'
+  })
+}

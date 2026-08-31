@@ -71,6 +71,26 @@
           @click="handleExport"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['mdm:deviceCategory:query']"
+          type="info"
+          plain
+          icon="el-icon-view"
+          size="mini"
+          @click="handleCatalogPreview"
+        >目录预检</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['mdm:eead:deviceCategory:catalog:bootstrap']"
+          type="warning"
+          plain
+          icon="el-icon-refresh"
+          size="mini"
+          @click="handleCatalogBootstrap"
+        >标准目录初始化</el-button>
+      </el-col>
       <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -192,6 +212,23 @@
         <el-form-item label="操作人">{{ data.modifyBy || data.createBy }}</el-form-item>
       </template>
     </history-snapshot>
+
+    <el-dialog title="设备类别标准目录预检" :visible.sync="previewVisible" width="560px" append-to-body>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="目录版本">{{ previewData.catalogVersion }}</el-descriptions-item>
+        <el-descriptions-item label="标准设备族数量">{{ previewData.standardFamilyCount }}</el-descriptions-item>
+        <el-descriptions-item label="已初始化">{{ previewData.initialized }}</el-descriptions-item>
+        <el-descriptions-item label="待创建">{{ previewData.missing }}</el-descriptions-item>
+        <el-descriptions-item label="冲突">{{ previewData.conflicted }}</el-descriptions-item>
+        <el-descriptions-item v-if="previewData.conflicts && previewData.conflicts.length" label="冲突明细">
+          <div v-for="(item, idx) in previewData.conflicts" :key="idx" class="catalog-conflict-item">{{ item }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item v-else label="冲突明细">无</el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="previewVisible = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -203,7 +240,9 @@ import {
   updateDeviceCategory,
   delDeviceCategory,
   deactivateDeviceCategory,
-  listDeviceCategoryHistory
+  listDeviceCategoryHistory,
+  previewDeviceCategoryCatalog,
+  bootstrapDeviceCategory
 } from '@/api/mdm/deviceCategory'
 import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
@@ -237,6 +276,8 @@ export default {
       historyVisible: false,
       historyLoading: false,
       historyList: [],
+      previewVisible: false,
+      previewData: {},
       historyFields: [
         { prop: 'code', label: '类别编码' },
         { prop: 'name', label: '类别名称' },
@@ -389,7 +430,29 @@ export default {
         this.historyList = response.data.rows
         this.historyLoading = false
       })
+    },
+    handleCatalogPreview() {
+      previewDeviceCategoryCatalog().then(response => {
+        this.previewData = response.data
+        this.previewVisible = true
+      })
+    },
+    handleCatalogBootstrap() {
+      this.$modal.confirm('是否执行设备类别标准目录初始化？将受控幂等导入 24 个标准设备族为 ACTIVE（已存在且一致则跳过，冲突仅报告，不覆盖已有业务数据）。').then(() => {
+        return bootstrapDeviceCategory()
+      }).then((response) => {
+        const r = response.data
+        this.$modal.msgSuccess('标准目录初始化完成：新建 ' + r.created + '，跳过 ' + r.skipped + '，冲突 ' + r.conflicted + '，失败 ' + r.failed)
+        this.getList()
+      }).catch(() => {})
     }
   }
 }
 </script>
+
+<style scoped>
+.catalog-conflict-item {
+  color: #e6a23c;
+  line-height: 1.6;
+}
+</style>
