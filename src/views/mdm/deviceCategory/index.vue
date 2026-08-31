@@ -96,7 +96,7 @@
 
     <el-table v-loading="loading" :data="categoryList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="类别编码" prop="code" width="100" />
+      <el-table-column label="类别编码" prop="code" width="150" />
       <el-table-column label="类别名称" prop="name" />
       <el-table-column label="本地化名称" prop="nameLocal" />
       <el-table-column label="排序" prop="sortOrder" width="80" align="center" />
