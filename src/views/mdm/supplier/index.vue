@@ -6,7 +6,7 @@
           v-model="queryParams.code"
           placeholder="请输入供应商代码"
           clearable
-          style="width: 140px"
+          style="width: 150px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -88,14 +88,14 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="供应商代码" prop="code" width="120" />
       <el-table-column label="供应商名称" prop="name" />
-      <el-table-column label="供应商类型" prop="supplierType" width="120">
+      <el-table-column label="本地化名称" prop="nameLocal" />
+      <el-table-column label="供应商类型" prop="supplierType" width="120" align="center">
         <template slot-scope="scope">
           {{ getSupplierTypeLabel(scope.row.supplierType) }}
         </template>
       </el-table-column>
-      <el-table-column label="国家" prop="country" width="80" />
-      <el-table-column label="联系人" prop="contactName" width="100" />
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="国家" prop="country" width="80" align="center" />
+      <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ scope.row.status === "ACTIVE" ? "启用" : scope.row.status === "INACTIVE" ? "停用" : scope.row.status === "DEPRECATED" ? "废弃" : "草稿" }}
@@ -155,8 +155,8 @@
     <!-- 添加或修改供应商对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="供应商代码" prop="code">
-          <el-input v-model="form.code" :readonly="form.code !== undefined && form.id !== undefined" placeholder="请输入供应商代码" />
+        <el-form-item v-if="form.id !== undefined" label="供应商代码" prop="code">
+          <el-input v-model="form.code" readonly placeholder="系统自动生成" />
         </el-form-item>
         <el-form-item label="供应商名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入供应商名称" />
@@ -347,10 +347,8 @@ export default {
         { prop: 'effectiveTo', label: '生效结束时间', type: 'date' }
       ],
       historyCode: '',
+      // CR-036：供应商 code 由系统发号（SUP+8 位全局流水），新增时无需用户录入；编辑时只读展示
       rules: {
-        code: [
-          { required: true, message: '供应商代码不能为空', trigger: 'blur' }
-        ],
         name: [
           { required: true, message: '供应商名称不能为空', trigger: 'blur' }
         ]
@@ -452,7 +450,10 @@ export default {
               this.getList()
             })
           } else {
-            addSupplier(this.form).then(response => {
+            // CR-036：code 由系统发号生成，新增时不携带调用方 code
+            const submitData = { ...this.form }
+            delete submitData.code
+            addSupplier(submitData).then(response => {
               this.$modal.msgSuccess('新增成功')
               this.open = false
               this.getList()
