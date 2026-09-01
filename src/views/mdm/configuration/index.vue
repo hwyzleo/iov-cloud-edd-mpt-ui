@@ -58,9 +58,9 @@
 
     <el-table v-loading="loading" :data="configurationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="配置代码" prop="code" width="190"/>
-      <el-table-column label="配置名称" prop="name"/>
-      <el-table-column label="本地化名称" prop="nameLocal"/>
+      <el-table-column label="配置代码" prop="code" width="190" fixed="left"/>
+      <el-table-column label="配置名称" prop="name" min-width="250"/>
+      <el-table-column label="本地化名称" prop="nameLocal" min-width="250"/>
       <el-table-column label="版本代码" prop="variantCode" width="120" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
@@ -70,12 +70,12 @@
         </template>
       </el-table-column>
       <el-table-column label="版本号" prop="version" width="60" align="center"/>
-      <el-table-column label="创建时间" align="center" width="160">
+      <el-table-column label="创建时间" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
