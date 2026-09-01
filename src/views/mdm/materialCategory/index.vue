@@ -6,7 +6,7 @@
           v-model="queryParams.parentCode"
           placeholder="请输入父分类编码"
           clearable
-          style="width: 140px"
+          style="width: 150px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -62,6 +62,26 @@
           @click="handleExport"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['mdm:material:category:catalog:preview']"
+          type="info"
+          plain
+          icon="el-icon-view"
+          size="mini"
+          @click="handleCatalogPreview"
+        >目录预检</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['mdm:material:category:catalog:bootstrap']"
+          type="warning"
+          plain
+          icon="el-icon-refresh"
+          size="mini"
+          @click="handleCatalogBootstrap"
+        >标准目录初始化</el-button>
+      </el-col>
       <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -73,11 +93,11 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="分类编码" prop="code" width="100" />
+      <el-table-column label="分类编码" prop="code" width="250" />
       <el-table-column label="分类名称" prop="name" />
       <el-table-column label="本地化名称" prop="nameLocal" />
-      <el-table-column label="父分类编码" prop="parentCode" width="100" />
-      <el-table-column label="状态" align="center" width="60">
+      <el-table-column label="父分类编码" prop="parentCode" width="200" />
+      <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ scope.row.status === 'ACTIVE' ? '启用' : scope.row.status === 'INACTIVE' ? '停用' : scope.row.status === 'DEPRECATED' ? '废弃' : '草稿' }}
@@ -90,7 +110,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['mdm:materialCategory:edit']"
@@ -108,7 +128,6 @@
             @click="handleDeactivate(scope.row)"
           >停用</el-button>
           <el-button
-            v-if="scope.row.status === 'DRAFT'"
             v-hasPermi="['mdm:materialCategory:remove']"
             size="mini"
             type="text"
@@ -188,6 +207,62 @@
         <el-form-item label="生效结束时间">{{ parseTime(data.effectiveTo) }}</el-form-item>
       </template>
     </history-snapshot>
+
+    <!-- 标准目录预检对话框（CR-039 §6） -->
+    <el-dialog title="物料分类标准目录预检" :visible.sync="previewVisible" width="640px" append-to-body>
+      <template v-if="previewData.catalogStatus === 'INVALID'">
+        <el-alert
+          title="标准目录非法，已禁用预检与初始化"
+          type="error"
+          :description="previewData.error || '目录静态校验失败'"
+          show-icon
+          :closable="false"
+        />
+      </template>
+      <template v-else>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="目录状态">{{ previewData.catalogStatus }}</el-descriptions-item>
+          <el-descriptions-item label="目录版本">{{ previewData.catalogVersion }}</el-descriptions-item>
+          <el-descriptions-item label="总条目">
+            {{ previewData.total }}（L1 {{ previewData.level1Count }} / L2 {{ previewData.level2Count }} / L3 {{ previewData.level3Count }}）
+          </el-descriptions-item>
+          <el-descriptions-item label="已初始化 / 待创建 / 冲突">
+            <span class="catalog-ok">{{ previewData.initialized }}</span> /
+            <span>{{ previewData.missing }}</span> /
+            <span class="catalog-conflict">{{ previewData.conflicted }}</span>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-divider content-position="left">冲突明细</el-divider>
+        <div v-if="previewData.conflicts && previewData.conflicts.length" class="catalog-conflict-box">
+          <div v-for="(item, idx) in previewData.conflicts" :key="idx" class="catalog-conflict-item">{{ item }}</div>
+        </div>
+        <div v-else class="catalog-empty">无冲突</div>
+        <el-divider content-position="left">条目状态</el-divider>
+        <el-collapse v-if="previewData.items && previewData.items.length">
+          <el-collapse-item :title="`已初始化（${initializedItems.length}）`" name="init">
+            <div v-if="initializedItems.length" class="catalog-code-list">
+              <el-tag v-for="it in initializedItems" :key="'i-' + it.code" size="mini" type="success" class="catalog-code-tag">{{ it.code }}</el-tag>
+            </div>
+            <div v-else class="catalog-empty">无</div>
+          </el-collapse-item>
+          <el-collapse-item :title="`待创建（${missingItems.length}）`" name="missing">
+            <div v-if="missingItems.length" class="catalog-code-list">
+              <el-tag v-for="it in missingItems" :key="'m-' + it.code" size="mini" class="catalog-code-tag">{{ it.code }}</el-tag>
+            </div>
+            <div v-else class="catalog-empty">无</div>
+          </el-collapse-item>
+          <el-collapse-item :title="`冲突（${conflictItems.length}）`" name="conflict">
+            <div v-if="conflictItems.length" class="catalog-code-list">
+              <el-tag v-for="it in conflictItems" :key="'c-' + it.code" size="mini" type="warning" class="catalog-code-tag">{{ it.code }}</el-tag>
+            </div>
+            <div v-else class="catalog-empty">无</div>
+          </el-collapse-item>
+        </el-collapse>
+      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="previewVisible = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -200,7 +275,9 @@ import {
   delMaterialCategory,
   deactivateMaterialCategory,
   listMaterialCategoryTree,
-  listMaterialCategoryHistory
+  listMaterialCategoryHistory,
+  previewMaterialCategoryCatalog,
+  bootstrapMaterialCategory
 } from '@/api/mdm/materialCategory'
 import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
@@ -233,6 +310,8 @@ export default {
       historyVisible: false,
       historyLoading: false,
       historyList: [],
+      previewVisible: false,
+      previewData: {},
       historyFields: [
         { prop: 'code', label: '分类编码' },
         { prop: 'name', label: '分类名称' },
@@ -381,7 +460,70 @@ export default {
         this.historyList = response.data.rows
         this.historyLoading = false
       })
+    },
+    handleCatalogPreview() {
+      previewMaterialCategoryCatalog().then(response => {
+        this.previewData = response.data
+        this.previewVisible = true
+      })
+    },
+    handleCatalogBootstrap() {
+      this.$modal.confirm('是否执行物料分类标准目录初始化？将按 L1→L2→L3 拓扑幂等导入 101 项（4 L1 + 19 L2 + 78 L3）为 ACTIVE；已存在且一致则跳过，冲突仅报告、不覆盖已有业务数据。').then(() => {
+        return bootstrapMaterialCategory()
+      }).then((response) => {
+        const r = response.data
+        if (r.catalogStatus === 'INVALID') {
+          this.$modal.msgError('标准目录非法，初始化已禁用：' + (r.error || ''))
+          return
+        }
+        this.$modal.msgSuccess('标准目录初始化完成：新建 ' + r.created + '，跳过 ' + r.skipped + '，冲突 ' + r.conflicted + '，失败 ' + r.failed + '，依赖失败 ' + r.dependencyFailed)
+        this.getList()
+      }).catch(() => {})
+    }
+  },
+  computed: {
+    initializedItems() {
+      return (this.previewData.items || []).filter(i => i.status === 'Initialized')
+    },
+    missingItems() {
+      return (this.previewData.items || []).filter(i => i.status === 'Missing')
+    },
+    conflictItems() {
+      return (this.previewData.items || []).filter(i => i.status === 'Conflict')
     }
   }
 }
 </script>
+
+<style scoped>
+.catalog-ok {
+  color: #67c23a;
+}
+.catalog-conflict {
+  color: #e6a23c;
+}
+.catalog-conflict-box {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px 8px;
+  background: #fdf6ec;
+  border-radius: 4px;
+}
+.catalog-conflict-item {
+  color: #e6a23c;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.catalog-code-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.catalog-code-tag {
+  margin: 0 0 4px 0;
+}
+.catalog-empty {
+  color: #909399;
+  font-size: 13px;
+}
+</style>

@@ -2,13 +2,24 @@
   <div class="app-container">
     <el-form v-show="showSearch" ref="queryForm" :model="queryParams" size="small" :inline="true">
       <el-form-item label="物料分类" prop="categoryCode">
-        <el-input
+        <el-select
           v-model="queryParams.categoryCode"
-          placeholder="请输入物料分类编码"
+          filterable
+          remote
           clearable
-          style="width: 140px"
-          @keyup.enter.native="handleQuery"
-        />
+          reserve-keyword
+          placeholder="编码/名称搜索"
+          :remote-method="remoteCategorySearch"
+          :loading="categoryLoading"
+          style="width: 190px"
+        >
+          <el-option
+            v-for="item in categoryList"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="零件类型" prop="partType">
         <el-select v-model="queryParams.partType" placeholder="请选择零件类型" clearable style="width: 150px">
@@ -138,7 +149,7 @@
           {{ getLifecycleStageLabel(scope.row.lifecycleStage) }}
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" width="60">
+      <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
             {{ scope.row.status === 'ACTIVE' ? '启用' : scope.row.status === 'INACTIVE' ? '停用' : scope.row.status === 'DEPRECATED' ? '废弃' : '草稿' }}
@@ -239,7 +250,24 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="物料分类" prop="categoryCode">
-              <el-input v-model="form.categoryCode" placeholder="请输入物料分类编码" />
+              <el-select
+                v-model="form.categoryCode"
+                filterable
+                remote
+                clearable
+                reserve-keyword
+                placeholder="编码/名称搜索（仅叶子可归类）"
+                :remote-method="remoteLeafCategorySearch"
+                :loading="categoryLoading"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in leafCategoryList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -573,6 +601,7 @@ import {
 } from '@/api/mdm/part'
 import { listAllVehicleNode } from '@/api/mdm/vehicleNode'
 import { listAllSupplier } from '@/api/mdm/supplier'
+import { listMaterialCategoryTree } from '@/api/mdm/materialCategory'
 import HistorySnapshot from '@/components/HistorySnapshot/index.vue'
 
 const PART_TYPE_OPTIONS = [
@@ -632,6 +661,12 @@ export default {
       vehicleNodeLoading: false,
       supplierList: [],
       supplierLoading: false,
+      // 物料分类远程搜索（CR-039：表单仅关联 L3 叶子）
+      allCategories: [],
+      categoryList: [],
+      leafCategoryList: [],
+      leafCodeSet: new Set(),
+      categoryLoading: false,
       loading: true,
       ids: [],
       codes: [],
@@ -737,6 +772,7 @@ export default {
     this.getList()
     this.loadVehicleNodeList()
     this.loadSupplierList()
+    this.loadCategoryList()
   },
   methods: {
     getList() {
@@ -752,7 +788,7 @@ export default {
       listAllVehicleNode().then(response => {
         this.vehicleNodeList = response.data.map(item => ({
           value: item.nodeCode,
-          label: item.nodeCode + ' - ' + item.name
+          label: item.nameLocal + '(' + item.name + ')'
         }))
         this.vehicleNodeLoading = false
       })
@@ -793,6 +829,81 @@ export default {
             }))
           this.supplierLoading = false
         })
+      }
+    },
+    loadCategoryList() {
+      this.categoryLoading = true
+      listMaterialCategoryTree().then(response => {
+        const rows = response.data || []
+        this.allCategories = rows
+        // CR-039：叶子 = 深度=3 且无 ACTIVE 子节点（Part 仅可归类 L3 叶子）
+        const leafCodes = this.computeLeafCodes(rows)
+        this.leafCodeSet = new Set(leafCodes)
+        this.categoryList = rows.map(item => ({
+          value: item.code,
+          label: item.code + ' - ' + item.name
+        }))
+        this.leafCategoryList = rows
+          .filter(item => leafCodes.includes(item.code))
+          .map(item => ({
+            value: item.code,
+            label: item.nameLocal + '(' + item.name + ')'
+          }))
+        this.categoryLoading = false
+      })
+    },
+    computeLeafCodes(rows) {
+      const byCode = {}
+      const childrenCount = {}
+      rows.forEach(c => {
+        byCode[c.code] = c
+        if (c.parentCode) {
+          childrenCount[c.parentCode] = (childrenCount[c.parentCode] || 0) + 1
+        }
+      })
+      const depthMap = {}
+      const depthOf = (code) => {
+        if (code === undefined || code === null || code === '') return 0
+        if (depthMap[code] !== undefined) return depthMap[code]
+        const c = byCode[code]
+        if (!c) return 0
+        const d = c.parentCode ? depthOf(c.parentCode) + 1 : 1
+        depthMap[code] = d
+        return d
+      }
+      return rows
+        .filter(c => depthOf(c.code) === 3 && !(childrenCount[c.code] > 0))
+        .map(c => c.code)
+    },
+    remoteCategorySearch(query) {
+      if (query !== '') {
+        this.categoryLoading = true
+        const q = query.toLowerCase()
+        this.categoryList = this.allCategories
+          .filter(item => (item.code || '').toLowerCase().includes(q)
+            || (item.name || '').toLowerCase().includes(q)
+            || (item.nameLocal || '').toLowerCase().includes(q))
+          .map(item => ({
+            value: item.code,
+            label: item.code + ' - ' + item.name
+          }))
+        this.categoryLoading = false
+      }
+    },
+    remoteLeafCategorySearch(query) {
+      if (query !== '') {
+        this.categoryLoading = true
+        const q = query.toLowerCase()
+        this.leafCategoryList = this.allCategories
+          .filter(item => this.leafCodeSet.has(item.code))
+          .filter(item => (item.code || '').toLowerCase().includes(q)
+            || (item.name || '').toLowerCase().includes(q)
+            || (item.nameLocal || '').toLowerCase().includes(q))
+          .map(item => ({
+            value: item.code,
+            label: item.nameLocal + '(' + item.name + ')'
+          }))
+        this.categoryLoading = false
       }
     },
     getPartTypeLabel(type) {
