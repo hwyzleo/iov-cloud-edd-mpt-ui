@@ -216,15 +216,15 @@
       </el-form>
 
       <el-table v-loading="bindingLoading" :data="bindingList" size="small">
-        <el-table-column label="选项码" prop="optionCodeCode" width="180"/>
-        <el-table-column label="选项族" prop="optionFamilyCode" width="180"/>
-        <el-table-column label="创建人" prop="createBy" width="120"/>
-        <el-table-column label="创建时间" align="center" width="160">
+        <el-table-column label="选项码" prop="optionCodeCode" width="220"/>
+        <el-table-column label="选项族" prop="optionFamilyCode" min-width="200"/>
+        <el-table-column label="创建人" prop="createBy" width="80" align="center"/>
+        <el-table-column label="创建时间" align="center" width="120">
           <template slot-scope="scope">
-            <span>{{ parseTime(scope.row.createTime) }}</span>
+            <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="100">
+        <el-table-column label="操作" align="center" width="80">
           <template slot-scope="scope">
             <el-button
               size="mini"
