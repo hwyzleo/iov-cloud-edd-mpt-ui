@@ -63,10 +63,10 @@
     </el-row>
 
     <el-table v-loading="loading" :data="familyList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="选项族代码" prop="code" width="280"/>
-      <el-table-column label="选项族名称" prop="name"/>
-      <el-table-column label="本地化名称" prop="nameLocal"/>
+      <el-table-column type="selection" width="55" align="center" fixed="left"/>
+      <el-table-column label="选项族代码" prop="code" width="280" fixed="left"/>
+      <el-table-column label="选项族名称" prop="name" min-width="180"/>
+      <el-table-column label="本地化名称" prop="nameLocal" min-width="150"/>
       <el-table-column label="商品分类" align="center" width="150">
         <template slot-scope="scope">
           {{ categoryLabel(scope.row.category) }}
@@ -83,7 +83,7 @@
           <span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="320" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -224,22 +224,21 @@
         </el-row>
 
         <el-table v-loading="codeLoading" :data="codeList" size="small">
-          <el-table-column label="选项码代码" prop="code" width="160"/>
-          <el-table-column label="选项码名称" prop="name"/>
-          <el-table-column label="本地化名称" prop="nameLocal"/>
-          <el-table-column label="描述" prop="description" show-overflow-tooltip/>
+          <el-table-column label="选项码代码" prop="code" width="220" fixed="left"/>
+          <el-table-column label="选项码名称" prop="name" min-width="120"/>
+          <el-table-column label="本地化名称" prop="nameLocal" min-width="120"/>
           <el-table-column label="状态" align="center" width="80">
             <template slot-scope="scope">
               <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="版本" prop="version" width="60" align="center"/>
-          <el-table-column label="创建时间" align="center" width="160">
+          <el-table-column label="创建时间" align="center" width="140">
             <template slot-scope="scope">
-              <span>{{ parseTime(scope.row.createTime) }}</span>
+              <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
+          <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width" fixed="right">
             <template slot-scope="scope">
               <el-button
                 size="mini"
@@ -290,8 +289,12 @@
         <el-form-item label="所属选项族">
           <el-input v-model="codeForm.optionFamilyCode" disabled/>
         </el-form-item>
+        <!-- CR-040：展示所属族派生主干，引导新建规范编码 -->
+        <el-form-item label="期望主干" v-if="codeStemHint">
+          <el-alert :title="codeStemHintText" type="info" :closable="false" show-icon/>
+        </el-form-item>
         <el-form-item label="选项码代码" prop="code">
-          <el-input v-model="codeForm.code" :readonly="codeForm.id !== undefined" placeholder="请输入选项码代码"/>
+          <el-input v-model="codeForm.code" :readonly="codeForm.id !== undefined" :placeholder="codePlaceholder" @blur="handleCodeCodeBlur"/>
         </el-form-item>
         <el-form-item label="选项码名称" prop="name">
           <el-input v-model="codeForm.name" placeholder="请输入选项码名称"/>
@@ -378,6 +381,8 @@ const PREFIX_CATEGORY_MAP = {
 };
 // CR-035：标准/扩展 code 格式（全大写字母/数字/下划线）
 const FAMILY_CODE_PATTERN = /^OF_(EXT|INT|PWR|SMART|COMF|SAFE|ACC|OTH|CHS)_(?:X_)?[A-Z0-9]+(?:_[A-Z0-9]+)*$/;
+// CR-040：选项码统一编码格式（OC_<分类前缀>_<族语义>_<VALUE>，与后端 OptionCodeCodePolicy 一致）
+const OPTION_CODE_PATTERN = /^OC_(EXT|INT|PWR|CHS|SMART|COMF|SAFE|ACC|OTH)_[A-Z0-9]+(?:_[A-Z0-9]+)*$/;
 
 export default {
   name: "MdmOption",
@@ -496,7 +501,39 @@ export default {
       codeForm: {},
       codeEffectiveDateRange: [],
       codeRules: {
-        code: [{ required: true, message: "选项码代码不能为空", trigger: "blur" }],
+        code: [
+          { required: true, message: "选项码代码不能为空", trigger: "blur" },
+          {
+            validator: (rule, value, callback) => {
+              // 修改路径：code 不可变（readonly），不追溯校验 legacy 格式（CR-040 §4）
+              if (this.codeForm.id !== undefined) return callback();
+              if (!value) return callback();
+              // CR-040 §2.2：长度上限 64，超过直接拒绝
+              if (value.length > 64) {
+                return callback(new Error("选项码代码长度不能超过64位"));
+              }
+              // CR-040 §2.2：接口不自动转大写或改写输入，小写输入直接判定格式非法
+              if (value !== value.toUpperCase()) {
+                return callback(new Error("选项码代码需全大写字母/数字/下划线（系统不自动改写输入，请手动改为大写）"));
+              }
+              if (!OPTION_CODE_PATTERN.test(value)) {
+                return callback(new Error("格式应为 OC_分类前缀_族语义_取值（如 OC_EXT_BODY_COLOR_BLACK），仅大写字母/数字/下划线，禁止连续/首尾下划线、空格、连字符、中文"));
+              }
+              // CR-040 §2.2：必须以所属选项族派生主干开头且 VALUE 非空
+              const stem = this.deriveOptionCodeStem(this.currentFamily && this.currentFamily.code);
+              if (stem) {
+                if (value.indexOf(stem) !== 0) {
+                  return callback(new Error("选项码必须以上所属选项族派生主干「" + stem + "」开头"));
+                }
+                if (value.length <= stem.length) {
+                  return callback(new Error("VALUE 不能为空，格式为 " + stem + "<VALUE>"));
+                }
+              }
+              callback();
+            },
+            trigger: "blur"
+          }
+        ],
         name: [{ required: true, message: "选项码名称不能为空", trigger: "blur" }]
       },
       // ===== 选项码 历史 =====
@@ -519,6 +556,22 @@ export default {
   },
   created() {
     this.getFamilyList();
+  },
+  computed: {
+    // CR-040：选项码输入框 placeholder（展示所属族派生主干格式）
+    codePlaceholder() {
+      const stem = this.deriveOptionCodeStem(this.currentFamily && this.currentFamily.code);
+      return stem ? "请输入选项码代码（" + stem + "<VALUE>，如 " + stem + "BLACK）" : "请输入选项码代码";
+    },
+    // CR-040：期望主干（非 OF_* legacy 族返回 null，不展示提示）
+    codeStemHint() {
+      return this.deriveOptionCodeStem(this.currentFamily && this.currentFamily.code);
+    },
+    // CR-040：期望主干提示文案
+    codeStemHintText() {
+      const stem = this.deriveOptionCodeStem(this.currentFamily && this.currentFamily.code);
+      return stem ? "新建选项码必须以所属选项族派生主干开头：" + stem + "<VALUE>（如 " + stem + "BLACK）" : "";
+    }
   },
   methods: {
     // ====== 公共 ======
@@ -729,6 +782,19 @@ export default {
       this.resetCodeForm();
       this.codeFormOpen = true;
       this.codeTitle = "添加选项码";
+    },
+    // CR-040：根据所属选项族派生期望主干（OF_ → OC_，追加尾部分隔下划线；非 OF_ 开头返回 null）
+    deriveOptionCodeStem(familyCode) {
+      if (familyCode && familyCode.indexOf('OF_') === 0 && familyCode.length > 3) {
+        return 'OC_' + familyCode.substring(3) + '_';
+      }
+      return null;
+    },
+    handleCodeCodeBlur() {
+      // CR-040 §2.2：不自动转大写或改写输入，仅触发校验提示
+      if (this.$refs["codeForm"]) {
+        this.$refs["codeForm"].validateField("code");
+      }
     },
     handleCodeUpdate(row) {
       this.resetCodeForm();
