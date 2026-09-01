@@ -119,7 +119,7 @@
       <el-table-column label="零件编码" prop="code" width="110" fixed="left" />
       <el-table-column label="零件名称" prop="name" min-width="250" fixed="left" />
       <el-table-column label="本地化名称" prop="nameLocal" min-width="250" />
-      <el-table-column label="物料分类" prop="categoryCode" width="220" align="center" />
+      <el-table-column label="物料分类" prop="categoryCode" width="240" />
       <el-table-column label="零件类型" prop="partType" width="80" align="center">
         <template slot-scope="scope">
           {{ getPartTypeLabel(scope.row.partType) }}

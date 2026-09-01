@@ -87,7 +87,7 @@
           <el-col :span="12">
             <el-form-item label="锚点编码" prop="anchorCode">
               <el-select v-model="form.anchorCode" placeholder="请选择锚点编码" clearable filterable style="width: 100%" :disabled="form.id !== undefined">
-                <el-option v-for="item in anchorOptions" :key="item.code" :label="item.name + ' (' + item.code + ')'" :value="item.code" />
+                <el-option v-for="item in anchorOptions" :key="item.code" :label="item.nameLocal + ' (' + item.name + ')'" :value="item.code" />
               </el-select>
             </el-form-item>
           </el-col>
