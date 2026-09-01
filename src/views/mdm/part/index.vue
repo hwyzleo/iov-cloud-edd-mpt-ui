@@ -118,6 +118,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="零件编码" prop="code" width="110" fixed="left" />
       <el-table-column label="零件名称" prop="name" min-width="250" fixed="left" />
+      <el-table-column label="本地化名称" prop="nameLocal" min-width="250" />
       <el-table-column label="物料分类" prop="categoryCode" width="80" align="center" />
       <el-table-column label="零件类型" prop="partType" width="80" align="center">
         <template slot-scope="scope">
@@ -798,7 +799,7 @@ export default {
       listAllSupplier().then(response => {
         this.supplierList = response.data.map(item => ({
           value: item.code,
-          label: item.code + ' - ' + item.name
+          label: item.nameLocal + '(' + item.name + ')'
         }))
         this.supplierLoading = false
       })
@@ -825,7 +826,7 @@ export default {
             .filter(item => item.code.toLowerCase().includes(query.toLowerCase()) || item.name.toLowerCase().includes(query.toLowerCase()))
             .map(item => ({
               value: item.code,
-              label: item.code + ' - ' + item.name
+              label: item.nameLocal + '(' + item.name + ')'
             }))
           this.supplierLoading = false
         })
