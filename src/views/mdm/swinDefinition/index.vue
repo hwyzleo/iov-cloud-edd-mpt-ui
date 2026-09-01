@@ -96,12 +96,12 @@
       <el-table-column label="SWIN编号" prop="swinCode" width="150" fixed="left"/>
       <el-table-column label="名称" prop="name" min-width="250" fixed="left"/>
       <el-table-column label="编码方案" prop="schemeCode" width="250"/>
-      <el-table-column label="型式锚点类型" prop="typeRefType" width="120">
+      <el-table-column label="型式锚点类型" prop="typeRefType" width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.typeRefType === 'VARIANT' ? 'Variant' : scope.row.typeRefType === 'MODEL' ? 'Model' : scope.row.typeRefType }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="型式锚点编码" prop="typeRefCode" width="150"/>
+      <el-table-column label="型式锚点编码" prop="typeRefCode" width="150" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : 'warning'">
@@ -184,7 +184,7 @@
             <el-option
               v-for="item in activeSchemeOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + ' (' + item.name + ')'"
               :value="item.code"
             />
           </el-select>
@@ -200,7 +200,7 @@
             <el-option
               v-for="item in typeRefCodeOptions"
               :key="item.code"
-              :label="item.name + ' (' + item.code + ')'"
+              :label="item.nameLocal + ' (' + item.name + ')'"
               :value="item.code"
             />
           </el-select>

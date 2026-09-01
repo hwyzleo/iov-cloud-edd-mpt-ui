@@ -70,12 +70,13 @@
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="编码方案代码" prop="code" width="250"/>
       <el-table-column label="方案名称" prop="name"/>
-      <el-table-column label="编码路线" prop="route" width="120">
+      <el-table-column label="本地化名称" prop="nameLocal"/>
+      <el-table-column label="编码路线" prop="route" width="100" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.route === 'SINGLE_SWIN' ? '单一SWIN' : scope.row.route === 'MULTI_SWIN' ? '多SWIN' : scope.row.route }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="数据来源" prop="source" width="100"/>
+      <el-table-column label="数据来源" prop="source" width="100" align="center"/>
       <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : 'warning'">

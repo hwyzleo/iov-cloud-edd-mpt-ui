@@ -42,11 +42,11 @@
     <el-table v-loading="loading" :data="baselineList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="基线编码" prop="taBaselineCode" width="200" fixed="left" />
-      <el-table-column label="SWIN编码" prop="swinCode" width="150" fixed="left" />
+      <el-table-column label="SWIN编码" prop="swinCode" />
       <el-table-column label="锚定层级" prop="anchorType" width="100" align="center">
         <template slot-scope="scope">{{ getAnchorTypeLabel(scope.row.anchorType) }}</template>
       </el-table-column>
-      <el-table-column label="锚点编码" prop="anchorCode" width="150" show-overflow-tooltip />
+      <el-table-column label="锚点编码" prop="anchorCode" width="150" align="center" />
       <el-table-column label="基线状态" prop="status" width="100" align="center">
         <template slot-scope="scope">
           <el-tag :type="getStatusTagType(scope.row.status)">{{ getStatusLabel(scope.row.status) }}</el-tag>
