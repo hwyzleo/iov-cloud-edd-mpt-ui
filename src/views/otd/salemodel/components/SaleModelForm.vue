@@ -12,7 +12,7 @@
           <el-option
             v-for="carline in carlineOptions"
             :key="carline.code"
-            :label="carline.code + ' - ' + carline.name"
+            :label="carline.nameLocal + '(' + carline.name + ')'"
             :value="carline.code"
           />
         </el-select>

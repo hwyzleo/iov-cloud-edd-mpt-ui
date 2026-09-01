@@ -105,7 +105,7 @@
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="销售代码" prop="saleModelCode" width="120"/>
       <el-table-column label="销售车型名称" prop="modelName" show-overflow-tooltip/>
-      <el-table-column label="车系代码" prop="carlineCode" width="120"/>
+      <el-table-column label="车系代码" prop="carlineCode" width="100" align="center"/>
       <el-table-column label="启用意向金" align="center" width="100">
         <template slot-scope="scope">
           <el-switch
@@ -130,6 +130,11 @@
         <template slot-scope="scope">
           <el-tag v-if="scope.row.listingStatus === 'active'" type="success" size="mini">上架</el-tag>
           <el-tag v-else type="info" size="mini">下架</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="生效时间" align="center" width="140">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.effectiveFrom, "{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
       <el-table-column label="排序" prop="sortWeight" align="center" width="60"/>
