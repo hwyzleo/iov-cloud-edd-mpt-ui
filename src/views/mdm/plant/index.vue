@@ -11,12 +11,12 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="工厂名称" prop="name">
+      <el-form-item label="名称关键字" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入工厂名称"
+          placeholder="请输入名称（英文/本地化）"
           clearable
-          style="width: 150px"
+          style="width: 200px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -100,13 +100,14 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="工厂代码" prop="code" width="120" />
       <el-table-column label="工厂名称" prop="name" />
-      <el-table-column label="工厂类型" prop="plantType" width="120">
+      <el-table-column label="本地化名称" prop="nameLocal" />
+      <el-table-column label="工厂类型" prop="plantType" width="100" align="center">
         <template slot-scope="scope">
           {{ getPlantTypeLabel(scope.row.plantType) }}
         </template>
       </el-table-column>
-      <el-table-column label="国家" prop="country" width="80" />
-      <el-table-column label="状态" align="center" width="100">
+      <el-table-column label="国家" prop="country" width="80" align="center" />
+      <el-table-column label="状态" align="center" width="80">
         <template slot-scope="scope">
           <el-tag :type="getStatusType(scope.row.status)">
             {{ getStatusLabel(scope.row.status) }}
@@ -119,7 +120,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['mdm:plant:edit']"
@@ -137,7 +138,6 @@
             @click="handleDeactivate(scope.row)"
           >停用</el-button>
           <el-button
-            v-if="scope.row.status === 'DRAFT'"
             v-hasPermi="['mdm:plant:remove']"
             size="mini"
             type="text"
@@ -176,14 +176,14 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="工厂名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入工厂名称" />
+              <el-input v-model="form.name" placeholder="请输入英文标准名称" maxlength="128" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="英文名称" prop="nameEn">
-              <el-input v-model="form.nameEn" placeholder="请输入英文名称" />
+            <el-form-item label="本地化名称" prop="nameLocal">
+              <el-input v-model="form.nameLocal" placeholder="请输入本地化名称" maxlength="128" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -331,8 +331,8 @@
     >
       <template #detail-fields="{ data }">
         <el-form-item label="工厂代码">{{ data.code }}</el-form-item>
-        <el-form-item label="工厂名称">{{ data.name }}</el-form-item>
-        <el-form-item label="英文名称">{{ data.nameEn }}</el-form-item>
+        <el-form-item label="英文标准名称">{{ data.name }}</el-form-item>
+        <el-form-item label="本地化名称">{{ data.nameLocal }}</el-form-item>
         <el-form-item label="简称">{{ data.shortName }}</el-form-item>
         <el-form-item label="工厂类型">{{ getPlantTypeLabel(data.plantType) }}</el-form-item>
         <el-form-item label="国家">{{ data.country }}</el-form-item>
@@ -417,8 +417,8 @@ export default {
       historyList: [],
       historyFields: [
         { prop: 'code', label: '工厂代码' },
-        { prop: 'name', label: '工厂名称' },
-        { prop: 'nameEn', label: '英文名称' },
+        { prop: 'name', label: '英文标准名称' },
+        { prop: 'nameLocal', label: '本地化名称' },
         { prop: 'shortName', label: '简称' },
         { prop: 'plantType', label: '工厂类型' },
         { prop: 'country', label: '国家' },
@@ -442,7 +442,7 @@ export default {
           { required: true, message: '工厂代码不能为空', trigger: 'blur' }
         ],
         name: [
-          { required: true, message: '工厂名称不能为空', trigger: 'blur' }
+          { required: true, message: '英文标准名称不能为空', trigger: 'blur' }
         ]
       }
     }
@@ -488,7 +488,7 @@ export default {
       this.form = {
         code: undefined,
         name: undefined,
-        nameEn: undefined,
+        nameLocal: undefined,
         shortName: undefined,
         description: undefined,
         plantType: undefined,
