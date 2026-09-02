@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row :gutter="10" class="mb8">
-      <el-col :span="6">
+      <el-col :span="8">
         <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small" style="width: 100%">
           <el-option
             v-for="item in variantOptions"
@@ -82,8 +82,8 @@
               border
               style="width: 100%"
             >
-              <el-table-column label="选项值代码" prop="optionCode" width="200" show-overflow-tooltip/>
-              <el-table-column label="选项值名称" prop="optionName" width="150" show-overflow-tooltip/>
+              <el-table-column label="选项值代码" prop="optionCode" width="250" show-overflow-tooltip/>
+              <el-table-column label="选项值名称" prop="optionName" width="250" show-overflow-tooltip/>
               <el-table-column label="营销标题" prop="marketingTitle" min-width="150" show-overflow-tooltip/>
               <el-table-column label="策略状态" align="center" width="100">
                 <template slot-scope="scope">
@@ -93,7 +93,7 @@
                   <el-tag v-else type="info" size="mini">未配置</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="价格" align="center" width="120">
+              <el-table-column label="价格" align="center" width="100">
                 <template slot-scope="scope">
                   <span v-if="scope.row.optionPrice" style="color: #67C23A;">￥{{ scope.row.optionPrice }}</span>
                   <span v-else style="color: #909399;">-</span>
