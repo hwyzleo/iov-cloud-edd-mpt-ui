@@ -14,7 +14,7 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="6">
-        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small">
+        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small" style="width: 100%">
           <el-option
             v-for="item in variantOptions"
             :key="item.variantCode"
@@ -57,7 +57,7 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" :selectable="isSelectable"/>
-      <el-table-column label="配置代码" prop="configurationCode" width="160" show-overflow-tooltip/>
+      <el-table-column label="配置代码" prop="configurationCode" width="180"/>
       <el-table-column label="指导价" align="center" width="120">
         <template slot-scope="scope">
           <span style="color: #67C23A;">￥{{ scope.row.guidePrice || 0 }}</span>
@@ -164,11 +164,11 @@ export default {
 
       const promises = []
       if (toAdd.length > 0) {
-        promises.push(createConfigPolicy(this.saleModelCode, { 
+        promises.push(createConfigPolicy(this.saleModelCode, {
           modelCode: this.getModelCodeByVariant(this.selectedVariantCode),
           variantCode: this.selectedVariantCode,
-          configurationCodes: toAdd, 
-          status: 'active' 
+          configurationCodes: toAdd,
+          status: 'active'
         }))
       }
       if (toRemove.length > 0) {

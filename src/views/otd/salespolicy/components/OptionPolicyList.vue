@@ -2,7 +2,7 @@
   <div>
     <el-row :gutter="10" class="mb8">
       <el-col :span="6">
-        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small">
+        <el-select v-model="selectedVariantCode" placeholder="请选择版本" clearable @change="handleVariantChange" size="small" style="width: 100%">
           <el-option
             v-for="item in variantOptions"
             :key="item.variantCode"
@@ -82,10 +82,10 @@
               border
               style="width: 100%"
             >
-              <el-table-column label="选项值代码" prop="optionCode" width="160" show-overflow-tooltip/>
-              <el-table-column label="选项值名称" prop="optionName" show-overflow-tooltip/>
-              <el-table-column label="营销标题" prop="marketingTitle" width="150" show-overflow-tooltip/>
-              <el-table-column label="策略状态" align="center" width="120">
+              <el-table-column label="选项值代码" prop="optionCode" width="200" show-overflow-tooltip/>
+              <el-table-column label="选项值名称" prop="optionName" width="150" show-overflow-tooltip/>
+              <el-table-column label="营销标题" prop="marketingTitle" min-width="150" show-overflow-tooltip/>
+              <el-table-column label="策略状态" align="center" width="100">
                 <template slot-scope="scope">
                   <el-tag v-if="scope.row.inPolicy && scope.row.saleStatus === 'active'" type="success" size="mini">已上架</el-tag>
                   <el-tag v-else-if="scope.row.inPolicy && scope.row.saleStatus === 'off_shelf'" type="info" size="mini">已下架</el-tag>

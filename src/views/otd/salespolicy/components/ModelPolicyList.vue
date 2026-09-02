@@ -34,8 +34,8 @@
       border
       style="width: 100%"
     >
-      <el-table-column label="车型代码" prop="modelCode" width="140" show-overflow-tooltip/>
-      <el-table-column label="车型名称" prop="modelName" min-width="150" show-overflow-tooltip/>
+      <el-table-column label="车型代码" prop="modelCode" width="100"/>
+      <el-table-column label="车型名称" prop="modelName" width="150"/>
       <el-table-column label="MDM状态" align="center" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.status && scope.row.status.toLowerCase() === 'active'" type="success" size="mini">启用</el-tag>
@@ -53,7 +53,7 @@
           <el-tag v-else type="info" size="mini">未配置</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="营销名称" prop="marketingName" width="150" show-overflow-tooltip/>
+      <el-table-column label="营销名称" prop="marketingName" min-width="200" show-overflow-tooltip/>
       <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
