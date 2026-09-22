@@ -395,19 +395,32 @@ export default {
         if (valid) {
           if (this.form.id !== undefined) {
             updatePartImportData(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
+              this.handleImportResult(response, "修改");
               this.open = false;
               this.getList();
             });
           } else {
             addPartImportData(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
+              this.handleImportResult(response, "新增");
               this.open = false;
               this.getList();
             });
           }
         }
       });
+    },
+    /** 根据解析结果提示成功或失败（有失败项时展示具体错误） */
+    handleImportResult(response, action) {
+      const data = response.data;
+      if (data && data.failureCount > 0) {
+        let msg = action + "成功，但有 " + data.failureCount + " 条处理失败";
+        if (data.description) {
+          msg += "：\n" + data.description;
+        }
+        this.$modal.alertError(msg);
+      } else {
+        this.$modal.msgSuccess(action + "成功");
+      }
     },
     /** 删除按钮操作 */
     handleDelete(row) {
