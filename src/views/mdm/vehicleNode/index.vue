@@ -110,6 +110,11 @@
           <span>{{ otaSupportTypeMap[scope.row.otaSupportType] || scope.row.otaSupportType }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="HSM能力" prop="hsmCapability" width="110" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="hsmCapabilityTagType(scope.row.hsmCapability)">{{ hsmCapabilityMap[scope.row.hsmCapability] || scope.row.hsmCapability || '-' }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" prop="status" width="70" align="center">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : scope.row.status === 'INACTIVE' ? 'info' : scope.row.status === 'DEPRECATED' ? 'danger' : 'warning'">
@@ -205,7 +210,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="HSM能力" prop="hsmCapability">
-          <el-input v-model="form.hsmCapability" placeholder="请输入HSM能力" />
+          <el-select v-model="form.hsmCapability" placeholder="请选择HSM能力" clearable style="width: 100%">
+            <el-option v-for="item in hsmCapabilityOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="安全等级" prop="securityLevel">
           <el-input v-model="form.securityLevel" placeholder="请输入安全等级" />
@@ -244,7 +251,7 @@
         <el-form-item label="设备类别">{{ data.deviceCategory }}</el-form-item>
         <el-form-item label="核心节点">{{ data.isCoreNode ? '是' : '否' }}</el-form-item>
         <el-form-item label="OTA支持类型">{{ otaSupportTypeMap[data.otaSupportType] || data.otaSupportType }}</el-form-item>
-        <el-form-item label="HSM能力">{{ data.hsmCapability }}</el-form-item>
+        <el-form-item label="HSM能力">{{ hsmCapabilityMap[data.hsmCapability] || data.hsmCapability }}</el-form-item>
         <el-form-item label="安全等级">{{ data.securityLevel }}</el-form-item>
         <el-form-item label="版本">{{ data.version }}</el-form-item>
         <el-form-item label="状态">{{ statusMap[data.status] || data.status }}</el-form-item>
@@ -349,6 +356,18 @@ export default {
         BOTH: '同时支持',
         NOT_SUPPORTED: '不支持'
       },
+      hsmCapabilityOptions: [
+        { value: 'NONE', label: '无安全芯片' },
+        { value: 'SHE', label: 'SHE' },
+        { value: 'HSM_LIGHT', label: 'HSM 轻量' },
+        { value: 'HSM_FULL', label: 'HSM 完整' }
+      ],
+      hsmCapabilityMap: {
+        NONE: '无安全芯片',
+        SHE: 'SHE',
+        HSM_LIGHT: 'HSM 轻量',
+        HSM_FULL: 'HSM 完整'
+      },
       statusMap: {
         ACTIVE: '启用',
         INACTIVE: '停用',
@@ -379,7 +398,7 @@ export default {
         { prop: 'deviceCategory', label: '设备类别' },
         { prop: 'isCoreNode', label: '核心节点', type: 'boolean' },
         { prop: 'otaSupportType', label: 'OTA支持类型', type: 'otaSupportType' },
-        { prop: 'hsmCapability', label: 'HSM能力' },
+        { prop: 'hsmCapability', label: 'HSM能力', type: 'hsmCapability' },
         { prop: 'securityLevel', label: '安全等级' },
         { prop: 'version', label: '版本' },
         { prop: 'status', label: '状态', type: 'status' },
@@ -412,6 +431,15 @@ export default {
       listAllDeviceCategory().then(response => {
         this.deviceCategoryOptions = response.data || [];
       });
+    },
+    hsmCapabilityTagType(value) {
+      if (value === 'HSM_FULL' || value === 'HSM_LIGHT') {
+        return 'success';
+      }
+      if (value === 'SHE') {
+        return 'warning';
+      }
+      return 'info';
     },
     getList() {
       this.loading = true;
