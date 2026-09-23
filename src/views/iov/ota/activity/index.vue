@@ -816,7 +816,15 @@ export default {
       this.$modal.confirm('是否确认发布该升级活动？').then(() => {
         if (activityId !== undefined) {
           releaseActivity(activityId).then(response => {
-            this.$modal.msgSuccess("发布成功");
+            // 后端成功时 data=1；对历史版本可能返回 0 的场景做兜底提示，避免误报“发布成功”
+            if (response && response.code === 200 && response.data === 1) {
+              this.$modal.msgSuccess("发布成功");
+            } else {
+              const msg = (response && response.msg) || "发布失败：请确认活动已审核通过且型批评估已完成";
+              this.$modal.msgError(msg);
+            }
+            this.getList();
+          }).catch(() => {
             this.getList();
           });
         }

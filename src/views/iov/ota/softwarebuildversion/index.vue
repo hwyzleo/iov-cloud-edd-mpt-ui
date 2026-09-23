@@ -94,10 +94,10 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="设备" prop="deviceCode" width="150" fixed="left"/>
+      <el-table-column label="设备" prop="deviceCode" width="200" fixed="left"/>
       <el-table-column label="软件零件号" prop="softwarePn" width="120" fixed="left"/>
       <el-table-column label="软件零件名称" prop="softwarePartName" min-width="120" fixed="left"/>
-      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100" fixed="left"/>
+      <el-table-column label="软件内部版本" prop="softwareBuildVer" width="100" fixed="left" align="center"/>
       <el-table-column label="发布状态" prop="buildState" width="90" align="center" fixed="left">
         <template slot-scope="scope">
           <el-tag :type="getBuildStateTagType(scope.row.buildState)">{{ getBuildStateLabel(scope.row.buildState) }}</el-tag>

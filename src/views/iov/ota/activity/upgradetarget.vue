@@ -71,7 +71,7 @@
     >
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="序号" type="index" width="60" align="center"/>
-      <el-table-column label="车辆节点/ECU" prop="vehicleNodeCode" width="130" align="center"/>
+      <el-table-column label="车辆节点/ECU" prop="vehicleNodeCode" width="200" align="center"/>
       <el-table-column label="软件零件号" prop="partCode" width="130" align="center"/>
       <el-table-column label="目标软件版本" prop="softwareBuildVersionId" min-width="180">
         <template slot-scope="scope">

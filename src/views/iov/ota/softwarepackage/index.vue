@@ -80,7 +80,7 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="软件包名称" prop="packageName" min-width="200" fixed="left"/>
-      <el-table-column label="设备" prop="deviceCode" width="150" align="center" fixed="left"/>
+      <el-table-column label="设备" prop="deviceCode" width="200" align="left" fixed="left"/>
       <el-table-column label="软件包类型" prop="packageType" width="90" align="center" fixed="left">
         <template slot-scope="scope">
           <span v-if="scope.row.packageType==='FULL'">全量</span>
@@ -92,7 +92,7 @@
           <el-tag :type="getPackageStateTagType(scope.row.packageState)">{{ getPackageStateLabel(scope.row.packageState) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="软件零件号" prop="softwarePn" width="120"/>
+      <el-table-column label="软件零件号" prop="softwarePn" width="120" align="center"/>
       <el-table-column label="适配级别" prop="packageAdaptiveLevel" width="120" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.packageAdaptiveLevel === 1">基础版本及以下</span>
@@ -101,7 +101,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="适配总成零件号" prop="adaptiveAssemblyPn" width="120"/>
+      <el-table-column label="适配总成零件号" prop="adaptiveAssemblyPn" width="120" align="center"/>
       <el-table-column label="是否OTA包" prop="ota" width="90" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.ota ? '是' : '否' }}</span>
