@@ -68,7 +68,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.page" :limit.sync="queryParams.size" @pagination="getList" />
 
     <!-- 添加或修改软件基线对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="1000px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="基线名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入基线名称" />
@@ -136,8 +136,8 @@
         </el-form>
       </el-card>
       <el-table v-loading="itemLoading" :data="itemList" size="small" border>
-        <el-table-column label="零件编码" prop="partCode" width="160" />
-        <el-table-column label="车载节点" prop="vehicleNodeCode" width="120" />
+        <el-table-column label="零件编码" prop="partCode" width="150" />
+        <el-table-column label="车载节点" prop="vehicleNodeCode" width="200" />
         <el-table-column label="备注" prop="remark" show-overflow-tooltip />
         <el-table-column label="操作" align="center" width="80">
           <template slot-scope="scope">

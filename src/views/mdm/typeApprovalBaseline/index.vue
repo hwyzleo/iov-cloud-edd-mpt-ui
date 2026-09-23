@@ -110,11 +110,11 @@
       </el-descriptions>
       <el-divider content-position="left">基线项列表</el-divider>
       <el-table v-loading="detailLoading" :data="detail.items || []" size="small" border max-height="300">
-        <el-table-column label="车载节点" prop="vehicleNodeCode" width="120" />
-        <el-table-column label="零件编码" prop="partCode" width="160" />
-        <el-table-column label="批准版本" prop="approvedVersion" width="100" />
+        <el-table-column label="车载节点" prop="vehicleNodeCode" width="200" />
+        <el-table-column label="零件编码" prop="partCode" width="140" />
+        <el-table-column label="批准版本" prop="approvedVersion" width="140" />
         <el-table-column label="来源基线" prop="sourceBaselineCode" min-width="160" show-overflow-tooltip />
-        <el-table-column label="创建人" prop="createBy" width="100" />
+        <el-table-column label="创建人" prop="createBy" width="100" align="center" />
         <el-table-column label="创建时间" align="center" width="140">
           <template slot-scope="scope"><span>{{ parseTime(scope.row.createTime, "{y}-{m}-{d} {h}:{i}") }}</span></template>
         </el-table-column>

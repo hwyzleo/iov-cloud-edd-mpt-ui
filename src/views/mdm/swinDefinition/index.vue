@@ -248,8 +248,8 @@
       </el-form>
 
       <el-table v-loading="managedSystemLoading" :data="managedSystemList" size="small">
-        <el-table-column label="受管软件系统" prop="vehicleNodeCode" width="150"/>
-        <el-table-column label="型式批准相关" prop="isTypeApprovalRelevant" width="120">
+        <el-table-column label="受管软件系统" prop="vehicleNodeCode" width="200"/>
+        <el-table-column label="型式批准相关" prop="isTypeApprovalRelevant" width="120" align="center">
           <template slot-scope="scope">
             <el-tag :type="scope.row.isTypeApprovalRelevant ? 'success' : 'info'">
               {{ scope.row.isTypeApprovalRelevant ? '是' : '否' }}
