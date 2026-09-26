@@ -152,7 +152,7 @@
           <span v-else>未知</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width" fixed="right">
+      <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width" fixed="right">
         <template slot-scope="scope">
           <el-button
             size="mini"

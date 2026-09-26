@@ -44,14 +44,14 @@
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="车辆" prop="vin" min-width="170"/>
-      <el-table-column label="品牌" prop="brandCode" width="80"/>
-      <el-table-column label="平台" prop="platformCode" width="80"/>
-      <el-table-column label="车系" prop="carLineCode" width="80"/>
-      <el-table-column label="车型" prop="modelCode" width="120"/>
-      <el-table-column label="变型" prop="variantCode" width="150"/>
-      <el-table-column label="配置代码" prop="configurationCode" width="180"/>
-      <el-table-column label="工厂代码" prop="plantCode" width="100"/>
+      <el-table-column label="车辆" prop="vin" min-width="170" fixed="left"/>
+      <el-table-column label="品牌" prop="brandCode" width="80" align="center"/>
+      <el-table-column label="平台" prop="platformCode" width="80" align="center"/>
+      <el-table-column label="车系" prop="carLineCode" width="80" align="center"/>
+      <el-table-column label="车型" prop="modelCode" width="100" align="center"/>
+      <el-table-column label="版本" prop="variantCode" width="140" align="center"/>
+      <el-table-column label="配置代码" prop="configurationCode" width="180" align="center"/>
+      <el-table-column label="工厂代码" prop="plantCode" width="100" align="center"/>
       <el-table-column label="生产时间" align="center" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.productionTime, '{y}-{m}-{d} {h}:{i}') }}</span>
