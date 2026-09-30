@@ -43,3 +43,11 @@ export function confirmInstalledVehicleCertificate(id, data) {
     data: data
   })
 }
+
+// 获取已签发证书本体（只读，供再次获取注入设备）
+export function queryVehicleCertificateBody(id) {
+  return request({
+    url: '/edd-vmd/api/mpt/vehicleCertificate/v1/' + id + '/certificate',
+    method: 'get'
+  })
+}

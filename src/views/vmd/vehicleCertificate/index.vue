@@ -119,7 +119,7 @@
       </el-table-column>
       <el-table-column label="最后操作人" prop="lastOperator" align="center" width="110" show-overflow-tooltip />
       <el-table-column label="失败原因" prop="failReason" min-width="160" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" fixed="right" width="240" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="320" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['vmd:security:vehicleCertificate:query']"
@@ -146,6 +146,15 @@
             :disabled="!canConfirm(scope.row.status)"
             @click="handleConfirmInstalled(scope.row)"
           >安装补录
+          </el-button>
+          <el-button
+            v-hasPermi="['vmd:security:vehicleCertificate:query']"
+            size="mini"
+            type="text"
+            icon="el-icon-download"
+            :disabled="!canQuery(scope.row.status)"
+            @click="handleQueryCert(scope.row)"
+          >获取证书
           </el-button>
         </template>
       </el-table-column>
@@ -344,7 +353,7 @@
     </el-dialog>
 
     <!-- 已签发证书内容对话框（供产线/售后手动注入设备） -->
-    <el-dialog title="已签发证书内容" :visible.sync="openCertResult" width="720px" append-to-body>
+    <el-dialog title="已签发证书内容" :visible.sync="openCertResult" width="900px" append-to-body>
       <el-alert
         title="以下为已签发的证书本体（公开信息，不含私钥）。VMD不长期保存证书本体，需要时请通过“对账”重新获取。"
         type="success"
@@ -407,7 +416,8 @@ import {
   getVehicleCertificate,
   compensateVehicleCertificate,
   reconcileVehicleCertificate,
-  confirmInstalledVehicleCertificate
+  confirmInstalledVehicleCertificate,
+  queryVehicleCertificateBody
 } from '@/api/vmd/vehicleCertificate'
 
 export default {
@@ -564,6 +574,10 @@ export default {
     canReconcile(status) {
       return status === 'REQUESTED' || status === 'ISSUING' || status === 'PENDING_RECONCILE'
     },
+    /** 是否允许获取证书本体（仅已签发未确认/已激活，只读重取） */
+    canQuery(status) {
+      return status === 'ISSUED_NOT_CONFIRMED' || status === 'ACTIVE'
+    },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -684,6 +698,20 @@ export default {
         }).finally(() => {
           this.submitting = false
         })
+      })
+    },
+    /** 获取证书本体（只读重取，展示供注入设备） */
+    handleQueryCert(row) {
+      this.submitting = true
+      queryVehicleCertificateBody(row.id).then(response => {
+        const data = response.data || {}
+        if (data.certificateDerBase64) {
+          this.maybeShowCert(data)
+        } else {
+          this.$modal.msgWarning('未获取到证书本体，可能已超出结果存储保留期')
+        }
+      }).finally(() => {
+        this.submitting = false
       })
     },
     /** 若响应含已签发证书本体则弹窗展示，供手动注入设备 */
