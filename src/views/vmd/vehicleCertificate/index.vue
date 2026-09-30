@@ -119,7 +119,7 @@
       </el-table-column>
       <el-table-column label="最后操作人" prop="lastOperator" align="center" width="110" show-overflow-tooltip />
       <el-table-column label="失败原因" prop="failReason" min-width="160" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" fixed="right" width="320" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="400" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['vmd:security:vehicleCertificate:query']"
@@ -155,6 +155,15 @@
             :disabled="!canQuery(scope.row.status)"
             @click="handleQueryCert(scope.row)"
           >获取证书
+          </el-button>
+          <el-button
+            v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-right"
+            :disabled="!canReissue(scope.row.status)"
+            @click="handleReissue(scope.row)"
+          >重新签发
           </el-button>
         </template>
       </el-table-column>
@@ -352,10 +361,47 @@
       </div>
     </el-dialog>
 
+    <!-- 重新签发/续期对话框 -->
+    <el-dialog title="重新签发 / 续期" :visible.sync="openReissue" width="640px" append-to-body>
+      <el-alert
+        title="作废当前证书并以新有效期重新签发。CSR 不落库，请由设备侧重新提供（同公钥即续期，新公钥即换钥）。"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px;"
+      />
+      <el-form ref="reissueForm" :model="reissueForm" :rules="reissueRules" label-width="120px">
+        <el-form-item label="车架号">
+          <span>{{ reissueForm.vin }}</span>
+        </el-form-item>
+        <el-form-item label="设备SN">
+          <span>{{ reissueForm.deviceSn }}</span>
+        </el-form-item>
+        <el-form-item label="CSR(DER Base64)" prop="csrDerBase64">
+          <el-input
+            v-model="reissueForm.csrDerBase64"
+            type="textarea"
+            :rows="4"
+            placeholder="请粘贴设备重新生成的 CSR（DER Base64）"
+          />
+        </el-form-item>
+        <el-form-item label="工单号" prop="ticketNo">
+          <el-input v-model="reissueForm.ticketNo" placeholder="必填" />
+        </el-form-item>
+        <el-form-item label="重签原因" prop="reason">
+          <el-input v-model="reissueForm.reason" type="textarea" :rows="2" placeholder="必填，如：原证书有效期过短" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" :loading="submitting" @click="submitReissue">确 定</el-button>
+        <el-button @click="openReissue = false">取 消</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 已签发证书内容对话框（供产线/售后手动注入设备） -->
     <el-dialog title="已签发证书内容" :visible.sync="openCertResult" width="900px" append-to-body>
       <el-alert
-        title="以下为已签发的证书本体（公开信息，不含私钥）。VMD不长期保存证书本体，需要时请通过“对账”重新获取。"
+        title="以下为已签发的证书本体（公开信息，不含私钥）。VMD不长期保存证书本体，需要时请通过“获取证书”重新获取。"
         type="success"
         :closable="false"
         show-icon
@@ -417,7 +463,8 @@ import {
   compensateVehicleCertificate,
   reconcileVehicleCertificate,
   confirmInstalledVehicleCertificate,
-  queryVehicleCertificateBody
+  queryVehicleCertificateBody,
+  reissueVehicleCertificate
 } from '@/api/vmd/vehicleCertificate'
 
 export default {
@@ -454,7 +501,9 @@ export default {
       actionTypes: {
         COMPENSATE: '人工补申请',
         RECONCILE: '对账',
-        CONFIRM_INSTALLED: '安装补录'
+        CONFIRM_INSTALLED: '安装补录',
+        QUERY: '获取证书',
+        REISSUE: '重新签发'
       },
       // 遮罩层
       loading: true,
@@ -488,6 +537,7 @@ export default {
       openCompensate: false,
       openReconcile: false,
       openConfirm: false,
+      openReissue: false,
       // 已签发证书内容
       openCertResult: false,
       certResult: {},
@@ -512,6 +562,13 @@ export default {
         result: [{ required: true, message: '请选择安装结果', trigger: 'change' }],
         ticketNo: [{ required: true, message: '工单号不能为空', trigger: 'blur' }],
         reason: [{ required: true, message: '补录原因不能为空', trigger: 'blur' }]
+      },
+      // 重新签发表单
+      reissueForm: {},
+      reissueRules: {
+        csrDerBase64: [{ required: true, message: 'CSR不能为空', trigger: 'blur' }],
+        ticketNo: [{ required: true, message: '工单号不能为空', trigger: 'blur' }],
+        reason: [{ required: true, message: '重签原因不能为空', trigger: 'blur' }]
       }
     }
   },
@@ -577,6 +634,11 @@ export default {
     /** 是否允许获取证书本体（仅已签发未确认/已激活，只读重取） */
     canQuery(status) {
       return status === 'ISSUED_NOT_CONFIRMED' || status === 'ACTIVE'
+    },
+    /** 是否允许重新签发/续期（已定案态：已签发未确认/已激活/安装失败/已过期） */
+    canReissue(status) {
+      return status === 'ISSUED_NOT_CONFIRMED' || status === 'ACTIVE' ||
+        status === 'INSTALL_FAILED' || status === 'EXPIRED'
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -695,6 +757,43 @@ export default {
           this.$modal.msgSuccess('安装结果已补录，当前状态：' + this.statusLabel(result.status || ''))
           this.openConfirm = false
           this.getList()
+        }).finally(() => {
+          this.submitting = false
+        })
+      })
+    },
+    /** 重新签发按钮操作 */
+    handleReissue(row) {
+      this.reissueForm = {
+        id: row.id,
+        vin: row.vin,
+        deviceSn: row.deviceSn,
+        status: row.status,
+        csrDerBase64: undefined,
+        ticketNo: undefined,
+        reason: undefined
+      }
+      this.openReissue = true
+      this.$nextTick(() => {
+        this.resetForm('reissueForm')
+      })
+    },
+    /** 提交重新签发 */
+    submitReissue() {
+      this.$refs['reissueForm'].validate(valid => {
+        if (!valid) return
+        this.submitting = true
+        const data = {
+          csrDerBase64: this.reissueForm.csrDerBase64,
+          ticketNo: this.reissueForm.ticketNo,
+          reason: this.reissueForm.reason
+        }
+        reissueVehicleCertificate(this.reissueForm.id, data).then(response => {
+          const result = response.data || {}
+          this.$modal.msgSuccess('重新签发完成，当前状态：' + this.statusLabel(result.status || ''))
+          this.openReissue = false
+          this.getList()
+          this.maybeShowCert(result)
         }).finally(() => {
           this.submitting = false
         })

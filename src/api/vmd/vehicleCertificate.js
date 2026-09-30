@@ -51,3 +51,12 @@ export function queryVehicleCertificateBody(id) {
     method: 'get'
   })
 }
+
+// 重新签发/续期（作废旧证书后以新有效期重签，需重新提供CSR）
+export function reissueVehicleCertificate(id, data) {
+  return request({
+    url: '/edd-vmd/api/mpt/vehicleCertificate/v1/' + id + '/reissue',
+    method: 'post',
+    data: data
+  })
+}
