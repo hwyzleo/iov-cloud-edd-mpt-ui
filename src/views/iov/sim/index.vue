@@ -290,6 +290,7 @@ export default {
       const labels = {
         'CMCC': '中国移动',
         'CUCC': '中国联通',
+        'CTCC': '中国电信',
         'UNKNOWN': '未知'
       }
       return labels[mno] || mno

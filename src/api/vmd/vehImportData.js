@@ -43,7 +43,17 @@ export function delVehImportData(ids) {
   })
 }
 
+// 车辆导入事件补发预检（返回 importType / candidateVinCount / actions）
+export function previewReplayEvent(id) {
+  return request({
+    url: '/edd-vmd/api/mpt/vehImportData/v1/' + id + '/replayEvent/preview',
+    method: 'get'
+  })
+}
+
 // 补发车辆导入数据消息
+// data 可选：{ reason, requestId, actionTypes: string[] }
+// 不传 actionTypes 则执行该导入类型的全部默认动作（向后兼容）
 export function republishVehImportData(id, data) {
   return request({
     url: '/edd-vmd/api/mpt/vehImportData/v1/' + id + '/replayEvent',

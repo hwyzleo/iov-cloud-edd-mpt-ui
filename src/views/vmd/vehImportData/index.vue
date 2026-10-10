@@ -134,6 +134,20 @@
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="可补发动作" align="center" min-width="220">
+        <template slot-scope="scope">
+          <template v-if="scope.row.replayActionTypes && scope.row.replayActionTypes.length">
+            <el-tag
+              v-for="actionType in scope.row.replayActionTypes"
+              :key="actionType"
+              size="mini"
+              type="info"
+              style="margin: 2px"
+            >{{ getActionLabel(actionType) }}</el-tag>
+          </template>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -153,10 +167,21 @@
             v-if="scope.row.handle === true"
           >详情
           </el-button>
+          <el-tooltip
+            v-if="scope.row.eventReplayable === false && scope.row.eventReplayReason"
+            :content="scope.row.eventReplayReason"
+            placement="top"
+          >
+            <span style="margin: 0 4px">
+              <el-button size="mini" type="text" icon="el-icon-refresh-right" disabled>补发</el-button>
+            </span>
+          </el-tooltip>
           <el-button
+            v-else
             size="mini"
             type="text"
             icon="el-icon-refresh-right"
+            :disabled="scope.row.eventReplayable === false"
             @click="handleRepublish(scope.row)"
             v-hasPermi="['completeVehicle:vehicle:importData:republish']"
           >补发
@@ -259,6 +284,94 @@
         <el-button @click="detailOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- 车辆导入事件补发对话框（预检 → 选择动作 → 执行 → 结果） -->
+    <el-dialog title="车辆导入事件补发" :visible.sync="replayOpen" width="760px" append-to-body @closed="resetReplay">
+      <div v-loading="replayLoading">
+        <!-- 预检信息 -->
+        <el-descriptions v-if="replayPreview" :column="3" border size="small" style="margin-bottom: 12px">
+          <el-descriptions-item label="批次号">{{ replayPreview.batchNum }}</el-descriptions-item>
+          <el-descriptions-item label="导入类型">{{ getTypeLabel(replayPreview.importType) }}</el-descriptions-item>
+          <el-descriptions-item label="候选车辆数">{{ replayPreview.candidateVinCount }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 动作选择（仅可提交预检返回的可选动作） -->
+        <template v-if="replayPreview && !replayResult">
+          <el-alert
+            title="请选择需要补发的动作，仅可提交预检返回的动作。跳过项表示候选范围内无可执行目标。"
+            type="info"
+            :closable="false"
+            show-icon
+            style="margin-bottom: 12px"
+          />
+          <el-checkbox-group v-model="replaySelectedActions">
+            <el-table :data="replayPreview.actions" border size="small">
+              <el-table-column label="选择" align="center" width="60">
+                <template slot-scope="scope">
+                  <el-checkbox :label="scope.row.actionType" :disabled="scope.row.eligibleCount <= 0">
+                    <span></span>
+                  </el-checkbox>
+                </template>
+              </el-table-column>
+              <el-table-column label="动作" prop="actionName" min-width="180"/>
+              <el-table-column label="可执行数" prop="eligibleCount" align="center" width="90"/>
+              <el-table-column label="跳过数" prop="skipCount" align="center" width="80"/>
+              <el-table-column label="跳过原因" prop="reason" min-width="200">
+                <template slot-scope="scope">
+                  <span>{{ scope.row.reason || '-' }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-checkbox-group>
+        </template>
+
+        <!-- 执行结果（分动作） -->
+        <template v-if="replayResult">
+          <el-alert
+            :title="replayResultSummary"
+            :type="replayResult.failureCount > 0 ? 'warning' : 'success'"
+            :closable="false"
+            show-icon
+            style="margin-bottom: 12px"
+          />
+          <el-table :data="replayResult.actionResults || []" border size="small">
+            <el-table-column label="动作" min-width="180">
+              <template slot-scope="scope">
+                <span>{{ getActionLabel(scope.row.actionType) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="目标数" prop="totalCount" align="center" width="80"/>
+            <el-table-column label="入队" prop="queuedCount" align="center" width="70"/>
+            <el-table-column label="成功" prop="successCount" align="center" width="70"/>
+            <el-table-column label="跳过" prop="skipCount" align="center" width="70"/>
+            <el-table-column label="失败" prop="failureCount" align="center" width="70"/>
+          </el-table>
+          <div v-if="replayResult.failures && replayResult.failures.length" style="margin-top: 12px">
+            <el-alert
+              v-for="(failure, index) in replayResult.failures"
+              :key="index"
+              :title="failure"
+              type="error"
+              :closable="false"
+              style="margin-bottom: 6px"
+            />
+          </div>
+        </template>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <template v-if="!replayResult">
+          <el-button
+            type="primary"
+            :loading="replaySubmitting"
+            :disabled="replayLoading || replaySelectedActions.length === 0"
+            @click="submitReplay"
+          >执行补发
+          </el-button>
+          <el-button @click="replayOpen = false">取 消</el-button>
+        </template>
+        <el-button v-else @click="replayOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -270,7 +383,8 @@ import {
   updateVehImportData,
   delVehImportData,
   republishVehImportData,
-  republishBatchVehImportData
+  republishBatchVehImportData,
+  previewReplayEvent
 } from "@/api/vmd/vehImportData";
 
 export default {
@@ -284,6 +398,28 @@ export default {
         { label: '总装上线', value: 'TOL' },
         { label: '电检下线', value: 'EOL' }
       ],
+      // 补发动作类型标签映射（与后端 VehicleImportReplayActionType 一致）
+      actionTypeLabels: {
+        PRODUCE_EVENT: '生产事件补发',
+        TOL_LIFECYCLE_ENSURE: 'TOL 生命周期节点补齐',
+        EOL_LIFECYCLE_ENSURE: 'EOL 生命周期节点补齐',
+        BINDING_EVENT_REPLAY: '绑定变更事件重放',
+        SOFTWARE_INVENTORY_EVENT_REPLAY: '软件实装事件重放'
+      },
+      // 补发对话框
+      replayOpen: false,
+      // 补发预检加载中
+      replayLoading: false,
+      // 补发提交中
+      replaySubmitting: false,
+      // 当前补发行
+      replayRow: {},
+      // 补发预检结果
+      replayPreview: null,
+      // 已选补发动作类型
+      replaySelectedActions: [],
+      // 补发执行结果
+      replayResult: null,
       // 遮罩层
       loading: true,
       // 选中数组
@@ -335,11 +471,25 @@ export default {
   created() {
     this.getList();
   },
+  computed: {
+    /** 补发结果汇总文案 */
+    replayResultSummary() {
+      if (!this.replayResult) {
+        return '';
+      }
+      const r = this.replayResult;
+      return `补发完成：目标总数 ${r.totalCount}，入队 ${r.queuedCount}，成功 ${r.successCount}，跳过 ${r.skipCount}，失败 ${r.failureCount}`;
+    }
+  },
   methods: {
     /** 获取数据类型标签 */
     getTypeLabel(type) {
       const item = this.typeOptions.find(item => item.value === type);
       return item ? item.label : type;
+    },
+    /** 获取补发动作类型标签 */
+    getActionLabel(actionType) {
+      return this.actionTypeLabels[actionType] || actionType;
     },
     /** 查询车辆导入数据列表 */
     getList() {
@@ -448,14 +598,50 @@ export default {
         ...this.queryParams
       }, `veh_import_data_${new Date().getTime()}.xlsx`)
     },
-    /** 补发按钮操作 */
+    /** 补发按钮操作：打开对话框并预检 */
     handleRepublish(row) {
-      this.$modal.confirm('是否确认补发车辆导入数据"' + row.batchNum + '"？补发将重新发送导入消息到下游系统。').then(() => {
-        return republishVehImportData(row.id)
-      }).then(() => {
-        this.$modal.msgSuccess("补发成功")
-        this.getList()
-      }).catch(() => {})
+      this.resetReplay();
+      this.replayRow = row;
+      this.replayOpen = true;
+      this.replayLoading = true;
+      previewReplayEvent(row.id).then(response => {
+        this.replayPreview = response.data;
+        // 默认勾选所有可执行动作（TOL/EOL 默认全选，PRODUCE 仅 PRODUCE_EVENT）
+        this.replaySelectedActions = (this.replayPreview.actions || [])
+          .filter(action => action.eligibleCount > 0)
+          .map(action => action.actionType);
+      }).catch(() => {
+        this.replayOpen = false;
+      }).finally(() => {
+        this.replayLoading = false;
+      });
+    },
+    /** 提交补发（仅提交预检返回且勾选的动作） */
+    submitReplay() {
+      if (this.replaySelectedActions.length === 0) {
+        this.$modal.msgWarning("请至少选择一个补发动作");
+        return;
+      }
+      this.replaySubmitting = true;
+      const data = {
+        actionTypes: this.replaySelectedActions
+      };
+      republishVehImportData(this.replayRow.id, data).then(response => {
+        this.replayResult = response.data;
+        this.$modal.msgSuccess("补发已执行");
+        this.getList();
+      }).finally(() => {
+        this.replaySubmitting = false;
+      });
+    },
+    /** 重置补发对话框状态 */
+    resetReplay() {
+      this.replayRow = {};
+      this.replayPreview = null;
+      this.replaySelectedActions = [];
+      this.replayResult = null;
+      this.replayLoading = false;
+      this.replaySubmitting = false;
     },
     /** 批量补发按钮操作 */
     handleBatchRepublish() {
