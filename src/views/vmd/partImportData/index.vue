@@ -109,7 +109,7 @@
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="230" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -127,6 +127,16 @@
             @click="handleDetail(scope.row)"
             v-if="scope.row.handle === true"
           >详情
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-right"
+            :disabled="scope.row.postProcessReplayable === false"
+            :title="scope.row.postProcessReplayable === false ? scope.row.postProcessReplayReason : ''"
+            @click="handleReplay(scope.row)"
+            v-hasPermi="['vmd:partImportData:replayPostProcess']"
+          >补发
           </el-button>
           <el-button
             size="mini"
@@ -232,6 +242,136 @@
         <el-button @click="detailOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- 零件导入数据补发（后置处理重放）对话框 -->
+    <el-dialog title="零件导入数据补发" :visible.sync="replayOpen" width="760px" append-to-body>
+      <el-alert
+        title="补发仅重新执行导入后的后置处理（跨域事件、下游联动、绑定事实事件、安全常量补偿），不会重新解析导入数据，也不会修改零件主体与绑定关系。"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px;"
+      />
+      <el-form ref="replayForm" :model="replayForm" label-width="120px">
+        <el-form-item label="批次号">
+          <span>{{ replayForm.batchNum }}</span>
+        </el-form-item>
+        <el-form-item label="硬件零件号">
+          <span>{{ replayForm.partCode }}{{ replayForm.partName ? ' - ' + replayForm.partName : '' }}</span>
+        </el-form-item>
+        <el-form-item label="补发动作">
+          <el-table
+            ref="actionTable"
+            :data="replayForm.actionPreview"
+            size="mini"
+            border
+            row-key="actionType"
+            @selection-change="handleActionSelectionChange"
+          >
+            <el-table-column type="selection" width="45" align="center" :selectable="row => row.applicable"/>
+            <el-table-column label="动作" prop="label" min-width="150"/>
+            <el-table-column label="动作类型" prop="actionType" width="170"/>
+            <el-table-column label="是否适用" align="center" width="90">
+              <template slot-scope="scope">
+                <el-tag :type="scope.row.applicable ? 'success' : 'info'" size="mini">
+                  {{ scope.row.applicable ? '适用' : '不适用' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="不适用原因" prop="reason" min-width="150" show-overflow-tooltip/>
+          </el-table>
+          <div class="replay-tip">不勾选任何动作时，按服务端判定补发全部适用动作。</div>
+        </el-form-item>
+        <el-form-item label="仅重试失败项">
+          <el-switch v-model="replayForm.retryFailedOnly"/>
+          <span class="replay-tip">开启后仅继续上一次补发中失败或未完成的动作。</span>
+        </el-form-item>
+        <el-form-item label="请求ID">
+          <el-input v-model="replayForm.requestId" placeholder="可选，作为幂等键；留空由服务端生成"/>
+        </el-form-item>
+        <el-form-item label="补发原因">
+          <el-input v-model="replayForm.reason" type="textarea" :rows="2" placeholder="可选，将进入审计"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" :loading="replaySubmitting" @click="submitReplay">确 定</el-button>
+        <el-button @click="replayOpen = false">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 补发结果对话框 -->
+    <el-dialog title="补发结果" :visible.sync="replayResultOpen" width="900px" append-to-body>
+      <div v-loading="replayResultLoading">
+        <el-descriptions title="任务概要" :column="3" border size="small">
+          <el-descriptions-item label="补发请求ID" :span="2">{{ replayResult.replayId }}</el-descriptions-item>
+          <el-descriptions-item label="任务状态">
+            <el-tag :type="replayStatusTagType(replayResult.status)" size="mini">
+              {{ replayStatusLabel(replayResult.status) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="批次号">{{ replayResult.batchNum }}</el-descriptions-item>
+          <el-descriptions-item label="候选实例数">{{ replayResult.totalItemCount }}</el-descriptions-item>
+          <el-descriptions-item label="规划动作数">{{ replayResult.totalActionCount }}</el-descriptions-item>
+          <el-descriptions-item label="成功">{{ replayResult.successCount }}</el-descriptions-item>
+          <el-descriptions-item label="已入Outbox">{{ replayResult.queuedCount }}</el-descriptions-item>
+          <el-descriptions-item label="跳过">{{ replayResult.skippedCount }}</el-descriptions-item>
+          <el-descriptions-item label="失败">
+            <span :class="{ 'replay-fail-count': replayResult.failureCount > 0 }">{{ replayResult.failureCount }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="操作人">{{ replayResult.operatorName }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ parseTime(replayResult.startedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间">{{ parseTime(replayResult.finishedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="补发原因" :span="2">{{ replayResult.reason }}</el-descriptions-item>
+          <el-descriptions-item label="动作范围">{{ replayResult.scope || '全部适用动作' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div class="replay-section-title">动作明细</div>
+        <el-table :data="replayResult.items || []" size="mini" border max-height="340">
+          <el-table-column label="硬件零件号" prop="partCode" width="130"/>
+          <el-table-column label="SN" prop="sn" min-width="150" show-overflow-tooltip/>
+          <el-table-column label="动作" width="170">
+            <template slot-scope="scope">
+              <span>{{ actionTypeLabel(scope.row.actionType) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" align="center" width="110">
+            <template slot-scope="scope">
+              <el-tag :type="actionStatusTagType(scope.row.status)" size="mini">
+                {{ actionStatusLabel(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="尝试次数" prop="attemptCount" align="center" width="80"/>
+          <el-table-column label="失败/跳过原因" min-width="200" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <span>{{ scope.row.errorMessage || scope.row.skipReason }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="结束时间" align="center" width="140">
+            <template slot-scope="scope">
+              <span>{{ parseTime(scope.row.finishedAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-if="!replayResult.items || replayResult.items.length === 0" description="暂无动作明细" :image-size="80"/>
+
+        <div v-if="replayFailures.length > 0" class="replay-section-title">失败摘要</div>
+        <ul v-if="replayFailures.length > 0" class="replay-failure-list">
+          <li v-for="(failure, index) in replayFailures" :key="index">{{ failure }}</li>
+        </ul>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button icon="el-icon-refresh" @click="refreshReplayResult">刷 新</el-button>
+        <el-button
+          type="primary"
+          :disabled="!replayResult.failureCount"
+          @click="handleRetryFailed"
+          v-hasPermi="['vmd:partImportData:replayPostProcess']"
+        >仅重试失败项
+        </el-button>
+        <el-button @click="replayResultOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -241,9 +381,41 @@ import {
   getPartImportData,
   addPartImportData,
   updatePartImportData,
-  delPartImportData
+  delPartImportData,
+  replayPartImportPostProcess,
+  getPartImportPostProcessReplay
 } from "@/api/vmd/partImportData";
 import { listAllParts } from "@/api/mdm/part";
+
+// 补发动作类型（与 VMD PartPostProcessActionType 对齐）
+const ACTION_TYPE_OPTIONS = [
+  { value: 'PART_INBOUND_EVENT', label: '零件入站跨域事件' },
+  { value: 'TSP_SYNC', label: 'TSP 下游联动' },
+  { value: 'OTA_SYNC', label: 'OTA 下游联动' },
+  { value: 'IDK_SYNC', label: 'IDK 下游联动' },
+  { value: 'BINDING_FACT_EVENT', label: '绑定事实事件' },
+  { value: 'SECURITY_PRESET', label: '器件安全常量补偿' }
+];
+
+// 补发主任务状态（与 VMD PartPostProcessReplayStatus 对齐）
+const REPLAY_STATUS_OPTIONS = [
+  { value: 'PENDING', label: '待执行', tag: 'info' },
+  { value: 'RUNNING', label: '执行中', tag: '' },
+  { value: 'PARTIAL_SUCCESS', label: '部分成功', tag: 'warning' },
+  { value: 'SUCCESS', label: '成功', tag: 'success' },
+  { value: 'FAILED', label: '失败', tag: 'danger' }
+];
+
+// 补发动作状态（与 VMD PartPostProcessActionStatus 对齐）
+const ACTION_STATUS_OPTIONS = [
+  { value: 'PENDING', label: '待执行', tag: 'info' },
+  { value: 'RUNNING', label: '执行中', tag: '' },
+  { value: 'QUEUED', label: '事件已入Outbox', tag: 'warning' },
+  { value: 'SUCCESS', label: '成功', tag: 'success' },
+  { value: 'SKIPPED', label: '已跳过', tag: 'info' },
+  { value: 'FAILED_RETRYABLE', label: '可重试失败', tag: 'danger' },
+  { value: 'FAILED_FINAL', label: '终态失败', tag: 'danger' }
+];
 
 export default {
   name: "VmdImportData",
@@ -274,6 +446,26 @@ export default {
       detailOpen: false,
       // 详情表单参数
       detailForm: {},
+      // 是否显示补发弹出层
+      replayOpen: false,
+      // 补发表单参数
+      replayForm: {
+        actionPreview: []
+      },
+      // 补发选中的动作范围
+      replayScope: [],
+      // 补发提交中
+      replaySubmitting: false,
+      // 是否显示补发结果弹出层
+      replayResultOpen: false,
+      // 补发结果加载中
+      replayResultLoading: false,
+      // 补发结果
+      replayResult: {},
+      // 补发失败摘要
+      replayFailures: [],
+      // 当前补发的零件导入数据ID
+      replayPartImportDataId: undefined,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -446,7 +638,140 @@ export default {
         this.detailForm = response.data;
         this.detailOpen = true;
       });
+    },
+    /** 补发按钮操作：打开二次确认弹窗并展示动作预览 */
+    handleReplay(row) {
+      getPartImportData(row.id).then(response => {
+        const data = response.data || {};
+        if (data.postProcessReplayable === false) {
+          this.$modal.msgError(data.postProcessReplayReason || "该零件导入数据不允许补发");
+          return;
+        }
+        this.replayPartImportDataId = data.id;
+        this.replayScope = [];
+        this.replayForm = {
+          batchNum: data.batchNum,
+          partCode: data.partCode,
+          partName: data.partName,
+          actionPreview: data.postProcessActionPreview || [],
+          retryFailedOnly: false,
+          requestId: undefined,
+          reason: undefined
+        };
+        this.replayOpen = true;
+      });
+    },
+    /** 补发动作多选 */
+    handleActionSelectionChange(selection) {
+      this.replayScope = selection.map(item => item.actionType);
+    },
+    /** 提交补发 */
+    submitReplay() {
+      this.replaySubmitting = true;
+      this.doReplay({
+        reason: this.replayForm.reason,
+        requestId: this.replayForm.requestId,
+        scope: this.replayScope.length > 0 ? this.replayScope : undefined,
+        retryFailedOnly: this.replayForm.retryFailedOnly === true
+      }).finally(() => {
+        this.replaySubmitting = false;
+      });
+    },
+    /** 仅重试失败项 */
+    handleRetryFailed() {
+      this.$modal.confirm('是否确认仅重试本次补发中失败或未完成的动作？').then(() => {
+        return this.doReplay({
+          reason: this.replayResult.reason,
+          requestId: this.replayResult.replayId,
+          retryFailedOnly: true
+        });
+      }).catch(() => {
+      });
+    },
+    /** 执行补发并展示结果 */
+    doReplay(data) {
+      return replayPartImportPostProcess(this.replayPartImportDataId, data).then(response => {
+        const result = response.data || {};
+        this.replayFailures = result.failures || [];
+        this.replayOpen = false;
+        this.replayResultOpen = true;
+        if (result.failureCount > 0) {
+          this.$modal.msgWarning("补发完成，存在 " + result.failureCount + " 个失败动作");
+        } else {
+          this.$modal.msgSuccess("补发成功");
+        }
+        this.getList();
+        return this.loadReplayResult(result.replayId);
+      });
+    },
+    /** 加载补发任务及动作明细 */
+    loadReplayResult(replayId) {
+      if (!replayId) {
+        return Promise.resolve();
+      }
+      this.replayResultLoading = true;
+      return getPartImportPostProcessReplay(replayId).then(response => {
+        this.replayResult = response.data || {};
+      }).finally(() => {
+        this.replayResultLoading = false;
+      });
+    },
+    /** 刷新补发结果 */
+    refreshReplayResult() {
+      this.loadReplayResult(this.replayResult.replayId);
+    },
+    /** 动作类型名称 */
+    actionTypeLabel(actionType) {
+      const item = ACTION_TYPE_OPTIONS.find(option => option.value === actionType);
+      return item ? item.label : actionType;
+    },
+    /** 主任务状态名称 */
+    replayStatusLabel(status) {
+      const item = REPLAY_STATUS_OPTIONS.find(option => option.value === status);
+      return item ? item.label : status;
+    },
+    /** 主任务状态标签类型 */
+    replayStatusTagType(status) {
+      const item = REPLAY_STATUS_OPTIONS.find(option => option.value === status);
+      return item ? item.tag : 'info';
+    },
+    /** 动作状态名称 */
+    actionStatusLabel(status) {
+      const item = ACTION_STATUS_OPTIONS.find(option => option.value === status);
+      return item ? item.label : status;
+    },
+    /** 动作状态标签类型 */
+    actionStatusTagType(status) {
+      const item = ACTION_STATUS_OPTIONS.find(option => option.value === status);
+      return item ? item.tag : 'info';
     }
   }
 };
 </script>
+
+<style scoped>
+.replay-tip {
+  color: #909399;
+  font-size: 12px;
+  line-height: 20px;
+  margin-left: 8px;
+}
+
+.replay-section-title {
+  margin: 16px 0 8px;
+  font-weight: bold;
+}
+
+.replay-fail-count {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.replay-failure-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #f56c6c;
+  font-size: 12px;
+  line-height: 20px;
+}
+</style>

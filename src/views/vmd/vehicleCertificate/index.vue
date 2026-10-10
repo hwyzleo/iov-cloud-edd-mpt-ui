@@ -91,17 +91,17 @@
     </el-row>
 
     <el-table v-loading="loading" :data="certificateList">
-      <el-table-column label="车架号" fixed="left" min-width="180" prop="vin" show-overflow-tooltip />
-      <el-table-column label="设备SN" prop="deviceSn" min-width="150" show-overflow-tooltip />
+      <el-table-column label="车架号" fixed="left" width="180" prop="vin" />
+      <el-table-column label="设备SN" prop="deviceSn" min-width="180" show-overflow-tooltip />
       <el-table-column label="设备类别" prop="deviceCategory" align="center" width="90" />
       <el-table-column label="证书序列号" prop="certSn" min-width="160" show-overflow-tooltip />
       <el-table-column label="证书Profile" prop="certificateProfile" align="center" width="130" show-overflow-tooltip />
-      <el-table-column label="状态" prop="status" align="center" width="130">
+      <el-table-column label="状态" prop="status" align="center" width="120">
         <template slot-scope="scope">
           <el-tag :type="statusTagType(scope.row.status)" size="mini">{{ statusLabel(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="来源系统" prop="sourceSystem" align="center" width="140">
+      <el-table-column label="来源系统" prop="sourceSystem" align="center" width="120">
         <template slot-scope="scope">
           <span>{{ sourceLabel(scope.row.sourceSystem) }}</span>
         </template>
@@ -370,7 +370,7 @@
         show-icon
         style="margin-bottom: 16px;"
       />
-      <el-form ref="reissueForm" :model="reissueForm" :rules="reissueRules" label-width="120px">
+      <el-form ref="reissueForm" :model="reissueForm" :rules="reissueRules" label-width="140px">
         <el-form-item label="车架号">
           <span>{{ reissueForm.vin }}</span>
         </el-form-item>
