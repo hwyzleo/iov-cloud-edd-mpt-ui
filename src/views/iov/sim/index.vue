@@ -103,7 +103,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改SIM信息对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -200,6 +200,7 @@ export default {
       mnoOptions: [
         { value: 'CMCC', label: '中国移动' },
         { value: 'CUCC', label: '中国联通' },
+        { value: 'CTCC', label: '中国电信' },
         { value: 'UNKNOWN', label: '未知' }
       ],
       // 来源类型选项

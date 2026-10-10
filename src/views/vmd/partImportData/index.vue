@@ -244,7 +244,7 @@
     </el-dialog>
 
     <!-- 零件导入数据补发（后置处理重放）对话框 -->
-    <el-dialog title="零件导入数据补发" :visible.sync="replayOpen" width="760px" append-to-body>
+    <el-dialog title="零件导入数据补发" :visible.sync="replayOpen" width="900px" append-to-body>
       <el-alert
         title="补发仅重新执行导入后的后置处理（跨域事件、下游联动、绑定事实事件、安全常量补偿），不会重新解析导入数据，也不会修改零件主体与绑定关系。"
         type="warning"
