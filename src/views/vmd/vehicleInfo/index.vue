@@ -371,7 +371,8 @@ export default {
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        vin: undefined
       },
       // 表单参数
       form: {},
@@ -404,9 +405,27 @@ export default {
     }
   },
   created() {
+    this.applyRouteQuery()
     this.getList()
   },
+  watch: {
+    // 页面联动：从 TBOX 详情等携带 vin 跳转时，按参数过滤并刷新列表
+    '$route.query': {
+      handler() {
+        this.applyRouteQuery()
+        this.getList()
+      }
+    }
+  },
   methods: {
+    /** 应用页面联动查询参数（如 TBOX 详情跳转携带的 vin） */
+    applyRouteQuery() {
+      const vin = this.$route.query.vin
+      if (vin) {
+        this.queryParams.vin = vin
+        this.showSearch = true
+      }
+    },
     /** 查询车辆列表 */
     getList() {
       this.loading = true

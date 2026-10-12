@@ -295,9 +295,29 @@ export default {
     };
   },
   created() {
+    this.applyRouteQuery();
     this.getList();
   },
+  watch: {
+    // 页面联动：从 TBOX 详情等携带 sn/partCode 跳转时，按参数过滤并刷新列表
+    '$route.query': {
+      handler() {
+        this.applyRouteQuery();
+        this.getList();
+      }
+    }
+  },
   methods: {
+    /** 应用页面联动查询参数（如 TBOX 详情跳转携带的 sn/partCode） */
+    applyRouteQuery() {
+      const { sn, partCode } = this.$route.query;
+      if (sn) {
+        this.queryParams.sn = sn;
+      }
+      if (partCode) {
+        this.queryParams.partCode = partCode;
+      }
+    },
     /** 查询零件列表 */
     getList() {
       this.loading = true;

@@ -193,6 +193,21 @@ export const dynamicRoutes = [
         meta: { title: '零件批量导入', activeMenu: '/mdm/part' }
       }
     ]
+  },
+  {
+    // TBOX 运营详情（TSP-DSN-CR-009）：列表菜单由后台菜单驱动，详情页随权限注册
+    path: '/iov/tsp/tbox/:sn',
+    component: Layout,
+    hidden: true,
+    permissions: ['tsp:tbox:query'],
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/iov/tsp/tbox/detail'),
+        name: 'TboxDetail',
+        meta: { title: 'TBOX 详情', activeMenu: '/iov/tsp/tbox' }
+      }
+    ]
   }
 ]
 
