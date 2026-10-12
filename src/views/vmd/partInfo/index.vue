@@ -31,8 +31,10 @@
       </el-form-item>
       <el-form-item label="实例状态" prop="instanceState">
         <el-select v-model="queryParams.instanceState" placeholder="请选择实例状态" clearable style="width: 200px">
-          <el-option label="正常" :value="0" />
-          <el-option label="禁用" :value="1" />
+          <el-option label="在库" :value="0" />
+          <el-option label="在用" :value="1" />
+          <el-option label="待更换" :value="2" />
+          <el-option label="已报废" :value="3" />
         </el-select>
       </el-form-item>
       <el-form-item label="创建时间">
@@ -116,8 +118,10 @@
       <el-table-column label="软件版本" prop="softwareVer" width="80" align="center" />
       <el-table-column label="零件状态" prop="instanceState" width="80" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.instanceState === 0">正常</span>
-          <span v-if="scope.row.instanceState === 1">禁用</span>
+          <span v-if="scope.row.instanceState === 0">在库</span>
+          <span v-if="scope.row.instanceState === 1">在用</span>
+          <span v-if="scope.row.instanceState === 2">待更换</span>
+          <span v-if="scope.row.instanceState === 3">已报废</span>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" prop="createTime" width="140" align="center">
@@ -230,8 +234,10 @@
           <el-col :span="12">
             <el-form-item label="实例状态" prop="instanceState">
               <el-radio-group v-model="form.instanceState">
-                <el-radio :label="0">正常</el-radio>
-                <el-radio :label="1">禁用</el-radio>
+                <el-radio :label="0">在库</el-radio>
+                <el-radio :label="1">在用</el-radio>
+                <el-radio :label="2">待更换</el-radio>
+                <el-radio :label="3">已报废</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
