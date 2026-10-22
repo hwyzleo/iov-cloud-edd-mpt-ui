@@ -470,7 +470,7 @@
       :destroy-on-close="false"
     >
       <div style="padding: 0 20px 20px;">
-        <blocking-governance ref="blockingGovernance" :request-id="governanceRequestId" />
+        <blocking-governance ref="blockingGovernance" :request-id="governanceRequestId" :certificate-request-id="governanceCertificateRequestId" />
       </div>
     </el-drawer>
   </div>
@@ -562,7 +562,10 @@ export default {
       openReissue: false,
       // 业务密钥阻塞治理抽屉
       openGovernance: false,
+      // 开通批次 requestId（kp-*，告警深链用，直接诊断）
       governanceRequestId: '',
+      // 证书申请 requestId（MPT-CERT-*，车辆证书入口用，先寻址再诊断）
+      governanceCertificateRequestId: '',
       // 已签发证书内容
       openCertResult: false,
       certResult: {},
@@ -616,10 +619,14 @@ export default {
   },
   created() {
     this.getList()
-    // 支持从告警按 requestId 深链打开阻塞治理抽屉：/vmd/vehicleCertificate?requestId=xxx
+    // 支持从告警按 ID 深链打开阻塞治理抽屉：
+    //   /vmd/vehicleCertificate?requestId=xxx              真实开通批次 requestId（kp-*，直接诊断）
+    //   /vmd/vehicleCertificate?certificateRequestId=xxx   证书申请 requestId（先证书维度寻址）
     const deepLinkRequestId = (this.$route.query.requestId || '').trim()
-    if (deepLinkRequestId) {
+    const deepLinkCertificateRequestId = (this.$route.query.certificateRequestId || '').trim()
+    if (deepLinkRequestId || deepLinkCertificateRequestId) {
       this.governanceRequestId = deepLinkRequestId
+      this.governanceCertificateRequestId = deepLinkCertificateRequestId
       this.openGovernance = true
     }
   },
@@ -694,9 +701,11 @@ export default {
         this.loadingDetail = false
       })
     },
-    /** 业务密钥阻塞治理按钮操作：以证书行 requestId 为初始提示，可编辑为开通批次 requestId */
+    /** 业务密钥阻塞治理按钮操作：以证书行 requestId（证书申请 requestId）发起证书维度寻址，
+     *  由组件解析真实开通批次（kp-*）后再诊断/清理 */
     handleBlockingGovernance(row) {
-      this.governanceRequestId = (row.requestId || '').trim()
+      this.governanceCertificateRequestId = (row.requestId || '').trim()
+      this.governanceRequestId = ''
       this.openGovernance = true
     },
     /** 人工补申请按钮操作 */

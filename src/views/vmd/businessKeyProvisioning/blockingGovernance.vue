@@ -1,31 +1,128 @@
 <template>
   <div class="blocking-governance">
-    <!-- 查询区：按业务密钥开通批次 requestId 定位 -->
-    <el-form :inline="true" size="small" @submit.native.prevent>
-      <el-form-item label="开通批次 requestId">
-        <el-input
-          v-model="queryRequestId"
-          placeholder="请输入业务密钥开通批次 requestId"
-          clearable
-          style="width: 320px"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button
-          v-hasPermi="['vmd:security:businessKey:provisioning:query']"
-          type="primary"
-          icon="el-icon-search"
-          :loading="loading"
-          @click="handleQuery"
-        >查询诊断
-        </el-button>
-        <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+    <!-- 查询区：证书维度寻址 + 开通批次直接定位 -->
+    <el-card shadow="never" style="margin-bottom: 12px;">
+      <div class="query-section">
+        <span class="section-label">① 证书维度定位（从车辆证书入口，可选）</span>
+        <el-form :inline="true" size="small" @submit.native.prevent>
+          <el-form-item label="证书申请 requestId">
+            <el-input
+              v-model="certRequestId"
+              placeholder="车辆证书申请 requestId（MPT-CERT-*）"
+              clearable
+              style="width: 300px"
+              @keyup.enter.native="handleResolve"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              v-hasPermi="['vmd:security:businessKey:provisioning:query']"
+              type="primary"
+              plain
+              icon="el-icon-link"
+              :loading="resolving"
+              @click="handleResolve"
+            >寻址开通批次
+            </el-button>
+            <el-checkbox v-model="includeTerminal" style="margin-left: 4px;">附带历史终结批次</el-checkbox>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="query-section">
+        <span class="section-label">② 开通批次定位（从告警/监控直接输入 kp-*）</span>
+        <el-form :inline="true" size="small" @submit.native.prevent>
+          <el-form-item label="开通批次 requestId">
+            <el-input
+              v-model="queryRequestId"
+              placeholder="业务密钥开通批次 requestId（kp-*）"
+              clearable
+              style="width: 300px"
+              @keyup.enter.native="handleQuery"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              v-hasPermi="['vmd:security:businessKey:provisioning:query']"
+              type="primary"
+              icon="el-icon-search"
+              :loading="loading"
+              @click="handleQuery"
+            >查询诊断
+            </el-button>
+            <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-card>
+
+    <!-- 证书维度寻址结果 -->
+    <el-card v-if="resolution" shadow="never" style="margin-bottom: 12px; border-left: 4px solid #409EFF;">
+      <div slot="header">
+        <span>证书维度寻址结果</span>
+        <el-button type="text" style="float: right; padding: 0;" @click="resolution = null">收起</el-button>
+      </div>
+      <el-descriptions :column="2" border size="small">
+        <el-descriptions-item label="证书申请 requestId">{{ resolution.certificateRequestId }}</el-descriptions-item>
+        <el-descriptions-item label="设备SN">{{ resolution.deviceSn }}</el-descriptions-item>
+        <el-descriptions-item label="业务域">{{ resolution.businessDomain }}</el-descriptions-item>
+        <el-descriptions-item label="寻址结果">
+          <el-tag :type="resolution.resolution === 'OPEN_BATCH_FOUND' ? 'success' : 'info'" size="mini">
+            {{ resolution.resolution === 'OPEN_BATCH_FOUND' ? '命中未终结开通批次' : '无未终结开通批次' }}
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template v-if="resolution.openBatch">
+        <div style="margin: 12px 0 6px; font-weight: bold;">命中批次</div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="真实批次 requestId" :span="2">{{ resolution.openBatch.provisioningRequestId }}</el-descriptions-item>
+          <el-descriptions-item label="批次状态">
+            <el-tag :type="statusTagType(resolution.openBatch.state)" size="mini">{{ statusLabel(resolution.openBatch.state) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="证书已升级">
+            <el-tag :type="resolution.openBatch.certificateChanged ? 'warning' : 'info'" size="mini">
+              {{ resolution.openBatch.certificateChanged ? '是（旧摘要与新证书冲突）' : '否' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="可清理候选">
+            <el-tag :type="resolution.openBatch.clearCandidate ? 'success' : 'info'" size="mini">
+              {{ resolution.openBatch.clearCandidate ? '是' : '否（WAIT_DEVICE_ACK 由 ACK 超时任务治理）' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="批次修改时间">{{ parseTime(resolution.openBatch.modifyTime) }}</el-descriptions-item>
+        </el-descriptions>
+      </template>
+      <template v-if="resolution.terminalHistory && resolution.terminalHistory.length">
+        <div style="margin: 12px 0 6px; font-weight: bold;">历史终结批次（仅供审计，不进入清理）</div>
+        <el-table :data="resolution.terminalHistory" size="mini" border>
+          <el-table-column label="批次 requestId" prop="provisioningRequestId" min-width="220" show-overflow-tooltip />
+          <el-table-column label="状态" prop="state" align="center" width="110">
+            <template slot-scope="scope">
+              <el-tag :type="statusTagType(scope.row.state)" size="mini">{{ statusLabel(scope.row.state) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="证书已升级" prop="certificateChanged" align="center" width="110">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.certificateChanged ? 'warning' : 'info'" size="mini">{{ scope.row.certificateChanged ? '是' : '否' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="批次修改时间" align="center" width="150">
+            <template slot-scope="scope">{{ parseTime(scope.row.modifyTime) }}</template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <div v-if="resolution.openBatch && resolution.openBatch.clearCandidate" style="margin-top: 10px; text-align: right;">
+        <el-button type="primary" size="mini" icon="el-icon-search" @click="jumpToBatchDiagnosis">定位到该批次并诊断</el-button>
+      </div>
+      <div v-else-if="resolution.openBatch" style="margin-top: 10px; color: #E6A23C; font-size: 12px;">
+        该批次非清理候选（{{ statusLabel(resolution.openBatch.state) }}），无需执行"清理阻塞"；WAIT_DEVICE_ACK 由 ACK 超时任务治理。
+      </div>
+      <div v-else style="margin-top: 10px; color: #67C23A; font-size: 12px;">
+        该设备 + 业务域当前无未终结开通批次，无需清理阻塞。
+      </div>
+    </el-card>
 
     <el-alert
-      title="本功能仅用于解除旧业务密钥开通批次对新证书流程的占用（清理批次 FAILED + 关联 PENDING 目录），不会修改、删除或撤销车辆证书，也不会自动签发证书。"
+      title="本功能仅用于解除旧业务密钥开通批次对新证书流程的占用（清理批次 FAILED + 关联 PENDING 目录），不会修改、删除或撤销车辆证书，也不会自动签发证书。证书申请 requestId 与开通批次 requestId 是两套独立标识，诊断/清理仅接受真实批次 requestId（kp-*）。"
       type="info"
       :closable="false"
       show-icon
@@ -181,14 +278,20 @@
 <script>
 import {
   getBlockingDiagnosis,
-  clearBlocking
+  clearBlocking,
+  resolveByCertificateRequest
 } from '@/api/vmd/businessKeyProvisioning'
 
 export default {
   name: 'BlockingGovernance',
   props: {
-    // 初始 requestId（来自车辆证书行或告警跳转深链），非空时自动查询诊断
+    // 开通批次 requestId（kp-*，来自告警深链或手动输入），非空时自动查询诊断
     requestId: {
+      type: String,
+      default: ''
+    },
+    // 证书申请 requestId（MPT-CERT-*，来自车辆证书入口），非空时先寻址再定位批次
+    certificateRequestId: {
       type: String,
       default: ''
     }
@@ -197,7 +300,12 @@ export default {
     return {
       // 查询输入
       queryRequestId: '',
+      certRequestId: '',
       loading: false,
+      resolving: false,
+      includeTerminal: false,
+      // 证书维度寻址结果
+      resolution: null,
       // 诊断结果
       diagnosis: null,
       // 清理结果
@@ -260,17 +368,49 @@ export default {
     }
   },
   created() {
-    if (this.requestId) {
+    if (this.certificateRequestId) {
+      this.certRequestId = this.certificateRequestId
+      this.handleResolve()
+    } else if (this.requestId) {
       this.queryRequestId = this.requestId
       this.handleQuery()
     }
   },
   methods: {
+    /** 证书维度寻址：证书申请 requestId → 真实开通批次 requestId */
+    handleResolve() {
+      const certRequestId = (this.certRequestId || '').trim()
+      if (!certRequestId) {
+        this.$modal.msgWarning('请输入证书申请 requestId')
+        return
+      }
+      this.resolving = true
+      resolveByCertificateRequest(certRequestId, 'V2C_COMM', this.includeTerminal).then(response => {
+        const data = response.data
+        this.resolution = data
+        if (data.resolution === 'OPEN_BATCH_FOUND' && data.openBatch) {
+          // 自动定位到真实批次并诊断（两套 ID 不得混用：此处为 kp-* 批次号）
+          this.queryRequestId = data.openBatch.provisioningRequestId
+          this.handleQuery()
+        } else {
+          this.$modal.msgInfo('该设备 + 业务域当前无未终结开通批次，无需清理阻塞')
+        }
+      }).finally(() => {
+        this.resolving = false
+      })
+    },
+    /** 定位到寻址命中的批次并诊断 */
+    jumpToBatchDiagnosis() {
+      if (this.resolution && this.resolution.openBatch) {
+        this.queryRequestId = this.resolution.openBatch.provisioningRequestId
+        this.handleQuery()
+      }
+    },
     /** 查询阻塞诊断 */
     handleQuery() {
       const requestId = (this.queryRequestId || '').trim()
       if (!requestId) {
-        this.$modal.msgWarning('请输入业务密钥开通批次 requestId')
+        this.$modal.msgWarning('请输入业务密钥开通批次 requestId（kp-*）')
         return
       }
       this.loading = true
@@ -284,8 +424,11 @@ export default {
     /** 重置 */
     resetQuery() {
       this.queryRequestId = ''
+      this.certRequestId = ''
       this.diagnosis = null
       this.result = null
+      this.resolution = null
+      this.includeTerminal = false
     },
     /** 打开清理确认对话框 */
     openClearDialog() {
@@ -377,6 +520,18 @@ export default {
 </script>
 
 <style scoped>
+.query-section {
+  margin-bottom: 8px;
+}
+.query-section:last-child {
+  margin-bottom: 0;
+}
+.section-label {
+  display: inline-block;
+  width: 170px;
+  color: #909399;
+  font-size: 12px;
+}
 .diagnosis-body {
   margin-top: 4px;
 }
