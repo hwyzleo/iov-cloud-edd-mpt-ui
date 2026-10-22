@@ -119,8 +119,16 @@
       </el-table-column>
       <el-table-column label="最后操作人" prop="lastOperator" align="center" width="110" show-overflow-tooltip />
       <el-table-column label="失败原因" prop="failReason" min-width="160" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" fixed="right" width="400" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="480" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            v-hasPermi="['vmd:security:businessKey:provisioning:query']"
+            size="mini"
+            type="text"
+            icon="el-icon-warning-outline"
+            @click="handleBlockingGovernance(scope.row)"
+          >业务密钥阻塞治理
+          </el-button>
           <el-button
             v-hasPermi="['vmd:security:vehicleCertificate:query']"
             size="mini"
@@ -453,6 +461,18 @@
         <el-button @click="openCertResult = false">关 闭</el-button>
       </div>
     </el-dialog>
+    <!-- 业务密钥开通批次阻塞治理抽屉（VMD-DSN-CR-065） -->
+    <el-drawer
+      title="业务密钥开通批次阻塞治理"
+      :visible.sync="openGovernance"
+      size="760px"
+      append-to-body
+      :destroy-on-close="false"
+    >
+      <div style="padding: 0 20px 20px;">
+        <blocking-governance ref="blockingGovernance" :request-id="governanceRequestId" />
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -466,9 +486,11 @@ import {
   queryVehicleCertificateBody,
   reissueVehicleCertificate
 } from '@/api/vmd/vehicleCertificate'
+import BlockingGovernance from '@/views/vmd/businessKeyProvisioning/blockingGovernance'
 
 export default {
   name: 'VehicleCertificate',
+  components: { BlockingGovernance },
   data() {
     return {
       // 证书状态选项
@@ -538,6 +560,9 @@ export default {
       openReconcile: false,
       openConfirm: false,
       openReissue: false,
+      // 业务密钥阻塞治理抽屉
+      openGovernance: false,
+      governanceRequestId: '',
       // 已签发证书内容
       openCertResult: false,
       certResult: {},
@@ -591,6 +616,12 @@ export default {
   },
   created() {
     this.getList()
+    // 支持从告警按 requestId 深链打开阻塞治理抽屉：/vmd/vehicleCertificate?requestId=xxx
+    const deepLinkRequestId = (this.$route.query.requestId || '').trim()
+    if (deepLinkRequestId) {
+      this.governanceRequestId = deepLinkRequestId
+      this.openGovernance = true
+    }
   },
   methods: {
     /** 查询证书申请记录列表 */
@@ -662,6 +693,11 @@ export default {
       }).catch(() => {
         this.loadingDetail = false
       })
+    },
+    /** 业务密钥阻塞治理按钮操作：以证书行 requestId 为初始提示，可编辑为开通批次 requestId */
+    handleBlockingGovernance(row) {
+      this.governanceRequestId = (row.requestId || '').trim()
+      this.openGovernance = true
     },
     /** 人工补申请按钮操作 */
     handleCompensate() {

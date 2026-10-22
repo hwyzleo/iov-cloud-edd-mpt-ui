@@ -208,6 +208,22 @@ export const dynamicRoutes = [
         meta: { title: 'TBOX 详情', activeMenu: '/iov/tsp/tbox' }
       }
     ]
+  },
+  {
+    // 业务密钥开通批次阻塞治理（VMD-DSN-CR-065）：无独立菜单，支持从告警按 requestId 深链
+    // /vmd/businessKeyProvisioning?requestId=xxx；入口亦嵌入“车辆证书管理”操作区
+    path: '/vmd/businessKeyProvisioning',
+    component: Layout,
+    hidden: true,
+    permissions: ['vmd:security:businessKey:provisioning:query'],
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/vmd/businessKeyProvisioning/index'),
+        name: 'BusinessKeyProvisioning',
+        meta: { title: '业务密钥开通批次阻塞治理' }
+      }
+    ]
   }
 ]
 
