@@ -119,16 +119,8 @@
       </el-table-column>
       <el-table-column label="最后操作人" prop="lastOperator" align="center" width="110" show-overflow-tooltip />
       <el-table-column label="失败原因" prop="failReason" min-width="160" show-overflow-tooltip />
-      <el-table-column label="操作" align="center" fixed="right" width="480" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="280" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
-            v-hasPermi="['vmd:security:businessKey:provisioning:query']"
-            size="mini"
-            type="text"
-            icon="el-icon-warning-outline"
-            @click="handleBlockingGovernance(scope.row)"
-          >业务密钥阻塞治理
-          </el-button>
           <el-button
             v-hasPermi="['vmd:security:vehicleCertificate:query']"
             size="mini"
@@ -136,24 +128,6 @@
             icon="el-icon-view"
             @click="handleDetail(scope.row)"
           >详情
-          </el-button>
-          <el-button
-            v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
-            size="mini"
-            type="text"
-            icon="el-icon-refresh"
-            :disabled="!canReconcile(scope.row.status)"
-            @click="handleReconcile(scope.row)"
-          >对账
-          </el-button>
-          <el-button
-            v-hasPermi="['vmd:security:vehicleCertificate:confirm']"
-            size="mini"
-            type="text"
-            icon="el-icon-finished"
-            :disabled="!canConfirm(scope.row.status)"
-            @click="handleConfirmInstalled(scope.row)"
-          >安装补录
           </el-button>
           <el-button
             v-hasPermi="['vmd:security:vehicleCertificate:query']"
@@ -164,15 +138,42 @@
             @click="handleQueryCert(scope.row)"
           >获取证书
           </el-button>
-          <el-button
-            v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+          <el-dropdown
+            v-hasPermi="['vmd:security:businessKey:provisioning:query', 'vmd:security:vehicleCertificate:compensate', 'vmd:security:vehicleCertificate:confirm']"
             size="mini"
-            type="text"
-            icon="el-icon-refresh-right"
-            :disabled="!canReissue(scope.row.status)"
-            @click="handleReissue(scope.row)"
-          >重新签发
-          </el-button>
+            @command="(command) => handleCommand(command, scope.row)"
+          >
+            <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                v-hasPermi="['vmd:security:businessKey:provisioning:query']"
+                command="handleBlockingGovernance"
+                icon="el-icon-warning-outline"
+              >业务密钥阻塞治理
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+                command="handleReconcile"
+                icon="el-icon-refresh"
+                :disabled="!canReconcile(scope.row.status)"
+              >对账
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-hasPermi="['vmd:security:vehicleCertificate:confirm']"
+                command="handleConfirmInstalled"
+                icon="el-icon-finished"
+                :disabled="!canConfirm(scope.row.status)"
+              >安装补录
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+                command="handleReissue"
+                icon="el-icon-refresh-right"
+                :disabled="!canReissue(scope.row.status)"
+              >重新签发
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -707,6 +708,25 @@ export default {
       this.governanceCertificateRequestId = (row.requestId || '').trim()
       this.governanceRequestId = ''
       this.openGovernance = true
+    },
+    /** 更多操作下拉菜单命令分发 */
+    handleCommand(command, row) {
+      switch (command) {
+        case 'handleBlockingGovernance':
+          this.handleBlockingGovernance(row)
+          break
+        case 'handleReconcile':
+          this.handleReconcile(row)
+          break
+        case 'handleConfirmInstalled':
+          this.handleConfirmInstalled(row)
+          break
+        case 'handleReissue':
+          this.handleReissue(row)
+          break
+        default:
+          break
+      }
     },
     /** 人工补申请按钮操作 */
     handleCompensate() {
