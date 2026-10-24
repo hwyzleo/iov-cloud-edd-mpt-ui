@@ -227,7 +227,9 @@
 
     <!-- 一键清理确认对话框（二次确认） -->
     <el-dialog title="清理业务密钥阻塞，允许新证书重试" :visible.sync="openClear" width="620px" append-to-body>
-      <el-alert
+      <!-- 仅在有诊断结果时渲染（避免 diagnosis=null 时插槽表达式求值报错导致白屏） -->
+      <template v-if="diagnosis">
+        <el-alert
         title="该操作将把当前业务密钥开通批次置为 FAILED，并将关联 PENDING 目录一并失败化，以释放唯一约束；批次明细、摘要与历史证据保留，不会删除数据、不会伪造成功事件。清理后请使用新的 requestId + 当前 ACTIVE 新证书由车端重新发起开通。"
         type="warning"
         :closable="false"
@@ -267,6 +269,7 @@
           <el-checkbox v-model="clearForm.confirmed">我已确认该批次无成功事实（ACK/ACTIVE/成功事件）且 operation 已确定无副作用，可安全清理</el-checkbox>
         </el-form-item>
       </el-form>
+      </template>
       <div slot="footer" class="dialog-footer">
         <el-button type="danger" :loading="submitting" @click="submitClear">确认清理</el-button>
         <el-button @click="openClear = false">取 消</el-button>
