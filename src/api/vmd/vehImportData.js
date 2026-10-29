@@ -51,21 +51,11 @@ export function previewReplayEvent(id) {
   })
 }
 
-// 补发车辆导入数据消息
-// data 可选：{ reason, requestId, actionTypes: string[] }
-// 不传 actionTypes 则执行该导入类型的全部默认动作（向后兼容）
+// 批量补发车辆导入数据消息
+// 注意：后端无批量补发接口，批量操作由前端逐条调用 republishVehImportData 完成
 export function republishVehImportData(id, data) {
   return request({
     url: '/edd-vmd/api/mpt/vehImportData/v1/' + id + '/replayEvent',
-    method: 'post',
-    data: data
-  })
-}
-
-// 批量补发车辆导入数据消息
-export function republishBatchVehImportData(data) {
-  return request({
-    url: '/edd-vmd/api/mpt/vehImportData/v1/replayEvent/batch',
     method: 'post',
     data: data
   })

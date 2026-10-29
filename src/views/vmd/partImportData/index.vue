@@ -25,6 +25,17 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="是否已处理" prop="handle">
+        <el-select
+          v-model="queryParams.handle"
+          placeholder="处理状态"
+          clearable
+          style="width: 120px"
+        >
+          <el-option label="是" value="true"/>
+          <el-option label="否" value="false"/>
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
           v-model="dateRange"
@@ -50,7 +61,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['vmd:importData:add']"
+          v-hasPermi="['vmd:vehicle:importData:add']"
         >新增
         </el-button>
       </el-col>
@@ -62,7 +73,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['vmd:importData:edit']"
+          v-hasPermi="['vmd:vehicle:importData:edit']"
         >解析处理
         </el-button>
       </el-col>
@@ -74,7 +85,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['vmd:importData:remove']"
+          v-hasPermi="['vmd:vehicle:importData:remove']"
         >删除
         </el-button>
       </el-col>
@@ -85,7 +96,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['vmd:importData:export']"
+          v-hasPermi="['vmd:vehicle:importData:export']"
         >导出
         </el-button>
       </el-col>
@@ -117,7 +128,7 @@
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-if="scope.row.handle === false"
-            v-hasPermi="['vmd:importData:edit']"
+            v-hasPermi="['vmd:vehicle:importData:edit']"
           >解析处理
           </el-button>
           <el-button
@@ -143,7 +154,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['vmd:importData:remove']"
+            v-hasPermi="['vmd:vehicle:importData:remove']"
           >删除
           </el-button>
         </template>
@@ -483,9 +494,6 @@ export default {
         partCode: [
           {required: true, message: "零件代码不能为空", trigger: "change"}
         ],
-        type: [
-          {required: true, message: "数据类型不能为空", trigger: "blur"}
-        ],
         version: [
           {required: true, message: "数据版本不能为空", trigger: "blur"}
         ],
@@ -530,7 +538,7 @@ export default {
     reset() {
       this.form = {
         batchNum: undefined,
-        type: undefined,
+        partCode: undefined,
         version: undefined,
         data: undefined,
         description: undefined
@@ -627,7 +635,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('edd-vmd/api/partImportData/v1/export', {
+      this.download('edd-vmd/api/mpt/partImportData/v1/export', {
         ...this.queryParams
       }, `part_import_data_${new Date().getTime()}.xlsx`)
     },
