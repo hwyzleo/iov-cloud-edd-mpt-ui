@@ -120,7 +120,7 @@
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="230" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="300" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -138,6 +138,15 @@
             @click="handleDetail(scope.row)"
             v-if="scope.row.handle === true"
           >详情
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh"
+            @click="handleReimport(scope.row)"
+            v-if="scope.row.handle === true"
+            v-hasPermi="['vmd:importOperation:execute']"
+          >重导
           </el-button>
           <el-button
             size="mini"
@@ -383,6 +392,13 @@
         <el-button @click="replayResultOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <reimport-dialog
+      :visible.sync="reimportOpen"
+      :domain="reimportDomain"
+      :import-data-id="reimportImportDataId"
+      :batch-num="reimportBatchNum"
+    />
   </div>
 </template>
 
@@ -397,6 +413,7 @@ import {
   getPartImportPostProcessReplay
 } from "@/api/vmd/partImportData";
 import { listAllParts } from "@/api/mdm/part";
+import ReimportDialog from "@/views/vmd/importOperation/reimportDialog";
 
 // 补发动作类型（与 VMD PartPostProcessActionType 对齐）
 const ACTION_TYPE_OPTIONS = [
@@ -431,6 +448,7 @@ const ACTION_STATUS_OPTIONS = [
 export default {
   name: "VmdImportData",
   dicts: [],
+  components: { ReimportDialog },
   data() {
     return {
       // 遮罩层
@@ -477,6 +495,11 @@ export default {
       replayFailures: [],
       // 当前补发的零件导入数据ID
       replayPartImportDataId: undefined,
+      // 重导对话框
+      reimportOpen: false,
+      reimportDomain: 'PART',
+      reimportImportDataId: undefined,
+      reimportBatchNum: undefined,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -668,6 +691,12 @@ export default {
         };
         this.replayOpen = true;
       });
+    },
+    /** 重导按钮操作：打开统一操作门面 REIMPORT 对话框 */
+    handleReimport(row) {
+      this.reimportImportDataId = row.id;
+      this.reimportBatchNum = row.batchNum;
+      this.reimportOpen = true;
     },
     /** 补发动作多选 */
     handleActionSelectionChange(selection) {

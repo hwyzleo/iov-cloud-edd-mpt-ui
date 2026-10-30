@@ -148,7 +148,7 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="260" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -166,6 +166,15 @@
             @click="handleDetail(scope.row)"
             v-if="scope.row.handle === true"
           >详情
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh"
+            @click="handleReimport(scope.row)"
+            v-if="scope.row.handle === true"
+            v-hasPermi="['vmd:importOperation:execute']"
+          >重导
           </el-button>
           <el-tooltip
             v-if="scope.row.eventReplayable === false && scope.row.eventReplayReason"
@@ -372,6 +381,13 @@
         <el-button v-else @click="replayOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <reimport-dialog
+      :visible.sync="reimportOpen"
+      :domain="reimportDomain"
+      :import-data-id="reimportImportDataId"
+      :batch-num="reimportBatchNum"
+    />
   </div>
 </template>
 
@@ -385,10 +401,12 @@ import {
   republishVehImportData,
   previewReplayEvent
 } from "@/api/vmd/vehImportData";
+import ReimportDialog from "@/views/vmd/importOperation/reimportDialog";
 
 export default {
   name: "VehImportData",
   dicts: [],
+  components: { ReimportDialog },
   data() {
     return {
       // 数据类型选项
@@ -413,6 +431,11 @@ export default {
       replaySubmitting: false,
       // 当前补发行
       replayRow: {},
+      // 重导对话框
+      reimportOpen: false,
+      reimportDomain: 'VEHICLE',
+      reimportImportDataId: undefined,
+      reimportBatchNum: undefined,
       // 补发预检结果
       replayPreview: null,
       // 已选补发动作类型
@@ -627,6 +650,12 @@ export default {
       }).finally(() => {
         this.replayLoading = false;
       });
+    },
+    /** 重导按钮操作：打开统一操作门面 REIMPORT 对话框 */
+    handleReimport(row) {
+      this.reimportImportDataId = row.id;
+      this.reimportBatchNum = row.batchNum;
+      this.reimportOpen = true;
     },
     /** 提交补发（仅提交预检返回且勾选的动作） */
     submitReplay() {
