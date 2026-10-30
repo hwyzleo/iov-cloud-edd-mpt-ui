@@ -3,7 +3,7 @@
     <div v-loading="previewLoading">
       <!-- 预检信息 -->
       <el-alert
-        title="重新导入（REIMPORT）将重新进入导入内核修复事实数据，仅按 FILL_MISSING 策略补缺、不改写已有正确字段；已处理批次无法通过普通解析处理接口重导（幂等跳过），必须走统一操作门面。"
+        title="重新导入（REIMPORT）将重新进入导入内核修复事实数据，仅按 FILL_MISSING 策略补缺、不改写已有正确字段；已处理批次无法通过普通解析处理接口重导（幂等跳过），必须走统一操作门面。预览将生成获批计划（含设备类别补缺条目），执行必须携带预览计划摘要 planDigest，逐项审计并支持断点重试（仅恢复未提交条目）。"
         type="warning"
         :closable="false"
         show-icon
@@ -186,8 +186,9 @@ export default {
         return { changed: 0, unchanged: 0, skipped: 0, failed: 0 };
       }
     },
+    // CR-072：后端 retry 支持 PARTIAL_FAILED（FAILED_RETRYABLE 条目按冻结计划+检查点恢复）
     retryable() {
-      return this.result && ['PENDING', 'FAILED'].includes(this.result.status);
+      return this.result && ['PENDING', 'FAILED', 'PARTIAL_FAILED'].includes(this.result.status);
     }
   },
   watch: {

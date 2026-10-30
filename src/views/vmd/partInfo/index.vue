@@ -29,6 +29,15 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="设备类别" prop="deviceCategory">
+        <el-input
+          v-model="queryParams.deviceCategory"
+          placeholder="请输入设备类别"
+          clearable
+          style="width: 200px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
       <el-form-item label="实例状态" prop="instanceState">
         <el-select v-model="queryParams.instanceState" placeholder="请选择实例状态" clearable style="width: 200px">
           <el-option label="在库" :value="0" />
@@ -122,6 +131,13 @@
           <span v-if="scope.row.instanceState === 1">在用</span>
           <span v-if="scope.row.instanceState === 2">待更换</span>
           <span v-if="scope.row.instanceState === 3">已报废</span>
+        </template>
+      </el-table-column>
+      <!-- CR-072：设备类别为只读快照，节点已知但历史未补齐时为空（展示为未补齐，非 OTHER） -->
+      <el-table-column label="设备类别" prop="deviceCategory" width="100" align="center">
+        <template slot-scope="scope">
+          <span v-if="scope.row.deviceCategory">{{ scope.row.deviceCategory }}</span>
+          <el-tag v-else type="info" size="mini">未补齐</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" prop="createTime" width="140" align="center">
@@ -241,6 +257,12 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <!-- CR-072：设备类别为服务器派生只读字段，不随增改请求提交（后端明确拒绝显式纠错） -->
+            <el-form-item label="设备类别">
+              <el-input v-model="form.deviceCategory" disabled placeholder="服务器派生，不可人工编辑"/>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -285,6 +307,7 @@ export default {
         partCode: undefined,
         sn: undefined,
         vehicleNodeCode: undefined,
+        deviceCategory: undefined,
         instanceState: undefined
       },
       // 表单参数
@@ -353,6 +376,7 @@ export default {
         hardwarePn: undefined,
         softwarePn: undefined,
         extra: undefined,
+        deviceCategory: undefined,
         instanceState: 0
       };
       this.resetForm("form");
@@ -394,14 +418,17 @@ export default {
     submitForm: function() {
       this.$refs["form"].validate(valid => {
         if (valid) {
+          // CR-072：deviceCategory 为服务器派生只读字段，剔除后再提交，避免后端显式纠错拒绝（806135）
+          const formData = { ...this.form };
+          delete formData.deviceCategory;
           if (this.form.id !== undefined) {
-            updatePartInfo(this.form).then(response => {
+            updatePartInfo(formData).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addPartInfo(this.form).then(response => {
+            addPartInfo(formData).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
