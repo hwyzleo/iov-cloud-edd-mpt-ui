@@ -42,7 +42,7 @@
           <el-descriptions-item label="绑定状态">
             <el-tag :type="bindingStatusType(summary.bindingStatus)" size="mini">{{ bindingStatusLabel(summary.bindingStatus) }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="最后登录时间">{{ parseTime(summary.lastLoginTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="最后登录时间">{{ parseTspTime(summary.lastLoginTime) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="异常标签" :span="3">
             <template v-if="summary.anomalyTags && summary.anomalyTags.length">
               <el-tag
@@ -83,9 +83,9 @@
       <el-card shadow="never" class="box-card">
         <div slot="header" class="card-header"><span>激活信息</span></div>
         <el-descriptions :column="3" border size="small">
-          <el-descriptions-item label="首次登录时间">{{ parseTime(summary.firstLoginTime) || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="最近登录时间">{{ parseTime(summary.lastLoginTime) || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="激活时间">{{ parseTime(summary.activateTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="首次登录时间">{{ parseTspTime(summary.firstLoginTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="最近登录时间">{{ parseTspTime(summary.lastLoginTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="激活时间">{{ parseTspTime(summary.activateTime) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="激活耗时">{{ formatDuration(summary.activationDurationSeconds) }}</el-descriptions-item>
           <el-descriptions-item label="离线时长">{{ formatDuration(summary.lastLoginAgeSeconds) }}</el-descriptions-item>
           <el-descriptions-item label="绑定版本">{{ summary.bindingVersion === null || summary.bindingVersion === undefined ? '-' : summary.bindingVersion }}</el-descriptions-item>
@@ -96,7 +96,7 @@
             v-for="(item, index) in activationMilestones"
             :key="index"
             :type="milestoneType(item.milestone)"
-            :timestamp="parseTime(item.occurredAt) || '-'"
+            :timestamp="parseTspTime(item.occurredAt) || '-'"
             placement="top"
           >
             <div class="milestone-title">{{ milestoneLabel(item.milestone) }}</div>
@@ -117,7 +117,7 @@
           <el-descriptions-item label="绑定状态">
             <span>{{ detail.bindingState || (summary.bindingStatus === 'BINDING_CONFLICT' ? '绑定冲突' : '-') }}</span>
           </el-descriptions-item>
-          <el-descriptions-item label="绑定最后同步时间">{{ parseTime(detail.bindingUpdatedAt) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="绑定最后同步时间">{{ parseTspTime(detail.bindingUpdatedAt) || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -137,7 +137,7 @@
             v-for="(item, index) in timeline"
             :key="index"
             :type="milestoneType(item.milestone)"
-            :timestamp="parseTime(item.occurredAt) || '-'"
+            :timestamp="parseTspTime(item.occurredAt) || '-'"
             placement="top"
           >
             <div class="milestone-title">{{ milestoneLabel(item.milestone) }}</div>

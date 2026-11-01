@@ -46,6 +46,38 @@ export function parseTime(time, pattern) {
   return time_str
 }
 
+/**
+ * TSP 时间字段展示格式化（TSP-DSN-CR-015：传输为展示墙钟，直接按组件格式化）。
+ * 兼容三种传输格式：
+ * 1) epoch 毫秒/秒数字（绝对时刻）——本地化输出（兼容旧数据）；
+ * 2) 带时区标记字符串（如 "...Z" / "...+08:00"，绝对时刻）——解析后本地化输出；
+ * 3) 无偏移 ISO 字符串——后端已按展示时区（X-Timezone/默认 Asia/Shanghai）输出的展示墙钟，
+ *    直接取年月日时分秒格式化，不做 UTC/本地二次换算（禁止 new Date(无时区字符串) 猜时区）。
+ */
+export function parseTspTime(time, pattern) {
+  if (time === null || time === undefined || time === '') {
+    return null
+  }
+  if (typeof time === 'string') {
+    const trimmed = time.trim()
+    if (/^[0-9]+$/.test(trimmed)) {
+      // epoch 数字字符串（10 位秒 / 13 位毫秒）
+      time = parseInt(trimmed, 10)
+    } else if (/(Z|[+-]\d{2}:\d{2})$/.test(trimmed)) {
+      // 带时区标记：绝对时刻，直接解析
+      time = new Date(trimmed)
+    } else {
+      // 展示墙钟（= 浏览器时区）：按组件构造本地 Date 仅用于格式化，不再做时区换算
+      const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/.exec(trimmed)
+      if (!m) {
+        return null
+      }
+      time = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0))
+    }
+  }
+  return parseTime(time, pattern)
+}
+
 // 表单重置
 export function resetForm(refName) {
   if (this.$refs[refName]) {

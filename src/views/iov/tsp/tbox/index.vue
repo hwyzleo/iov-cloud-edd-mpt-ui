@@ -159,17 +159,17 @@
       </el-table-column>
       <el-table-column label="首次登录时间" align="center" key="firstLoginTime" prop="firstLoginTime" v-if="columns[4].visible" width="140" sortable="custom">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.firstLoginTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
+          <span>{{ parseTspTime(scope.row.firstLoginTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="最后登录时间" align="center" key="lastLoginTime" prop="lastLoginTime" v-if="columns[5].visible" width="140" sortable="custom">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lastLoginTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
+          <span>{{ parseTspTime(scope.row.lastLoginTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="激活时间" align="center" key="activateTime" prop="activateTime" v-if="columns[6].visible" width="140" sortable="custom">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.activateTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
+          <span>{{ parseTspTime(scope.row.activateTime, '{y}-{m}-{d} {h}:{i}') || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="绑定状态" align="center" key="bindingStatus" prop="bindingStatus" v-if="columns[7].visible" width="100">
@@ -233,12 +233,12 @@
       </el-table-column>
       <el-table-column label="创建时间" align="center" key="createdAt" prop="createdAt" v-if="columns[16].visible" width="160" sortable="custom">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createdAt) || '-' }}</span>
+          <span>{{ parseTspTime(scope.row.createdAt) || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="更新时间" align="center" key="updatedAt" prop="updatedAt" v-if="columns[17].visible" width="160" sortable="custom">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updatedAt) || '-' }}</span>
+          <span>{{ parseTspTime(scope.row.updatedAt) || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="90" class-name="small-padding fixed-width" fixed="right">
@@ -379,6 +379,7 @@ export default {
     },
     applyRange(query, range, fromKey, toKey) {
       if (range && range.length === 2) {
+        // TSP-DSN-CR-015：展示墙钟直接传后端（后端按 X-Timezone/默认时区严格解析后转 UTC 查询），不再本地→UTC 预转换
         query[fromKey] = range[0] ? range[0].replace(' ', 'T') : undefined
         query[toKey] = range[1] ? range[1].replace(' ', 'T') : undefined
       }

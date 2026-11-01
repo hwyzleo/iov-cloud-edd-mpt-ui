@@ -20,6 +20,14 @@ const service = axios.create({
   timeout: 10000
 })
 
+// TSP-DSN-CR-015：浏览器时区不可得时，省略 X-Timezone 交后端默认（Asia/Shanghai），提示一次避免刷屏
+let timezoneFallbackWarned = false
+function warnTimezoneFallback() {
+  if (timezoneFallbackWarned) return
+  timezoneFallbackWarned = true
+  Message.warning('无法获取浏览器时区，时间将按后端默认时区（Asia/Shanghai）显示，筛选请按该时区填写')
+}
+
 // request拦截器
 service.interceptors.request.use(config => {
   // 是否需要设置 token
@@ -28,6 +36,17 @@ service.interceptors.request.use(config => {
   const isRepeatSubmit = (config.headers || {}).repeatSubmit === false
   if (getToken() && !isToken) {
     config.headers['Authorization'] = 'Bearer ' + getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
+  }
+  // TSP-DSN-CR-015：展示时区参考，前端总带浏览器时区；后端按 X-Timezone > 默认 Asia/Shanghai 输出展示墙钟
+  try {
+    const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (browserZone) {
+      config.headers['X-Timezone'] = browserZone
+    } else {
+      warnTimezoneFallback()
+    }
+  } catch (e) {
+    warnTimezoneFallback()
   }
   // get请求映射params参数
   if (config.method === 'get' && config.params) {
