@@ -39,32 +39,49 @@
         >导出
         </el-button>
       </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar :showSearch.sync="showSearch" :columns="columns" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="车辆" prop="vin" min-width="170" fixed="left"/>
-      <el-table-column label="品牌" prop="brandCode" width="80" align="center"/>
-      <el-table-column label="平台" prop="platformCode" width="80" align="center"/>
-      <el-table-column label="车系" prop="carLineCode" width="80" align="center"/>
-      <el-table-column label="车型" prop="modelCode" width="100" align="center"/>
-      <el-table-column label="版本" prop="variantCode" width="140" align="center"/>
-      <el-table-column label="配置代码" prop="configurationCode" width="180" align="center"/>
-      <el-table-column label="工厂代码" prop="plantCode" width="100" align="center"/>
-      <el-table-column label="生产时间" align="center" width="140">
+      <el-table-column label="车辆" key="vin" prop="vin" v-if="columns[0].visible" min-width="170" fixed="left"/>
+      <el-table-column label="品牌" key="brandCode" prop="brandCode" v-if="columns[1].visible" width="80" align="center"/>
+      <el-table-column label="平台" key="platformCode" prop="platformCode" v-if="columns[2].visible" width="80" align="center"/>
+      <el-table-column label="车系" key="carLineCode" prop="carLineCode" v-if="columns[3].visible" width="80" align="center"/>
+      <el-table-column label="车型" key="modelCode" prop="modelCode" v-if="columns[4].visible" width="100" align="center"/>
+      <el-table-column label="版本" key="variantCode" prop="variantCode" v-if="columns[5].visible" width="140" align="center"/>
+      <el-table-column label="配置代码" key="configurationCode" prop="configurationCode" v-if="columns[6].visible" width="180" align="center"/>
+      <el-table-column label="工厂代码" key="plantCode" prop="plantCode" v-if="columns[7].visible" width="100" align="center"/>
+      <el-table-column label="生产时间" key="productionTime" prop="productionTime" v-if="columns[8].visible" align="center" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.productionTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="最后同步时间" align="center" width="140">
+      <el-table-column label="最后同步时间" key="lastSyncTime" prop="lastSyncTime" v-if="columns[9].visible" align="center" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.lastSyncTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" width="140">
+      <el-table-column label="最后上报时间" key="lastInventoryReportedAt" prop="lastInventoryReportedAt" v-if="columns[10].visible" align="center" width="140">
+        <template slot-scope="scope">
+          <span>{{ scope.row.lastInventoryReportedAt ? parseTime(scope.row.lastInventoryReportedAt, '{y}-{m}-{d} {h}:{i}') : '--' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" key="createTime" prop="createTime" v-if="columns[11].visible" align="center" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
+            v-hasPermi="['ota:fota:vehicle:query']"
+          >详情
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -76,6 +93,37 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 车辆详情（只读，含最后上报时间） -->
+    <el-drawer title="车辆详情" :visible.sync="detailOpen" direction="rtl" size="600px"
+               :modal="true"
+               :append-to-body="true"
+               @close="detailCancel">
+      <div class="drawer-content" v-loading="detailLoading">
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item label="车辆">{{ detail.vin || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="品牌">{{ detail.brandCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="平台">{{ detail.platformCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="车系">{{ detail.carLineCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="车型">{{ detail.modelCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="版本">{{ detail.variantCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="配置代码">{{ detail.configurationCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="工厂代码">{{ detail.plantCode || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="生产时间">
+            {{ detail.productionTime ? parseTime(detail.productionTime, '{y}-{m}-{d} {h}:{i}') : '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最后同步时间">
+            {{ detail.lastSyncTime ? parseTime(detail.lastSyncTime, '{y}-{m}-{d} {h}:{i}') : '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最后上报时间">
+            {{ detail.lastInventoryReportedAt ? parseTime(detail.lastInventoryReportedAt, '{y}-{m}-{d} {h}:{i}') : '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ detail.createTime ? parseTime(detail.createTime, '{y}-{m}-{d} {h}:{i}') : '--' }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-drawer>
 
     <!-- 添加或修改对话框 -->
     <el-drawer title="升级过程" :visible.sync="open" direction="rtl" size="700px"
@@ -103,6 +151,45 @@ import {
   getVehicle,
   listVehicle
 } from "@/api/iov/ota/vehicle";
+import cache from '@/plugins/cache'
+
+// 列显隐状态本地持久化键（浏览器维度，仅保存 key + visible，不保存文案）
+const COLUMN_CACHE_KEY = 'ota:vehicle:columns'
+
+// 默认列定义（品牌/平台/车系默认隐藏，并随列表列顺序一致）
+const DEFAULT_COLUMNS = [
+  { key: 0, label: '车辆', visible: true },
+  { key: 1, label: '品牌', visible: false },
+  { key: 2, label: '平台', visible: false },
+  { key: 3, label: '车系', visible: false },
+  { key: 4, label: '车型', visible: true },
+  { key: 5, label: '版本', visible: true },
+  { key: 6, label: '配置代码', visible: true },
+  { key: 7, label: '工厂代码', visible: true },
+  { key: 8, label: '生产时间', visible: true },
+  { key: 9, label: '最后同步时间', visible: true },
+  { key: 10, label: '最后上报时间', visible: true },
+  { key: 11, label: '创建时间', visible: true }
+]
+
+// 读取本地持久化的列显隐状态；无缓存/缓存异常时回退默认值
+function loadColumns() {
+  let saved = null
+  try {
+    saved = cache.local.getJSON(COLUMN_CACHE_KEY)
+  } catch (e) {
+    saved = null
+  }
+  return DEFAULT_COLUMNS.map(column => {
+    const hit = Array.isArray(saved)
+      ? saved.find(item => item && item.key === column.key)
+      : null
+    return {
+      ...column,
+      visible: hit && typeof hit.visible === 'boolean' ? hit.visible : column.visible
+    }
+  })
+}
 
 export default {
   name: "Vehicle",
@@ -124,10 +211,18 @@ export default {
       // 表格数据
       list: [],
       partList: [],
+      // 列信息（品牌/平台/车系默认隐藏，可通过显隐列开关展示；状态本地持久化）
+      columns: loadColumns(),
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
+      // 详情遮罩层
+      detailLoading: false,
+      // 是否显示详情抽屉
+      detailOpen: false,
+      // 详情数据（只读，含最后上报时间 lastInventoryReportedAt）
+      detail: {},
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -145,6 +240,20 @@ export default {
   created() {
     this.getList();
   },
+  watch: {
+    // 列显隐变化时持久化到 localStorage（RightToolbar 直接修改 columns 项，无需改公共组件）
+    columns: {
+      deep: true,
+      handler(columns) {
+        try {
+          cache.local.setJSON(COLUMN_CACHE_KEY,
+            columns.map(({ key, visible }) => ({ key, visible })))
+        } catch (e) {
+          // 存储不可用（隐私模式/配额满）时静默降级为仅会话内生效
+        }
+      }
+    }
+  },
   methods: {
     getList() {
       this.loading = true;
@@ -158,6 +267,23 @@ export default {
     /** 取消按钮 */
     cancel() {
       this.open = false;
+    },
+    /** 详情按钮操作：只读展示车辆运行态，最后上报时间为空显示 -- */
+    handleDetail(row) {
+      this.detail = {};
+      this.detailOpen = true;
+      this.detailLoading = true;
+      getVehicle(row.vin).then(response => {
+        this.detail = response.data || {};
+        this.detailLoading = false;
+      }).catch(() => {
+        this.detailLoading = false;
+      });
+    },
+    /** 详情抽屉关闭 */
+    detailCancel() {
+      this.detailOpen = false;
+      this.detail = {};
     },
     /** 表单重置 */
     reset() {
