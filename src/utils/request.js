@@ -128,6 +128,16 @@ service.interceptors.response.use(res => {
   },
   error => {
     console.log('err' + error)
+    // 后端返回统一 ApiResponse 时优先展示其脱敏业务消息（如服务网关 SGW-* 错误）
+    const responseData = error && error.response && error.response.data
+    if (responseData && responseData.code && (responseData.message || responseData.msg)) {
+      Message({
+        message: responseData.message || responseData.msg,
+        type: 'error',
+        duration: 5 * 1000
+      })
+      return Promise.reject(error)
+    }
     let { message } = error;
     if (message == "Network Error") {
       message = "后端接口连接异常";
