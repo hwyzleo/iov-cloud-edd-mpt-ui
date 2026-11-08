@@ -72,7 +72,7 @@
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="100" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="260" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -81,6 +81,22 @@
             @click="handleDetail(scope.row)"
             v-hasPermi="['ota:fota:vehicle:query']"
           >详情
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-connection"
+            @click="handleRelations(scope.row)"
+            v-hasPermi="['ota:fota:activity:list', 'ota:fota:taskVehicle:list']"
+          >升级关联
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-cpu"
+            @click="handleInventory(scope.row)"
+            v-hasPermi="['ota:fota:vehicle:query']"
+          >设备清单
           </el-button>
         </template>
       </el-table-column>
@@ -143,15 +159,151 @@
         </el-table>
       </div>
     </el-drawer>
+
+    <!-- 升级关联摘要（懒加载：仅展开时按 VIN 请求，快速切换 VIN 忽略过期响应） -->
+    <el-drawer :title="'升级关联 - ' + relationVin" :visible.sync="relationOpen" direction="rtl" size="820px"
+               :modal="true" :append-to-body="true" @close="closeRelations">
+      <div class="drawer-content" v-loading="relationLoading">
+        <div v-if="relationError" class="drawer-error">
+          <span>{{ relationError }}</span>
+          <el-button type="text" icon="el-icon-refresh" @click="loadRelations(relationVin)">重试</el-button>
+        </div>
+        <template v-else>
+          <div class="drawer-title">
+            关联活动（共 {{ relationActivityTotal }} 个）
+            <el-button type="text" icon="el-icon-view" @click="viewAllRelations('relation')"
+                       v-hasPermi="['ota:fota:activity:list']">查看全部</el-button>
+          </div>
+          <el-table :data="relationActivities" size="small" empty-text="暂无关联活动">
+            <el-table-column label="活动ID" prop="activityId" width="90" align="center"/>
+            <el-table-column label="活动名称" prop="activityName" min-width="160" show-overflow-tooltip/>
+            <el-table-column label="活动状态" width="110" align="center">
+              <template slot-scope="scope">
+                <el-tag size="mini" :type="activityStateType(scope.row.activityState)">
+                  {{ activityStateLabel(scope.row.activityState) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="任务数" prop="vehicleTaskCount" width="80" align="center"/>
+            <el-table-column label="最近任务时间" width="160" align="center">
+              <template slot-scope="scope">{{ formatTime(scope.row.latestTaskTime) }}</template>
+            </el-table-column>
+          </el-table>
+
+          <div class="drawer-title" style="margin-top: 24px">
+            最近任务（共 {{ relationTaskTotal }} 个）
+            <el-button type="text" icon="el-icon-view" @click="viewAllRelations('tasks')"
+                       v-hasPermi="['ota:fota:taskVehicle:list']">查看全部</el-button>
+          </div>
+          <el-table :data="relationTasks" size="small" empty-text="暂无关联任务">
+            <el-table-column label="任务名称" prop="taskName" min-width="150" show-overflow-tooltip/>
+            <el-table-column label="阶段" width="90" align="center">
+              <template slot-scope="scope">{{ taskPhaseLabel(scope.row.taskPhase) }}</template>
+            </el-table-column>
+            <el-table-column label="任务状态" width="100" align="center">
+              <template slot-scope="scope">{{ taskStateLabel(scope.row.taskState) }}</template>
+            </el-table-column>
+            <el-table-column label="车辆任务状态" width="130" align="center">
+              <template slot-scope="scope">{{ vehicleTaskStatusLabel(scope.row.vehicleTaskStatus) }}</template>
+            </el-table-column>
+            <el-table-column label="发布时间" width="160" align="center">
+              <template slot-scope="scope">{{ formatTime(scope.row.releaseAt) }}</template>
+            </el-table-column>
+            <el-table-column label="创建时间" width="160" align="center">
+              <template slot-scope="scope">{{ formatTime(scope.row.createTime) }}</template>
+            </el-table-column>
+          </el-table>
+          <div class="drawer-tip">此处仅展示最近记录，完整筛选与全部历史请进入独立详情。</div>
+        </template>
+      </div>
+    </el-drawer>
+
+    <!-- 设备清单摘要（懒加载：仅展开时按 VIN 请求） -->
+    <el-drawer :title="'设备清单 - ' + inventoryVin" :visible.sync="inventoryOpen" direction="rtl" size="900px"
+               :modal="true" :append-to-body="true" @close="closeInventory">
+      <div class="drawer-content" v-loading="inventoryLoading">
+        <div v-if="inventoryError" class="drawer-error">
+          <span>{{ inventoryError }}</span>
+          <el-button type="text" icon="el-icon-refresh" @click="loadInventory(inventoryVin)">重试</el-button>
+        </div>
+        <el-empty v-else-if="!inventoryData" description="暂无已接受清单"/>
+        <template v-else>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="清单版本">{{ inventoryData.inventoryRevision || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="清单模型">{{ inventoryData.inventoryModel || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="OTA 接受时间">{{ formatTime(inventoryData.acceptedTime) }}</el-descriptions-item>
+            <el-descriptions-item label="车端采集时间">{{ formatTime(inventoryData.sourceCollectedAt) }}</el-descriptions-item>
+            <el-descriptions-item label="ECU 数量">{{ inventoryData.ecuCount || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="核心版本">{{ coreVersions || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="Canonical Digest" :span="2">
+              <span class="digest-cell">{{ inventoryData.canonicalDigestHex || '--' }}</span>
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <el-collapse style="margin-top: 16px">
+            <el-collapse-item v-for="ecu in (inventoryData.ecuList || [])" :key="ecu.ecuId" :name="ecu.ecuId">
+              <template slot="title">
+                <span class="ecu-title">{{ ecu.ecuId || '--' }}</span>
+                <el-tag size="mini" style="margin-left: 8px">{{ ecu.softwareModel || 'SINGLE_IMAGE' }}</el-tag>
+                <el-tag size="mini" style="margin-left: 8px" :type="partStatusType(ecu.partAssociation)">
+                  {{ partStatusLabel(ecu.partAssociation) }}
+                </el-tag>
+                <span class="ecu-meta">硬件 {{ ecu.hardwarePn || '--' }} / {{ ecu.hardwareVersion || '--' }}</span>
+              </template>
+              <el-table :data="ecu.softwareUnits || []" size="mini" empty-text="暂无软件单元">
+                <el-table-column label="Target" prop="softwareTargetCode" min-width="120" show-overflow-tooltip/>
+                <el-table-column label="软件零件号" prop="softwarePartNumber" min-width="140" show-overflow-tooltip/>
+                <el-table-column label="版本" prop="swVersion" width="120"/>
+                <el-table-column label="Slot" prop="slot" width="70" align="center">
+                  <template slot-scope="scope">{{ scope.row.slot || '--' }}</template>
+                </el-table-column>
+                <el-table-column label="Active" width="70" align="center">
+                  <template slot-scope="scope">{{ scope.row.active ? '是' : '否' }}</template>
+                </el-table-column>
+              </el-table>
+              <div class="part-block">
+                <template v-if="ecu.partAssociation && ecu.partAssociation.status === 'MATCHED'">
+                  <div class="part-row"><b>零件号：</b>{{ ecu.partAssociation.part.pn }}　
+                    <b>SN：</b>{{ ecu.partAssociation.part.sn || '--' }}　
+                    <b>修改时间：</b>{{ formatTime(ecu.partAssociation.part.modifyTime) }}</div>
+                  <div class="part-row"><b>原始配置字（只读）：</b></div>
+                  <pre class="config-word">{{ partConfigWord(ecu.partAssociation.part.configWord) }}</pre>
+                </template>
+                <div v-else class="part-row">
+                  <b>零件关联：</b>{{ partStatusLabel(ecu.partAssociation) }}
+                  <span v-if="ecu.partAssociation">（候选 {{ ecu.partAssociation.candidateCount || 0 }} 条，不自动选值）</span>
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+          <div class="drawer-tip">
+            <el-button type="text" icon="el-icon-view" @click="viewAllRelations('inventory')">查看完整设备清单</el-button>
+          </div>
+        </template>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script>
 import {
   getVehicle,
-  listVehicle
+  getVehicleInventory,
+  listVehicle,
+  listVehicleActivities,
+  listVehicleTasks
 } from "@/api/iov/ota/vehicle";
 import cache from '@/plugins/cache'
+import {
+  activityStateLabel as activityStateText,
+  activityStateType as activityStateTagType,
+  partConfigWord as partConfigWordText,
+  partStatusLabel as partStatusText,
+  partStatusType as partStatusTagType,
+  taskPhaseLabel as taskPhaseText,
+  taskStateLabel as taskStateText,
+  vehicleTaskStatusLabel as vehicleTaskStatusText
+} from './constants'
 
 // 列显隐状态本地持久化键（浏览器维度，仅保存 key + visible，不保存文案）
 const COLUMN_CACHE_KEY = 'ota:vehicle:columns'
@@ -223,6 +375,23 @@ export default {
       detailOpen: false,
       // 详情数据（只读，含最后上报时间 lastInventoryReportedAt）
       detail: {},
+      // ===== CR-023：升级关联摘要（懒加载，未展开不请求） =====
+      relationOpen: false,
+      relationLoading: false,
+      relationError: '',
+      relationVin: '',
+      relationRequestSeq: 0,
+      relationActivities: [],
+      relationActivityTotal: 0,
+      relationTasks: [],
+      relationTaskTotal: 0,
+      // ===== CR-023：设备清单摘要（懒加载，未展开不请求） =====
+      inventoryOpen: false,
+      inventoryLoading: false,
+      inventoryError: '',
+      inventoryVin: '',
+      inventoryRequestSeq: 0,
+      inventoryData: null,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -239,6 +408,21 @@ export default {
   },
   created() {
     this.getList();
+  },
+  computed: {
+    /** 设备清单核心版本（去重后的 SoftwareUnit 版本摘要） */
+    coreVersions() {
+      const ecuList = (this.inventoryData && this.inventoryData.ecuList) || []
+      const versions = []
+      ecuList.forEach(ecu => {
+        (ecu.softwareUnits || []).forEach(unit => {
+          if (unit.swVersion && versions.indexOf(unit.swVersion) < 0) {
+            versions.push(unit.swVersion)
+          }
+        })
+      })
+      return versions.slice(0, 5).join(', ')
+    }
   },
   watch: {
     // 列显隐变化时持久化到 localStorage（RightToolbar 直接修改 columns 项，无需改公共组件）
@@ -284,6 +468,117 @@ export default {
     detailCancel() {
       this.detailOpen = false;
       this.detail = {};
+    },
+    /** 升级关联展开：仅展开时按 VIN 懒加载 */
+    handleRelations(row) {
+      this.relationVin = row.vin;
+      this.relationOpen = true;
+      this.loadRelations(row.vin);
+    },
+    /** 加载升级关联摘要（活动/任务第一页）；seq 防止快速切换 VIN 串车数据 */
+    loadRelations(vin) {
+      const seq = ++this.relationRequestSeq;
+      this.relationLoading = true;
+      this.relationError = '';
+      this.relationActivities = [];
+      this.relationActivityTotal = 0;
+      this.relationTasks = [];
+      this.relationTaskTotal = 0;
+      const stale = () => seq !== this.relationRequestSeq || vin !== this.relationVin;
+      // 分别复用 activity:list / taskVehicle:list，无权限的子资源不请求也不扩大数据权限
+      const activityRequest = this.$auth.hasPermi('ota:fota:activity:list')
+        ? listVehicleActivities(vin, { pageNum: 1, pageSize: 5 })
+        : Promise.resolve({ data: { items: [], total: 0 } });
+      const taskRequest = this.$auth.hasPermi('ota:fota:taskVehicle:list')
+        ? listVehicleTasks(vin, { pageNum: 1, pageSize: 5 })
+        : Promise.resolve({ data: { items: [], total: 0 } });
+      Promise.all([activityRequest, taskRequest]).then(([activityResponse, taskResponse]) => {
+        if (stale()) return;
+        const activityPage = activityResponse.data || {};
+        const taskPage = taskResponse.data || {};
+        this.relationActivities = activityPage.items || [];
+        this.relationActivityTotal = activityPage.total || 0;
+        this.relationTasks = taskPage.items || [];
+        this.relationTaskTotal = taskPage.total || 0;
+        this.relationLoading = false;
+      }).catch(error => {
+        if (stale()) return;
+        this.relationLoading = false;
+        this.relationError = (error && error.message) ? error.message : '升级关联加载失败';
+      });
+    },
+    /** 升级关联抽屉关闭：使在途请求失效 */
+    closeRelations() {
+      this.relationRequestSeq++;
+      this.relationOpen = false;
+      this.relationActivities = [];
+      this.relationTasks = [];
+      this.relationError = '';
+    },
+    /** 设备清单展开：仅展开时按 VIN 懒加载 */
+    handleInventory(row) {
+      this.inventoryVin = row.vin;
+      this.inventoryOpen = true;
+      this.loadInventory(row.vin);
+    },
+    /** 加载设备清单摘要；seq 防止快速切换 VIN 串车数据 */
+    loadInventory(vin) {
+      const seq = ++this.inventoryRequestSeq;
+      this.inventoryLoading = true;
+      this.inventoryError = '';
+      this.inventoryData = null;
+      getVehicleInventory(vin).then(response => {
+        if (seq !== this.inventoryRequestSeq || vin !== this.inventoryVin) return;
+        this.inventoryData = response.data || null;
+        this.inventoryLoading = false;
+      }).catch(error => {
+        if (seq !== this.inventoryRequestSeq || vin !== this.inventoryVin) return;
+        this.inventoryLoading = false;
+        this.inventoryError = (error && error.message) ? error.message : '设备清单加载失败';
+      });
+    },
+    /** 设备清单抽屉关闭：使在途请求失效 */
+    closeInventory() {
+      this.inventoryRequestSeq++;
+      this.inventoryOpen = false;
+      this.inventoryData = null;
+      this.inventoryError = '';
+    },
+    /** 查看全部：进入该 VIN 独立详情页（携带 tab） */
+    viewAllRelations(tab) {
+      const vin = this.relationVin || this.inventoryVin;
+      if (!vin) return;
+      this.$router.push({
+        path: '/iov/ota/vehicle-detail/' + vin,
+        query: { tab: tab || 'relation' }
+      });
+    },
+    activityStateLabel(state) {
+      return activityStateText(state);
+    },
+    activityStateType(state) {
+      return activityStateTagType(state);
+    },
+    taskPhaseLabel(phase) {
+      return taskPhaseText(phase);
+    },
+    taskStateLabel(state) {
+      return taskStateText(state);
+    },
+    vehicleTaskStatusLabel(status) {
+      return vehicleTaskStatusText(status);
+    },
+    partStatusLabel(association) {
+      return partStatusText(association);
+    },
+    partStatusType(association) {
+      return partStatusTagType(association);
+    },
+    partConfigWord(configWord) {
+      return partConfigWordText(configWord);
+    },
+    formatTime(value) {
+      return value ? this.parseTime(value, '{y}-{m}-{d} {h}:{i}:{s}') : '--';
     },
     /** 表单重置 */
     reset() {
@@ -366,5 +661,61 @@ export default {
 
 .drawer-row {
   margin-bottom: 15px;
+}
+
+.drawer-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  color: #f56c6c;
+  background: #fef0f0;
+  border-radius: 4px;
+}
+
+.drawer-tip {
+  margin-top: 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.ecu-title {
+  font-weight: bolder;
+}
+
+.ecu-meta {
+  margin-left: 12px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.part-block {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+.part-row {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* 配置字只读完整查看：超长/多行换行展示，不编辑 */
+.config-word {
+  margin: 0;
+  padding: 8px;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+
+.digest-cell {
+  word-break: break-all;
 }
 </style>

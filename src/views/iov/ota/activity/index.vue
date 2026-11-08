@@ -588,6 +588,11 @@ export default {
   created() {
     this.getActivityStateList();
     this.getList();
+    // CR-023：从车辆升级详情按 activityId 深链时自动打开目标活动
+    const activityId = this.$route.query.id;
+    if (activityId && this.$auth.hasPermi('ota:fota:activity:query')) {
+      this.$nextTick(() => this.handleUpdate({ id: Number(activityId) }));
+    }
   },
   methods: {
     getList() {

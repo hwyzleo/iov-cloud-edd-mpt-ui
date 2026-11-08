@@ -1147,6 +1147,11 @@ export default {
     this.getTaskStateList();
     this.getInstallConditionTypeList();
     this.getList();
+    // CR-023：从车辆升级详情按 taskId 深链时自动打开目标任务
+    const taskId = this.$route.query.id;
+    if (taskId && this.$auth.hasPermi('ota:fota:task:query')) {
+      this.$nextTick(() => this.handleUpdate({ id: Number(taskId) }));
+    }
   },
   methods: {
     /** 查询升级任务列表 */

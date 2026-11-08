@@ -224,6 +224,21 @@ export const dynamicRoutes = [
         meta: { title: '业务密钥开通批次阻塞治理' }
       }
     ]
+  },
+  {
+    // 升级车辆独立详情（IOV-OTA-DSN-CR-023）：无独立菜单，从车辆列表展开摘要“查看全部”深链
+    path: '/iov/ota/vehicle-detail/:vin',
+    component: Layout,
+    hidden: true,
+    permissions: ['ota:fota:vehicle:query'],
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/iov/ota/vehicle/detail'),
+        name: 'VehicleUpgradeDetail',
+        meta: { title: '车辆升级详情', activeMenu: '/iov/ota/vehicle' }
+      }
+    ]
   }
 ]
 

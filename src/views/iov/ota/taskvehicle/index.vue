@@ -436,7 +436,15 @@ export default {
     };
   },
   created() {
+    // CR-023：从车辆升级详情按 vehicleTaskId/vin 深链时定位并打开完整过程
+    const query = this.$route.query || {};
+    if (query.vin) {
+      this.queryParams.vin = query.vin;
+    }
     this.getList();
+    if (query.id && this.$auth.hasPermi('ota:fota:taskVehicle:query')) {
+      this.$nextTick(() => this.handleProcess({ id: Number(query.id) }));
+    }
   },
   methods: {
     /** 查询升级任务列表 */
