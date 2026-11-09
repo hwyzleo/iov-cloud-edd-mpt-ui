@@ -120,11 +120,13 @@ export function cancelTaskWithReason(taskId, data) {
 }
 
 // 排程升级任务
-export function scheduleTask(taskId, releaseTime) {
+export function scheduleTask(taskId, releaseTime, rowVersion) {
   return request({
     url: '/iov-ota/api/mpt/task/v1/' + taskId + '/action/schedule',
     method: 'post',
-    data: { releaseTime: releaseTime }
+    // CR-021：releaseTime 必须是带 offset 的 ISO-8601 绝对时刻（或历史 epoch 秒/毫秒整数），
+    // 后端 TaskScheduleRequest.releaseTime 为 Instant，拒绝无 offset 字符串。
+    data: { releaseTime: releaseTime, rowVersion: rowVersion }
   })
 }
 

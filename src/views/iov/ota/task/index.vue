@@ -719,7 +719,7 @@
             v-model="scheduleForm.releaseTime"
             type="datetime"
             placeholder="请选择计划发布时间"
-            value-format="yyyy-MM-ddTHH:mm:ss"
+            value-format="timestamp"
             format="yyyy-MM-dd HH:mm"
             :picker-options="scheduleTimePickerOptions"
             style="width: 100%;"
@@ -1023,6 +1023,7 @@ export default {
       scheduleForm: {
         taskId: undefined,
         releaseTime: undefined,
+        rowVersion: undefined,
         startTime: undefined
       },
       scheduleRules: {
@@ -1257,7 +1258,8 @@ export default {
       this.reset();
       const taskId = row.id || this.ids
       getTask(taskId).then(response => {
-        this.form = response.data;
+        // CR-021：后端 JSON 时间已切换为 ISO-8601，el-date-picker(timestamp) 需回填数字
+        this.form = this.toPickerTimeForm(response.data);
         this.parseTarget(this.form.target);
         getActivity(this.form.activityId).then(response2 => {
           const activity = response2.data;
@@ -1290,7 +1292,10 @@ export default {
       this.scheduleForm = {
         taskId: taskId,
         releaseTime: undefined,
-        startTime: row.startTime
+        // 乐观锁版本（历史行可能不返回，缺省时后端取库内当前版本）
+        rowVersion: row.rowVersion,
+        // 行数据时间为 ISO 字符串，选择器 disabledDate 需要 epoch 毫秒比较
+        startTime: toEpochMillis(row.startTime)
       }
       this.openSchedule = true
     },
@@ -1311,7 +1316,9 @@ export default {
     submitScheduleForm() {
       this.$refs["scheduleForm"].validate(valid => {
         if (valid) {
-          scheduleTask(this.scheduleForm.taskId, this.scheduleForm.releaseTime).then(response => {
+          // CR-021：选择器的 epoch 毫秒转带 offset 的 ISO-8601，不再发送无时区墙钟串
+          const releaseTime = toIsoDateTime(this.scheduleForm.releaseTime);
+          scheduleTask(this.scheduleForm.taskId, releaseTime, this.scheduleForm.rowVersion).then(response => {
             this.$modal.msgSuccess("排程成功");
             this.openSchedule = false;
             this.getList();
@@ -1386,13 +1393,13 @@ export default {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateTask(this.form).then(response => {
+            updateTask(this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addTask(this.form).then(response => {
+            addTask(this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -1510,7 +1517,7 @@ export default {
       this.$modal.confirm('是否确认提交该升级任务？').then(() => {
         this.$refs["form"].validate(valid => {
           if (valid && this.form.id !== undefined) {
-            submitTask(this.form.id, this.form).then(response => {
+            submitTask(this.form.id, this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("提交成功");
               this.open = false;
               this.getList();
@@ -1717,14 +1724,37 @@ export default {
     },
     /** 判断当前时间是否在任务开始时间之前 */
     isBeforeStartTime(startTime) {
-      if (!startTime) return false;
-      return Date.now() < startTime;
+      const start = toEpochMillis(startTime);
+      if (start === null) return false;
+      return Date.now() < start;
     },
     /** 判断当前时间是否在任务开始时间之后且在结束时间之前 */
     isAfterStartTimeBeforeEndTime(startTime, endTime) {
-      if (!startTime || !endTime) return false;
+      const start = toEpochMillis(startTime);
+      const end = toEpochMillis(endTime);
+      if (start === null || end === null) return false;
       const now = Date.now();
-      return now >= startTime && now < endTime;
+      return now >= start && now < end;
+    },
+    /**
+     * 回显转换：把后端返回的 ISO 时间（或历史 epoch 数字）转换为 el-date-picker
+     * value-format="timestamp" 所需的 epoch 毫秒，避免编辑弹窗时间控件空白。
+     */
+    toPickerTimeForm(data) {
+      const form = Object.assign({}, data || {});
+      form.startTime = toEpochMillis(form.startTime);
+      form.endTime = toEpochMillis(form.endTime);
+      return form;
+    },
+    /**
+     * 提交转换：把选择器的 epoch 毫秒还原为后端契约要求的 ISO-8601 绝对时刻（带偏移）。
+     */
+    buildTimePayload(source) {
+      const payload = Object.assign({}, source || {});
+      payload.startTime = toIsoDateTime(payload.startTime);
+      payload.endTime = toIsoDateTime(payload.endTime);
+      payload.releaseTime = toIsoDateTime(payload.releaseTime);
+      return payload;
     },
   }
 };

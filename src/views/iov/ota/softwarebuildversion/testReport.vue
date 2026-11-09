@@ -122,6 +122,7 @@ import {
   delTestReport,
   getSoftwareBuildVersion
 } from "@/api/iov/ota/softwarebuildversion";
+import {toIsoDateTime} from "@/utils/ruoyi";
 
 export default {
   name: "SoftwareBuildVersionTestReport",
@@ -191,7 +192,10 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          addTestReport(this.softwareBuildVersionId, this.form).then(response => {
+          // CR-021：出参时间使用 ISO-8601 绝对时刻（带偏移），不再发送 epoch 数字
+          const payload = Object.assign({}, this.form);
+          payload.testedAt = toIsoDateTime(payload.testedAt);
+          addTestReport(this.softwareBuildVersionId, payload).then(response => {
             this.$modal.msgSuccess("新增成功");
             this.open = false;
             this.getList();

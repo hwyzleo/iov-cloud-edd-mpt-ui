@@ -506,6 +506,7 @@ import {
 } from "@/api/iov/ota/activity";
 import {listArticle,} from "@/api/iov/ota/article";
 import {listBaseline} from "@/api/iov/ota/baseline";
+import {toEpochMillis, toIsoDateTime} from "@/utils/ruoyi";
 
 export default {
   name: "Activity",
@@ -714,23 +715,44 @@ export default {
       this.reset();
       const activityId = row.id || this.ids
       getActivity(activityId).then(response => {
-        this.form = response.data;
+        // CR-021：后端 JSON 时间已切换为 ISO-8601，el-date-picker(timestamp) 需回填数字
+        this.form = this.toPickerTimeForm(response.data);
         this.open = true;
       });
       this.title = "修改升级活动";
+    },
+    /**
+     * 回显转换：把后端返回的 ISO 时间（或历史 epoch 数字）转换为 el-date-picker
+     * value-format="timestamp" 所需的 epoch 毫秒，避免编辑弹窗时间控件空白。
+     */
+    toPickerTimeForm(data) {
+      const form = Object.assign({}, data || {});
+      form.startTime = toEpochMillis(form.startTime);
+      form.endTime = toEpochMillis(form.endTime);
+      return form;
+    },
+    /**
+     * 提交转换：把选择器的 epoch 毫秒还原为后端契约要求的 ISO-8601 绝对时刻（带偏移），
+     * 不再向外发送 epoch 数字（CR-021）。
+     */
+    buildTimePayload(source) {
+      const payload = Object.assign({}, source || {});
+      payload.startTime = toIsoDateTime(payload.startTime);
+      payload.endTime = toIsoDateTime(payload.endTime);
+      return payload;
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id !== undefined) {
-            updateActivity(this.form).then(response => {
+            updateActivity(this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addActivity(this.form).then(response => {
+            addActivity(this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -805,7 +827,7 @@ export default {
       this.$modal.confirm('是否确认提交该升级活动？').then(() => {
         this.$refs["form"].validate(valid => {
           if (valid && this.form.id !== undefined) {
-            submitActivity(this.form.id, this.form).then(response => {
+            submitActivity(this.form.id, this.buildTimePayload(this.form)).then(response => {
               this.$modal.msgSuccess("提交成功");
               this.open = false;
               this.getList();

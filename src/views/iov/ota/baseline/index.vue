@@ -218,6 +218,7 @@ import {
   listBaseline,
   updateBaseline
 } from "@/api/iov/ota/baseline";
+import {toEpochMillis, toIsoDateTime} from "@/utils/ruoyi";
 
 export default {
   name: "Baseline",
@@ -333,7 +334,10 @@ export default {
       this.reset();
       const baselineId = row.id || this.ids
       getBaseline(baselineId).then(response => {
-        this.form = response.data;
+        // CR-021：后端 JSON 时间已切换为 ISO-8601，el-date-picker(timestamp) 需回填数字
+        const form = Object.assign({}, response.data || {});
+        form.releaseDate = toEpochMillis(form.releaseDate);
+        this.form = form;
         this.open = true;
       });
       this.title = "修改基线";
@@ -348,14 +352,17 @@ export default {
     submitForm: function () {
       this.$refs["form"].validate(valid => {
         if (valid) {
+          // CR-021：出参时间使用 ISO-8601 绝对时刻（带偏移），不再发送 epoch 数字
+          const payload = Object.assign({}, this.form);
+          payload.releaseDate = toIsoDateTime(payload.releaseDate);
           if (this.form.id !== undefined) {
-            updateBaseline(this.form).then(response => {
+            updateBaseline(payload).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addBaseline(this.form).then(response => {
+            addBaseline(payload).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();

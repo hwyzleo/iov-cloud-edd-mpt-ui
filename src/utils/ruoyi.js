@@ -78,6 +78,73 @@ export function parseTspTime(time, pattern) {
   return parseTime(time, pattern)
 }
 
+/**
+ * 将后端时间值归一化为 epoch 毫秒（用于 el-date-picker 的 timestamp 值格式）。
+ *
+ * OTA 后端 JSON 时间契约已从 epoch-millis 切换为 ISO-8601（CR-021），响应中的
+ * java.util.Date / java.time 字段会返回 "2026-10-31T16:00:00.000+00:00" 这类字符串。
+ * el-date-picker 在 value-format="timestamp" 下只接受数字，直接回填 ISO 字符串会解析失败、
+ * 编辑弹窗显示为空，故回显与提交均需经过本工具转换。
+ *
+ * 支持：Date、13 位毫秒/10 位秒数字、数字字符串、带偏移 ISO（Z / +08:00）、
+ * 无偏移 ISO 或墙钟字符串（按浏览器本地时区解释）。无法解析返回 null（不返回 NaN）。
+ *
+ * @param {*} time 后端/组件时间值
+ * @returns {number|null} epoch 毫秒
+ */
+export function toEpochMillis(time) {
+  if (time === null || time === undefined || time === '') {
+    return null
+  }
+  if (time instanceof Date) {
+    const t = time.getTime()
+    return isNaN(t) ? null : t
+  }
+  if (typeof time === 'number') {
+    if (!isFinite(time)) return null
+    // 10 位为 epoch 秒，其余按毫秒处理
+    return Math.abs(time) < 1e11 ? Math.round(time * 1000) : Math.round(time)
+  }
+  if (typeof time === 'string') {
+    const s = time.trim()
+    if (s === '') return null
+    if (/^[0-9]+$/.test(s)) {
+      const n = parseInt(s, 10)
+      return s.length <= 10 ? n * 1000 : n
+    }
+    if (/(Z|[+-]\d{2}:?\d{2})$/.test(s)) {
+      // 带偏移：绝对时刻，直接解析
+      const t = new Date(s).getTime()
+      return isNaN(t) ? null : t
+    }
+    // 无偏移：按墙钟（浏览器时区）构造，避免 new Date 猜时区
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?(?:\.\d+)?$/.exec(s)
+    if (m) {
+      return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)).getTime()
+    }
+    const t = new Date(s).getTime()
+    return isNaN(t) ? null : t
+  }
+  return null
+}
+
+/**
+ * 将时间值转换为后端 JSON 契约要求的 ISO-8601 绝对时刻（带偏移，统一输出 UTC 'Z'）。
+ *
+ * 用于提交 java.util.Date / java.time 入参（CR-021：禁止新增 epoch-millis 写）。
+ * 无值返回 null。
+ *
+ * @param {*} time 组件/后端时间值
+ * @returns {string|null} 形如 2026-10-31T16:00:00.000Z
+ */
+export function toIsoDateTime(time) {
+  const ms = toEpochMillis(time)
+  if (ms === null) {
+    return null
+  }
+  return new Date(ms).toISOString()
+}
+
 // 表单重置
 export function resetForm(refName) {
   if (this.$refs[refName]) {
