@@ -287,7 +287,7 @@
         </el-form-item>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="任务阶段" prop="stage">
+            <el-form-item label="任务阶段" prop="phase">
               <el-select
                 v-model="form.phase"
                 placeholder="任务阶段"
@@ -336,8 +336,11 @@
                   :disabled="form.state === 2"
                 >
                   <el-button size="small" type="primary" :disabled="form.state === 2">选择文件</el-button>
-                  <div slot="tip" class="el-upload__tip">支持xlsx、xls、csv格式文件</div>
+                  <div slot="tip" class="el-upload__tip">支持xlsx、xls、csv格式文件（需包含VIN列，缺省取第1列）</div>
                 </el-upload>
+                <div style="margin-top: 5px; color: #909399; font-size: 12px;">
+                  已导入 {{ targetVinsList.length }} 个VIN
+                </div>
               </div>
               <!-- CONDITION模式：条件规则 -->
               <div v-if="targetMode === 'CONDITION'">
@@ -934,6 +937,8 @@ import {
 import {
   listInstallConditionType
 } from "@/api/iov/ota/installConditionType";
+import {toEpochMillis, toIsoDateTime} from "@/utils/ruoyi";
+import * as XLSX from 'xlsx';
 
 export default {
   name: "Task",
@@ -1095,6 +1100,33 @@ export default {
         ],
         endTime: [
           {required: true, message: "任务结束时间不能为空", trigger: "blur"}
+        ],
+        target: [
+          {
+            validator: (rule, value, callback) => {
+              const target = this.parseTargetObject(value);
+              const mode = target.mode || this.targetMode || 'LIST';
+              if (mode === 'CONDITION') {
+                const conditions = Array.isArray(target.conditions) ? target.conditions : [];
+                const incomplete = conditions.filter(c => !c || !c.field || !c.operator || !String(c.value || '').trim());
+                if (conditions.length === 0) {
+                  callback(new Error('请至少添加一条匹配条件'));
+                } else if (incomplete.length > 0) {
+                  callback(new Error('存在未填写完整的匹配条件（字段/操作符/值）'));
+                } else {
+                  callback();
+                }
+                return;
+              }
+              const vins = (Array.isArray(target.vins) ? target.vins : []).filter(v => v);
+              if (vins.length === 0) {
+                callback(new Error(mode === 'IMPORT' ? '请上传包含VIN的车辆清单文件' : '请至少输入一个VIN号'));
+              } else {
+                callback();
+              }
+            },
+            trigger: "change"
+          }
         ],
         upgradeMode: [
           {required: true, message: "升级模式不能为空", trigger: "blur"}
@@ -1441,6 +1473,14 @@ export default {
     },
     handleTargetModeChange(mode) {
       this.targetMode = mode;
+      // 模式切换时清理其他模式的残留数据，避免跨模式串用
+      if (mode === 'LIST') {
+        this.targetFileList = [];
+      } else {
+        this.targetFileList = [];
+        this.targetVins = '';
+        this.targetVinsList = [];
+      }
       this.updateTarget();
     },
     handleVinsChange(value) {
@@ -1453,7 +1493,74 @@ export default {
     },
     handleFileChange(file) {
       this.targetFileList = [file];
-      this.updateTarget();
+      this.parseVehicleFile(file);
+    },
+    /** 解析导入的车辆清单（xlsx/xls/csv），优先取表头含 VIN 的列，否则取第1列 */
+    parseVehicleFile(file) {
+      const raw = file && file.raw ? file.raw : file;
+      if (!raw) {
+        this.targetVinsList = [];
+        this.targetVins = '';
+        this.updateTarget();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, {header: 1, blankrows: false, defval: ''});
+          let columnIndex = 0;
+          let startRow = 0;
+          for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i] || [];
+            const vinColumn = cells.findIndex(cell => /vin|车辆识别/i.test(String(cell || '').trim()));
+            if (vinColumn >= 0) {
+              columnIndex = vinColumn;
+              startRow = i + 1;
+              break;
+            }
+          }
+          const vins = [];
+          for (let i = startRow; i < rows.length; i++) {
+            const cell = (rows[i] || [])[columnIndex];
+            const vin = String(cell == null ? '' : cell).trim();
+            // 过滤表头/空行：VIN 只允许字母数字
+            if (vin && /^[A-Za-z0-9]{6,64}$/.test(vin)) {
+              vins.push(vin);
+            }
+          }
+          this.targetVinsList = Array.from(new Set(vins));
+          this.targetVins = this.targetVinsList.join('\n');
+          this.updateTarget();
+          if (this.targetVinsList.length === 0) {
+            this.$modal.msgWarning('未从文件中解析到VIN，请检查文件内容');
+          }
+        } catch (err) {
+          this.targetVinsList = [];
+          this.targetVins = '';
+          this.updateTarget();
+          this.$modal.msgError('文件解析失败：' + (err && err.message ? err.message : err));
+        }
+      };
+      reader.onerror = () => {
+        this.$modal.msgError('文件读取失败');
+      };
+      reader.readAsArrayBuffer(raw);
+    },
+    /** 安全解析 form.target 字符串，返回对象（解析失败返回空对象） */
+    parseTargetObject(targetStr) {
+      if (!targetStr) {
+        return {};
+      }
+      if (typeof targetStr === 'object') {
+        return targetStr;
+      }
+      try {
+        return JSON.parse(targetStr) || {};
+      } catch (e) {
+        return {};
+      }
     },
     handleConditionChange() {
       this.updateTarget();
