@@ -6,7 +6,7 @@
           v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
-          style="width: 150px"
+          style="width: 160px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -15,7 +15,7 @@
           v-model="queryParams.orderState"
           placeholder="订单状态"
           clearable
-          style="width: 120px"
+          style="width: 140px"
         >
           <el-option
             v-for="dict in dict.type.iov_vehicle_sale_order_state"
@@ -25,7 +25,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="订单状态时间">
+      <!-- 后端按 created_at_business（下单时间）过滤 -->
+      <el-form-item label="下单时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
@@ -43,129 +44,86 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['completeVehicle:order:info:add']"
-        >新增
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['completeVehicle:order:info:edit']"
-        >修改
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['completeVehicle:order:info:export']"
-        >导出
-        </el-button>
-      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNo" fixed="left" width="160">
+    <el-table v-loading="loading" :data="orderList">
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="170"/>
+      <el-table-column label="订单类型" align="center" width="110">
         <template slot-scope="scope">
-          <span>{{ scope.row.orderNo }}</span>
+          <span>{{ dash(scope.row.orderTypeName || scope.row.orderType) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="订单类型" align="center" width="120">
+      <el-table-column label="订单来源" align="center" width="110">
         <template slot-scope="scope">
-          <span>{{ scope.row.orderTypeName || scope.row.orderType }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="订单来源" align="center" width="120">
-        <template slot-scope="scope">
-          <span>{{ scope.row.orderSourceName || scope.row.orderSource }}</span>
+          <span>{{ dash(scope.row.orderSourceName || scope.row.orderSource) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="订单状态" align="center" width="150">
         <template slot-scope="scope">
-          <el-tooltip :content="parseTime(scope.row.orderStateTime)" placement="top">
+          <el-tooltip :content="'状态时间：' + timeText(scope.row.orderStateTime)" placement="top">
             <span>{{ getVehicleSaleOrderStateLabel(scope.row.orderState) }}</span>
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="品牌" align="center" width="120">
+      <el-table-column label="下单时间" align="center" width="160">
         <template slot-scope="scope">
-          <span>{{ scope.row.brandName || scope.row.brandCode }}</span>
+          <span>{{ timeText(scope.row.orderTime || scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="销售车型" align="center" width="150">
+      <el-table-column label="锁单时间" align="center" width="160">
+        <template slot-scope="scope">
+          <span>{{ timeText(scope.row.lockTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="品牌" align="center" width="110">
+        <template slot-scope="scope">
+          <span>{{ dash(scope.row.brandName || scope.row.brandCode) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="销售车型" align="center" width="140">
         <template slot-scope="scope">
           <el-link
             type="primary"
             @click="openSaleModelTab(scope.row.saleModel)"
-          >{{ scope.row.saleModelName || scope.row.saleModel }}
+          >{{ dash(scope.row.saleModelName || scope.row.saleModel) }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="上牌城市" align="center" width="120">
+      <el-table-column label="上牌城市" align="center" width="110">
         <template slot-scope="scope">
-          <span>{{ scope.row.licenseCity }}</span>
+          <span>{{ dash(scope.row.licenseCity) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="生产配置" align="center" width="200">
         <template slot-scope="scope">
           <el-link
             type="primary"
-            @click="openModelConfigTab(scope.row.buildConfigCode)"
-          >{{ scope.row.buildConfigCode }}
+            @click="openModelConfigTab(scope.row.buildConfigCode || scope.row.configurationCode)"
+          >{{ dash(scope.row.buildConfigCode || scope.row.configurationCode) }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" align="center" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="200" align="center" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['completeVehicle:order:info:edit']"
-          >修改
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
             icon="el-icon-view"
-            @click="handleImages(scope.row)"
+            @click="handleDetail(scope.row)"
             v-hasPermi="['completeVehicle:order:info:query']"
           >详细
           </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-setting"
-            @click="handleConfig(scope.row)"
-            v-hasPermi="['completeVehicle:order:info:edit']"
-          >车型配置
-          </el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['completeVehicle:order:info:remove']"
-          >删除
-          </el-button>
+          <el-dropdown trigger="click" @command="command => handleMoreCommand(command, scope.row)">
+            <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="auditPass" v-hasPermi="['completeVehicle:order:info:audit']">审核通过</el-dropdown-item>
+              <el-dropdown-item command="auditReject" v-hasPermi="['completeVehicle:order:info:audit']">审核驳回</el-dropdown-item>
+              <el-dropdown-item command="lock" v-hasPermi="['completeVehicle:order:info:lock']">锁单</el-dropdown-item>
+              <el-dropdown-item command="close" v-hasPermi="['completeVehicle:order:info:close']">关闭订单</el-dropdown-item>
+              <el-dropdown-item command="delete" divided v-hasPermi="['completeVehicle:order:info:physicalDelete']">物理删除</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -178,49 +136,27 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改车辆销售订单配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="销售代码" prop="saleCode">
-          <el-input v-model="form.saleCode" :readonly="form.id !== undefined" placeholder="请输入销售代码"/>
+    <!-- 订单详情抽屉：时间线/支付/补款/退款/协议/交付 -->
+    <order-detail-drawer :order-id="detailOrderId" :visible.sync="detailVisible"/>
+
+    <!-- 审核驳回 -->
+    <el-dialog title="审核驳回" :visible.sync="rejectDialog.visible" width="480px" append-to-body>
+      <el-form ref="rejectForm" :model="rejectDialog" :rules="rejectRules" label-width="100px" size="small">
+        <el-form-item label="订单号">
+          <span>{{ rejectDialog.orderNo }}</span>
         </el-form-item>
-        <el-form-item label="销售车型名称" prop="modelName">
-          <el-input v-model="form.modelName" placeholder="请输入销售车型名称"/>
+        <el-form-item label="驳回分类" prop="rejectCategory">
+          <el-select v-model="rejectDialog.rejectCategory" placeholder="请选择驳回分类" style="width: 100%">
+            <el-option v-for="item in rejectCategories" :key="item" :label="item" :value="item"/>
+          </el-select>
         </el-form-item>
-        <el-form-item label="是否允许意向金">
-          <el-radio-group v-model="form.earnestMoney">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="意向金金额" v-show="form.earnestMoney">
-          <el-input v-model="form.earnestMoneyPrice" placeholder="请输入意向金金额"/>
-        </el-form-item>
-        <el-form-item label="是否允许定金">
-          <el-radio-group v-model="form.downPayment">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="定金金额" v-show="form.downPayment">
-          <el-input v-model="form.downPaymentPrice" placeholder="请输入定金金额"/>
-        </el-form-item>
-        <el-form-item label="是否启用">
-          <el-radio-group v-model="form.enable">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
+        <el-form-item label="驳回原因" prop="rejectReason">
+          <el-input v-model="rejectDialog.rejectReason" type="textarea" :rows="3" placeholder="请输入驳回原因"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button size="small" @click="rejectDialog.visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="rejectDialog.loading" @click="submitReject">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -229,177 +165,241 @@
 <script>
 import {
   listOrder,
-  getOrder,
-  delOrder,
   physicalDeleteOrder,
   auditPass,
   auditReject,
   lockOrder,
   closeOrder
-} from "@/api/otd/order/info";
+} from '@/api/otd/order/info'
+import OrderDetailDrawer from './detail'
 
 export default {
-  name: "VehicleSaleOrder",
+  name: 'VehicleSaleOrder',
+  components: { OrderDetailDrawer },
   dicts: ['iov_vehicle_sale_order_state'],
   data() {
     return {
       // 遮罩层
       loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
       total: 0,
       // 车辆销售订单表格数据
       orderList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
       // 日期范围
       dateRange: [],
+      // 详情抽屉
+      detailVisible: false,
+      detailOrderId: '',
+      // 驳回分类（后端存自由文本，此处提供常用选项）
+      rejectCategories: ['客户信息有误', '配置不可售', '支付异常', '重复下单', '其他'],
+      rejectDialog: {
+        visible: false,
+        loading: false,
+        orderId: '',
+        orderNo: '',
+        rejectCategory: '客户信息有误',
+        rejectReason: ''
+      },
+      rejectRules: {
+        rejectCategory: [{ required: true, message: '请选择驳回分类', trigger: 'change' }],
+        rejectReason: [{ required: true, message: '请输入驳回原因', trigger: 'blur' }]
+      },
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        orderNo: [
-          {required: true, message: "订单号不能为空", trigger: "blur"}
-        ]
+        pageSize: 10,
+        orderNo: undefined,
+        orderState: undefined
       }
-    };
+    }
   },
   created() {
-    this.getList();
+    this.getList()
   },
   methods: {
     /** 查询车辆销售订单列表 */
     getList() {
-      this.loading = true;
-      listOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.orderList = response.data.items;
-          this.total = response.data.total;
-          this.loading = false;
-        }
-      );
+      this.loading = true
+      listOrder(this.addDateRange(this.queryParams, this.dateRange))
+        .then(response => {
+          this.orderList = response.data.items || []
+          this.total = response.data.total || 0
+        })
+        .catch(() => {})
+        .then(() => {
+          this.loading = false
+        })
     },
     /** 获取车辆销售订单状态标签 */
     getVehicleSaleOrderStateLabel(vehicleSaleOrderState) {
+      if (vehicleSaleOrderState === null || vehicleSaleOrderState === undefined) {
+        return '-'
+      }
       if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_sale_order_state) {
-        return vehicleSaleOrderState;
+        return vehicleSaleOrderState
       }
       const item = this.dict.type.iov_vehicle_sale_order_state.find(
         dict => dict.value == vehicleSaleOrderState
       )
       return item ? item.label : vehicleSaleOrderState
     },
-    /** 跳转账号页 */
-    openAccountTab(accountId) {
-      const params = {accountId: accountId};
-      this.$tab.openPage("账号管理", "/tsp/account", params);
+    /** 空值占位 */
+    dash(value) {
+      if (value === null || value === undefined || value === '') {
+        return '-'
+      }
+      return value
+    },
+    /** 时间格式化 */
+    timeText(value) {
+      if (value === null || value === undefined || value === '') {
+        return '-'
+      }
+      return this.parseTime(value) || '-'
     },
     /** 跳转销售车型页 */
-    openSaleModelTab(saleCode) {
-      const params = {saleCode: saleCode};
-      this.$tab.openPage("销售车型管理", "/otd/saleModel", params);
+    openSaleModelTab(saleModelCode) {
+      if (!saleModelCode) {
+        return
+      }
+      const params = { saleCode: saleModelCode }
+      this.$tab.openPage('销售车型管理', '/otd/saleModel', params)
     },
     /** 跳转车型配置页 */
     openModelConfigTab(modelConfigCode) {
-      const params = {modelConfigCode: modelConfigCode};
-      this.$tab.openPage("车型配置管理", "/tsp/vmd/modelConfig", params);
+      if (!modelConfigCode) {
+        return
+      }
+      const params = { modelConfigCode: modelConfigCode }
+      this.$tab.openPage('车型配置管理', '/tsp/vmd/modelConfig', params)
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
+    /** 查看订单详情 */
+    handleDetail(row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法查询详情')
+        return
+      }
+      this.detailOrderId = row.orderId
+      this.detailVisible = true
     },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        orderNo: undefined
-      };
-      this.resetForm("form");
+    /** 更多操作（审核/锁单/关闭/删除） */
+    handleMoreCommand(command, row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法执行操作')
+        return
+      }
+      if (command === 'auditPass') {
+        this.handleAuditPass(row)
+      } else if (command === 'auditReject') {
+        this.handleAuditReject(row)
+      } else if (command === 'lock') {
+        this.handleLock(row)
+      } else if (command === 'close') {
+        this.handleClose(row)
+      } else if (command === 'delete') {
+        this.handleDelete(row)
+      }
+    },
+    /** 审核通过 */
+    handleAuditPass(row) {
+      this.$modal.confirm('是否确认审核通过订单"' + row.orderNo + '"？')
+        .then(() => auditPass(row.orderId))
+        .then(() => {
+          this.$modal.msgSuccess('审核通过')
+          this.getList()
+        })
+        .catch(() => {})
+    },
+    /** 审核驳回（需填驳回分类与原因） */
+    handleAuditReject(row) {
+      this.rejectDialog = {
+        visible: true,
+        loading: false,
+        orderId: row.orderId,
+        orderNo: row.orderNo,
+        rejectCategory: '客户信息有误',
+        rejectReason: ''
+      }
+    },
+    /** 提交驳回 */
+    submitReject() {
+      this.$refs['rejectForm'].validate(valid => {
+        if (!valid) {
+          return
+        }
+        this.rejectDialog.loading = true
+        auditReject(this.rejectDialog.orderId, this.rejectDialog.rejectCategory, this.rejectDialog.rejectReason)
+          .then(() => {
+            this.$modal.msgSuccess('已驳回')
+            this.rejectDialog.visible = false
+            this.getList()
+          })
+          .catch(() => {})
+          .then(() => {
+            this.rejectDialog.loading = false
+          })
+      })
+    },
+    /** 锁单 */
+    handleLock(row) {
+      this.$modal.confirm('锁单后生产配置将不可修改，是否确认锁单订单"' + row.orderNo + '"？')
+        .then(() => lockOrder(row.orderId))
+        .then(() => {
+          this.$modal.msgSuccess('锁单成功')
+          this.getList()
+        })
+        .catch(() => {})
+    },
+    /** 关闭订单 */
+    handleClose(row) {
+      this.$prompt('关闭后订单进入关闭状态，请输入关闭原因', '关闭订单 ' + row.orderNo, {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /\S+/,
+        inputErrorMessage: '关闭原因不能为空'
+      }).then(({ value }) => {
+        return closeOrder(row.orderId, value.trim())
+      }).then(() => {
+        this.$modal.msgSuccess('订单已关闭')
+        this.getList()
+      }).catch(() => {})
+    },
+    /** 物理删除订单 */
+    handleDelete(row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法删除')
+        return
+      }
+      this.$prompt('物理删除会清除订单及其全部关联数据且不可恢复，请输入删除原因', '确认物理删除订单 ' + row.orderNo, {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /\S+/,
+        inputErrorMessage: '删除原因不能为空'
+      }).then(({ value }) => {
+        return physicalDeleteOrder(row.orderId, {
+          orderNo: row.orderNo,
+          reason: value,
+          complianceFlag: true
+        })
+      }).then(response => {
+        const data = response.data || {}
+        this.$modal.msgSuccess('删除完成，共删除 ' + (data.totalDeletedRecords || 0) + ' 条记录')
+        this.getList()
+      }).catch(() => {})
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNum = 1;
-      this.getList();
+      this.queryParams.pageNum = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRange = [];
-      this.resetForm("queryForm");
-      this.handleQuery();
-    },
-    /** 多选框选中数据 */
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
-      this.single = selection.length != 1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加车辆销售订单";
-      this.form = {
-      };
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const orderId = row.id || this.ids
-      getOrder(orderId).then(response => {
-        this.form = response.data;
-        this.open = true;
-      });
-      this.title = "修改车辆销售订单";
-    },
-    /** 提交按钮 */
-    submitForm: function () {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateOrder(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addOrder(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      this.$modal.confirm('是否确认删除车辆销售订单号为"' + row.orderNo + '"的数据项？').then(function () {
-        return physicalDeleteOrder(row.orderId, {});
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('otd-vso/mpt/vso/v1/export', {
-        ...this.queryParams
-      }, `vehicle_sale_order_${new Date().getTime()}.xlsx`)
+      this.dateRange = []
+      this.resetForm('queryForm')
+      this.handleQuery()
     }
   }
-};
+}
 </script>

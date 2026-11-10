@@ -10,7 +10,8 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="锁单时间">
+      <!-- 后端按 created_at_business（下单时间）过滤 -->
+      <el-form-item label="下单时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
@@ -43,14 +44,27 @@
       </el-table-column>
       <el-table-column label="车型配置代码" align="center" width="200">
         <template slot-scope="scope">
-          {{ scope.row.modelConfigCode }}
+          {{ scope.row.modelConfigCode || scope.row.configurationCode || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="上牌城市" prop="licenseCity" width="170"/>
-      <el-table-column label="交付中心" prop="deliveryCenterName" width="250"/>
-      <el-table-column label="锁单时间" align="center" prop="lockTime" width="200">
+      <el-table-column label="上牌城市" prop="licenseCity" width="150"/>
+      <el-table-column label="交付门店" prop="deliveryStoreName" width="220"/>
+      <el-table-column label="预约时间" align="center" width="170">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lockTime) }}</span>
+          <span>{{ parseTime(scope.row.appointmentTime) || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预约状态" align="center" width="110">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.appointmentStatus" size="mini" type="success">
+            {{ appointmentStatusLabel(scope.row.appointmentStatus) }}
+          </el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="锁单时间" align="center" prop="lockTime" width="170">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.lockTime) || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" align="center" fixed="right" class-name="small-padding fixed-width">
@@ -60,7 +74,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleAssign(scope.row)"
-            v-hasPermi="['completeVehicle:order:assignVehicle:edit']"
+            v-hasPermi="['completeVehicle:order:assignDeliveryPerson:assign']"
           >分配交付人员
           </el-button>
         </template>
@@ -90,13 +104,20 @@
                 type="text"
                 icon="el-icon-edit"
                 @click="handleBinding(scope.row)"
-                v-hasPermi="['completeVehicle:order:assignVehicle:edit']"
+                v-hasPermi="['completeVehicle:order:assignDeliveryPerson:assign']"
               >绑定交付人员
               </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
+      <pagination
+        v-show="staffTotal>0"
+        :total="staffTotal"
+        :page.sync="queryDealershipStaffParams.pageNum"
+        :limit.sync="queryDealershipStaffParams.pageSize"
+        @pagination="getStaffList"
+      />
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancel">关 闭</el-button>
       </div>
@@ -134,6 +155,8 @@ export default {
       orderWithoutDeliveryPersonList: [],
       // 交付中心员工表格数据
       deliveryCenterStaffList: [],
+      // 交付中心员工总条数（后端组织服务远程分页）
+      staffTotal: 0,
       // 弹出层标题
       title: "",
       // 2级弹出层标题
@@ -217,14 +240,30 @@ export default {
     /** 分配交付人员操作 */
     handleAssign(row) {
       this.form.orderNo = row.orderNo;
-      this.queryDealershipStaffParams.dealershipCode = row.deliveryCenter;
+      // 交付中心/门店编码：后端字段为 deliveryStoreCode
+      this.queryDealershipStaffParams.dealershipCode = row.deliveryStoreCode;
+      this.queryDealershipStaffParams.pageNum = 1;
+      this.title = "交付门店-" + (row.deliveryStoreName || row.deliveryStoreCode || '') + " 员工";
+      this.open = true;
+      this.getStaffList();
+    },
+    /** 查询交付中心员工（后端远程分页，pageNum/pageSize 为独立 query 参数） */
+    getStaffList() {
       this.loadingDeliveryCenterStaff = true;
-      listDeliveryCenterStaff(this.queryDealershipStaffParams).then(response => {
-        this.deliveryCenterStaffList = response.data.items;
-        this.open = true;
-        this.loadingDeliveryCenterStaff = false;
-      });
-      this.title = "交付中心-" + row.deliveryCenterName + " 员工";
+      listDeliveryCenterStaff(this.queryDealershipStaffParams)
+        .then(response => {
+          this.deliveryCenterStaffList = response.data.items || [];
+          this.staffTotal = response.data.total || 0;
+        })
+        .catch(() => {})
+        .then(() => {
+          this.loadingDeliveryCenterStaff = false;
+        });
+    },
+    /** 交付预约状态标签（镜像后端 DeliveryAppointmentStatus） */
+    appointmentStatusLabel(status) {
+      const map = { booked: '已预约', completed: '已完成', cancelled: '已取消' };
+      return map[status] || status;
     },
     /** 绑定交付人员操作 */
     handleBinding(row) {
@@ -237,12 +276,6 @@ export default {
         this.open = false;
       }).catch(() => {
       });
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('otd-vso/mpt/vehicleSaleOrder/assignVehicle/export', {
-        ...this.queryParams
-      }, `assignable_order_${new Date().getTime()}.xlsx`)
     }
   }
 };

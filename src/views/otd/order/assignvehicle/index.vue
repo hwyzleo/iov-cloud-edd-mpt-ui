@@ -10,7 +10,8 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="锁单时间">
+      <!-- 后端按 created_at_business（下单时间）过滤 -->
+      <el-form-item label="下单时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
@@ -43,14 +44,14 @@
       </el-table-column>
       <el-table-column label="车型配置代码" align="center">
         <template slot-scope="scope">
-          {{ scope.row.modelConfigCode }}
+          {{ scope.row.modelConfigCode || scope.row.configurationCode || '-' }}
         </template>
       </el-table-column>
       <el-table-column label="上牌城市" prop="licenseCity" width="150"/>
-      <el-table-column label="交付中心" prop="deliveryCenter" width="150"/>
+      <el-table-column label="交付门店" prop="deliveryStoreName" width="180"/>
       <el-table-column label="锁单时间" align="center" prop="lockTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lockTime) }}</span>
+          <span>{{ parseTime(scope.row.lockTime) || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right" class-name="small-padding fixed-width">
@@ -60,7 +61,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleAssign(scope.row)"
-            v-hasPermi="['completeVehicle:order:assignVehicle:edit']"
+            v-hasPermi="['completeVehicle:order:assignVehicle:assign']"
           >分配车辆
           </el-button>
         </template>
@@ -92,7 +93,7 @@
                 type="text"
                 icon="el-icon-edit"
                 @click="handleBinding(scope.row)"
-                v-hasPermi="['completeVehicle:order:assignVehicle:edit']"
+                v-hasPermi="['completeVehicle:order:assignVehicle:assign']"
               >绑定车辆
               </el-button>
             </template>
@@ -221,10 +222,14 @@ export default {
     /** 分配车辆操作 */
     handleAssign(row) {
       this.form.orderNo = row.orderNo;
-      this.queryVehicleParams.modelConfigCode = row.modelConfigCode;
-      listAssignableVehicle(this.addDateRange(this.queryVehicleParams, this.dateRange)).then(response => {
+      // 按订单的车型配置筛选可分配车辆（VO 字段：modelConfigCode，回退 configurationCode）
+      this.queryVehicleParams.modelConfigCode = row.modelConfigCode || row.configurationCode;
+      this.loadingVehicle = true;
+      listAssignableVehicle(this.queryVehicleParams).then(response => {
         this.assignableVehicleList = response.data.items;
         this.open = true;
+        this.loadingVehicle = false;
+      }).catch(() => {
         this.loadingVehicle = false;
       });
       this.title = "可分配车辆";
@@ -240,12 +245,6 @@ export default {
         this.open = false;
       }).catch(() => {
       });
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('otd-vso/mpt/vehicleSaleOrder/assignVehicle/export', {
-        ...this.queryParams
-      }, `assignable_order_${new Date().getTime()}.xlsx`)
     }
   }
 };

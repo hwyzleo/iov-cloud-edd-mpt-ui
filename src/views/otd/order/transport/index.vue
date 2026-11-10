@@ -10,7 +10,8 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="锁单时间">
+      <!-- 后端按 created_at_business（下单时间）过滤 -->
+      <el-form-item label="下单时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
@@ -41,32 +42,44 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="下单时间" align="center" prop="lockTime" width="160">
+      <el-table-column label="下单时间" align="center" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.orderTime) }}</span>
+          <span>{{ parseTime(scope.row.orderTime || scope.row.createTime) || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="锁单时间" align="center" prop="lockTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lockTime) }}</span>
+          <span>{{ parseTime(scope.row.lockTime) || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="交付中心" prop="deliveryCenterName" width="180"/>
-      <el-table-column label="交付顾问" align="center" prop="deliveryPersonName" width="90"/>
-      <el-table-column label="交付车辆" align="center" prop="deliveryVin" width="170"/>
+      <el-table-column label="交付门店" prop="deliveryStoreName" width="180"/>
+      <el-table-column label="交付顾问" align="center" prop="deliveryPersonName" width="100">
+        <template slot-scope="scope">
+          <span>{{ scope.row.deliveryPersonName || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="交付车辆" align="center" prop="deliveryVin" width="170">
+        <template slot-scope="scope">
+          <span>{{ scope.row.deliveryVin || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="车型配置代码" align="center" width="200">
         <template slot-scope="scope">
-          {{ scope.row.modelConfigCode }}
+          {{ scope.row.modelConfigCode || scope.row.configurationCode || '-' }}
         </template>
       </el-table-column>
       <el-table-column label="上牌城市" align="center" prop="licenseCity" width="120"/>
-      <el-table-column label="发运申请人" align="center" prop="transportApplyPersonName" width="90"/>
-      <el-table-column label="发运申请时间" align="center" prop="transportApplyTime" width="160">
+      <el-table-column label="发运申请人" align="center" prop="transportApplyPersonName" width="110">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.transportApplyTime) }}</span>
+          <span>{{ scope.row.transportApplyPersonName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" align="center" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="发运申请时间" align="center" width="160">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.transportApplyTime) || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="220" align="center" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -74,8 +87,27 @@
             icon="el-icon-edit"
             @click="handleApply(scope.row)"
             v-if="scope.row.orderState === 450"
-            v-hasPermi="['completeVehicle:order:assignVehicle:edit']"
+            v-hasPermi="['completeVehicle:order:transport:apply']"
           >申请发运
+          </el-button>
+          <!-- 换绑/解绑仅允许在 ALLOCATION_VEHICLE(450) 状态执行 -->
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh"
+            @click="handleReassign(scope.row)"
+            v-if="scope.row.orderState === 450"
+            v-hasPermi="['completeVehicle:order:assignVehicle:reassign']"
+          >换绑 VIN
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-close"
+            @click="handleUnbind(scope.row)"
+            v-if="scope.row.orderState === 450"
+            v-hasPermi="['completeVehicle:order:assignVehicle:unbind']"
+          >解绑 VIN
           </el-button>
         </template>
       </el-table-column>
@@ -96,6 +128,10 @@ import {
   listTransportOrder,
   applyTransport
 } from "@/api/otd/order/transport";
+import {
+  reassignVehicle,
+  unbindVehicle
+} from "@/api/otd/order/assignvehicle";
 
 export default {
   name: "Transport",
@@ -210,11 +246,35 @@ export default {
       }).catch(() => {
       });
     },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('otd-vso/mpt/vehicleSaleOrder/assignVehicle/export', {
-        ...this.queryParams
-      }, `assignable_order_${new Date().getTime()}.xlsx`)
+    /** 换绑 VIN（仅 ALLOCATION_VEHICLE 状态，后端会校验新 VIN 可用性与占用） */
+    handleReassign(row) {
+      this.$prompt('请输入新的车架号（当前 VIN：' + (row.deliveryVin || '-') + '）', '换绑 VIN - ' + row.orderNo, {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /\S+/,
+        inputErrorMessage: '新 VIN 不能为空'
+      }).then(({ value }) => {
+        return reassignVehicle(row.orderNo, value.trim());
+      }).then(() => {
+        this.$modal.msgSuccess('换绑成功');
+        this.getList();
+      }).catch(() => {
+      });
+    },
+    /** 解绑 VIN（仅 ALLOCATION_VEHICLE 状态，解绑后订单释放车辆并回到待配车） */
+    handleUnbind(row) {
+      this.$prompt('解绑将释放当前车辆占用，请输入解绑原因', '解绑 VIN - ' + row.orderNo, {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /\S+/,
+        inputErrorMessage: '解绑原因不能为空'
+      }).then(({ value }) => {
+        return unbindVehicle(row.orderNo, value.trim());
+      }).then(() => {
+        this.$modal.msgSuccess('解绑成功');
+        this.getList();
+      }).catch(() => {
+      });
     }
   }
 };

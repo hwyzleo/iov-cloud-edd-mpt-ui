@@ -6,7 +6,7 @@
           v-model="queryParams.orderNo"
           placeholder="请输入订单号"
           clearable
-          style="width: 150px"
+          style="width: 160px"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
@@ -15,7 +15,7 @@
           v-model="queryParams.orderState"
           placeholder="订单状态"
           clearable
-          style="width: 120px"
+          style="width: 140px"
         >
           <el-option
             v-for="dict in dict.type.iov_vehicle_sale_order_state"
@@ -25,7 +25,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="订单状态时间">
+      <!-- 后端按 created_at_business（下单时间）过滤 -->
+      <el-form-item label="下单时间">
         <el-date-picker
           v-model="dateRange"
           style="width: 240px"
@@ -46,40 +47,66 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="orderChangeConfigList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="订单号" prop="orderNo" fixed="left" width="150"/>
+    <el-table v-loading="loading" :data="orderChangeConfigList">
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="170"/>
       <el-table-column label="订单状态" align="center" width="150">
         <template slot-scope="scope">
-          <el-tooltip :content="parseTime(scope.row.orderStateTime)" placement="top">
+          <el-tooltip :content="'状态时间：' + timeText(scope.row.orderStateTime)" placement="top">
             <span>{{ getVehicleSaleOrderStateLabel(scope.row.orderState) }}</span>
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="车型配置代码" align="center" width="180">
+      <el-table-column label="车型配置代码" align="center" width="200">
         <template slot-scope="scope">
           <el-link
             type="primary"
-            @click="openModelConfigTab(scope.row.modelConfigCode)"
-          >{{ scope.row.modelConfigCode }}</el-link>
+            @click="openModelConfigTab(scope.row.modelConfigCode || scope.row.configurationCode)"
+          >{{ dash(scope.row.modelConfigCode || scope.row.configurationCode) }}
+          </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="上牌城市" prop="licenseCity" width="150"/>
-      <el-table-column label="交付中心" prop="deliveryCenter" width="150"/>
+      <el-table-column label="销售车型" align="center" width="150">
+        <template slot-scope="scope">
+          <el-link
+            type="primary"
+            @click="openSaleModelTab(scope.row.saleModel)"
+          >{{ dash(scope.row.saleModelName || scope.row.saleModel) }}
+          </el-link>
+        </template>
+      </el-table-column>
+      <el-table-column label="上牌城市" align="center" width="130">
+        <template slot-scope="scope">
+          <span>{{ dash(scope.row.licenseCity) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="交付门店" prop="deliveryStoreName" width="180">
+        <template slot-scope="scope">
+          <span>{{ dash(scope.row.deliveryStoreName) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="锁单时间" align="center" prop="lockTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.lockTime) }}</span>
+          <span>{{ timeText(scope.row.lockTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" align="center" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="170" align="center" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleImages(scope.row)"
+            @click="handleModify(scope.row)"
+            v-if="canModify(scope.row)"
+            v-hasPermi="['completeVehicle:order:changeModel:edit']"
+          >改配
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
             v-hasPermi="['completeVehicle:order:changeModel:list']"
-          >修改配置
+          >查看详情
           </el-button>
         </template>
       </el-table-column>
@@ -93,647 +120,426 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改销售车型配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="销售代码" prop="saleCode">
-          <el-input v-model="form.saleCode" :readonly="form.id !== undefined" placeholder="请输入销售代码"/>
-        </el-form-item>
-        <el-form-item label="销售车型名称" prop="modelName">
-          <el-input v-model="form.modelName" placeholder="请输入销售车型名称"/>
-        </el-form-item>
-        <el-form-item label="是否允许意向金">
-          <el-radio-group v-model="form.earnestMoney">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="意向金金额" v-show="form.earnestMoney">
-          <el-input v-model="form.earnestMoneyPrice" placeholder="请输入意向金金额"/>
-        </el-form-item>
-        <el-form-item label="是否允许定金">
-          <el-radio-group v-model="form.downPayment">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="意向金金额" v-show="form.downPayment">
-          <el-input v-model="form.downPaymentPrice" placeholder="请输入定金金额"/>
-        </el-form-item>
-        <el-form-item label="是否启用">
-          <el-radio-group v-model="form.enable">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 图片维护对话框 -->
-    <el-dialog :title="title" :visible.sync="openImages" width="600px" append-to-body>
-      <el-form :model="form" label-width="120px">
-        <el-form-item label="销售代码">
-          <el-input v-model="form.saleCode" :disabled="true"/>
-        </el-form-item>
-        <el-form-item label="销售车型名称">
-          <el-input v-model="form.modelName" :disabled="true"/>
-        </el-form-item>
-        <el-form-item
-          v-for="(image, index) in form.images"
-          :label="'图片地址 ' + (index + 1)"
-          :key="index"
-        >
-          <el-row>
-            <el-input v-model="form.images[index]" @input="validateImage(index)">
-              <el-button slot="append" icon="el-icon-delete" @click="removeImage(index)"></el-button>
-            </el-input>
-          </el-row>
-          <el-row>
-            <el-image
-              v-if="isValidImage(form.images[index])"
-              :src="form.images[index]"
-              style="width: 100%;"
-              fit="cover"
+    <!-- 订单改配 -->
+    <el-dialog title="订单改配" :visible.sync="modify.visible" width="780px" append-to-body>
+      <div v-loading="modify.loading">
+        <el-form label-width="120px" size="small">
+          <el-form-item label="订单号">
+            <span>{{ modify.orderNo }}</span>
+            <span class="form-tip">当前配置：{{ dash(modify.currentConfigCode) }}</span>
+          </el-form-item>
+          <el-form-item label="当前总价">
+            <span>{{ moneyText(modify.currentTotal) }}</span>
+          </el-form-item>
+          <el-form-item label="目标车型版本" required>
+            <el-select
+              v-model="modify.variantCode"
+              placeholder="请选择目标版本"
+              style="width: 100%"
+              @change="handleVariantChange"
             >
-              <div slot="error" class="image-slot">
-                <i class="el-icon-picture-outline"></i>
+              <el-option
+                v-for="variant in variantList"
+                :key="variant.variantCode"
+                :label="variantLabel(variant)"
+                :value="variant.variantCode"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="选装配置" required>
+            <div v-loading="modify.loadingOptions" class="option-wrapper">
+              <el-empty v-if="!optionFamilies.length" description="当前版本无可选装配置" :image-size="60"/>
+              <div v-for="family in optionFamilies" :key="family.optionFamilyCode" class="option-family">
+                <div class="option-family-title">{{ family.optionFamilyName || family.optionFamilyCode }}</div>
+                <el-checkbox-group v-model="modify.optionCodes">
+                  <el-checkbox
+                    v-for="option in family.options || []"
+                    :key="option.optionCode"
+                    :label="option.optionCode"
+                  >
+                    {{ option.optionName || option.optionCode }}
+                    <span v-if="option.optionPrice !== null && option.optionPrice !== undefined" class="option-price">
+                      ￥{{ option.optionPrice }}
+                    </span>
+                  </el-checkbox>
+                </el-checkbox-group>
               </div>
-            </el-image>
-          </el-row>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-plus" @click="addImage">添加图片</el-button>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitImages">确 定</el-button>
-        <el-button @click="cancelImages">取 消</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 车型配置列表对话框 -->
-    <el-dialog :title="title" :visible.sync="openConfigList" width="1000px" append-to-body>
-      <el-form :model="form" label-width="120px">
-        <el-form-item label="销售代码">
-          <el-input v-model="form.saleCode" :disabled="true"/>
-        </el-form-item>
-        <el-form-item label="销售车型名称">
-          <el-input v-model="form.modelName" :disabled="true"/>
-        </el-form-item>
-      </el-form>
-      <div class="dialog-body" style="max-height: 50vh; overflow-y: auto;">
-        <el-table v-loading="loadingConfig" :data="saleModelConfigList">
-          <el-table-column label="配置类型" prop="type" width="100">
-            <template slot-scope="scope">
-              <span>{{ getSaleModelConfigTypeLabel(scope.row.type) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="类型代码" prop="typeCode" width="100"/>
-          <el-table-column label="类型名称" prop="typeName"/>
-          <el-table-column label="类型价格" prop="typePrice" width="100"/>
-          <el-table-column label="图片数量" align="center" width="80">
-            <template slot-scope="scope">
-              <span>{{ scope.row.typeImage.length }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="启用状态" align="center" width="80">
-            <template slot-scope="scope">
-              <el-switch
-                v-model="scope.row.enable"
-                :active-value="true"
-                :inactive-value="false"
-                disabled
-              ></el-switch>
-            </template>
-          </el-table-column>
-          <el-table-column label="排序" prop="sort" width="60"/>
-          <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
-            <template slot-scope="scope">
-              <el-button
-                size="mini"
-                type="text"
-                icon="el-icon-edit"
-                @click="handleUpdateConfig(scope.row)"
-                v-hasPermi="['completeVehicle:order:changeModel:list']"
-              >修改
-              </el-button>
-              <el-button
-                size="mini"
-                type="text"
-                icon="el-icon-delete"
-                @click="handleDeleteConfig(form.id, scope.row)"
-                v-hasPermi="['completeVehicle:order:changeModel:list']"
-              >删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="handleAddConfig(form.id)">新 增</el-button>
-        <el-button @click="cancelConfigList">关 闭</el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 车型配置对话框 -->
-    <el-dialog :title="title2" :visible.sync="openConfig" width="600px" append-to-body>
-      <el-form ref="formConfig" :model="formConfig" :rules="rulesConfig" label-width="100px">
-        <el-form-item label="销售代码">
-          <el-input v-model="formConfig.saleCode" :readonly="true"/>
-        </el-form-item>
-        <el-form-item label="配置类型">
-          <el-select
-            v-model="formConfig.type"
-            placeholder="配置类型"
-            clearable
-          >
-            <el-option
-              v-for="dict in dict.type.iov_sale_model_config_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
+            </div>
+          </el-form-item>
+          <el-form-item label="预计新总价">
+            <span>{{ moneyText(newTotal) }}</span>
+            <span class="form-tip" :class="diffClass">{{ diffText }}</span>
+          </el-form-item>
+          <el-form-item label="改配原因">
+            <el-input
+              v-model="modify.reason"
+              type="textarea"
+              :rows="3"
+              maxlength="256"
+              show-word-limit
+              placeholder="选填，最多 256 字"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="配置类型代码">
-          <el-input v-model="formConfig.typeCode"/>
-        </el-form-item>
-        <el-form-item label="配置类型名称">
-          <el-input v-model="formConfig.typeName"/>
-        </el-form-item>
-        <el-form-item label="配置类型价格">
-          <el-input v-model="formConfig.typePrice"/>
-        </el-form-item>
-        <el-form-item label="配置类型描述">
-          <el-input v-model="formConfig.typeDesc"/>
-        </el-form-item>
-        <el-form-item label="配置类型参数">
-          <el-input v-model="formConfig.typeParam"/>
-        </el-form-item>
-        <el-form-item
-          v-for="(image, index) in formConfig.typeImage"
-          :label="'图片地址 ' + (index + 1)"
-          :key="index"
-        >
-          <el-row>
-            <el-input v-model="formConfig.typeImage[index]" @input="validateConfigImage(index)">
-              <el-button slot="append" icon="el-icon-delete" @click="removeConfigImage(index)"></el-button>
-            </el-input>
-          </el-row>
-          <el-row>
-            <el-image
-              v-if="isValidImage(formConfig.typeImage[index])"
-              :src="formConfig.typeImage[index]"
-              style="width: 100%;"
-              fit="cover"
-            >
-              <div slot="error" class="image-slot">
-                <i class="el-icon-picture-outline"></i>
-              </div>
-            </el-image>
-          </el-row>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="el-icon-plus" @click="addConfigImage">添加图片</el-button>
-        </el-form-item>
-        <el-form-item label="是否启用">
-          <el-radio-group v-model="formConfig.enable">
-            <el-radio :label="true">是</el-radio>
-            <el-radio :label="false">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="formConfig.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-      </el-form>
+          </el-form-item>
+        </el-form>
+      </div>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitConfig">确 定</el-button>
-        <el-button @click="cancelConfig">取 消</el-button>
+        <el-button size="small" @click="modify.visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="modify.submitting" @click="submitModify">提交改配</el-button>
       </div>
     </el-dialog>
+
+    <order-detail-drawer :order-id="detailOrderId" :visible.sync="detailVisible"/>
   </div>
 </template>
 
 <script>
 import {
-  getSaleModel,
-  getSaleModelConfig,
-  listVehicleSaleOrder,
-  listSaleModelConfig,
-  updateSaleModel,
-  updateSaleModelImages,
-  updateSaleModelConfig, listModelConfigChangeableOrder
-} from "@/api/otd/order/changemodel";
+  listModelConfigChangeableOrder,
+  modifyOrderConfig
+} from '@/api/otd/order/changemodel'
+import { getOrderDetail } from '@/api/otd/order/detail'
+import { getVariantPolicy, getAvailableOptionPolicies } from '@/api/otd/salespolicy'
+import OrderDetailDrawer from '../info/detail'
 
 export default {
-  name: "OrderChangeConfig",
+  name: 'OrderChangeConfig',
+  components: { OrderDetailDrawer },
   dicts: ['iov_vehicle_sale_order_state'],
   data() {
     return {
       // 遮罩层
       loading: true,
-      // 遮罩层（车型配置）
-      loadingConfig: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
       total: 0,
-      // 可改配车辆销售订单表格数据
+      // 可改配订单列表
       orderChangeConfigList: [],
-      // 销售车型配置表格数据
-      saleModelConfigList: [],
-      // 弹出层标题
-      title: "",
-      // 2级弹出层标题
-      title2: "",
-      // 是否显示弹出层
-      open: false,
-      // 是否显示弹出层（图片维护）
-      openImages: false,
-      // 是否显示弹出层（车型配置列表）
-      openConfigList: false,
-      // 是否显示弹出层（车型配置）
-      openConfig: false,
-      menuExpand: false,
-      menuNodeAll: false,
       // 日期范围
       dateRange: [],
-      // 菜单列表
-      menuOptions: [],
+      // 详情抽屉
+      detailVisible: false,
+      detailOrderId: '',
+      // 可改配版本与选装
+      variantList: [],
+      optionFamilies: [],
+      // 改配表单
+      modify: {
+        visible: false,
+        loading: false,
+        loadingOptions: false,
+        submitting: false,
+        orderId: '',
+        orderNo: '',
+        saleModel: '',
+        modelCode: '',
+        currentConfigCode: '',
+        currentTotal: null,
+        variantCode: '',
+        optionCodes: [],
+        reason: ''
+      },
       // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        saleCode: undefined,
-        modelName: undefined
-      },
-      // 销售车型表单参数
-      form: {},
-      // 销售车型配置表单参数
-      formConfig: {},
-      defaultProps: {
-        children: "children",
-        label: "label"
-      },
-      // 销售车型表单校验
-      rules: {
-        saleCode: [
-          {required: true, message: "销售代码不能为空", trigger: "blur"}
-        ],
-        modelName: [
-          {required: true, message: "销售车型名称不能为空", trigger: "blur"}
-        ],
-        sort: [
-          {required: true, message: "排序不能为空", trigger: "blur"}
-        ]
-      },
-      // 销售车型配置表单校验
-      rulesConfig: {
-        saleCode: [
-          {required: true, message: "销售代码不能为空", trigger: "blur"}
-        ],
-        modelName: [
-          {required: true, message: "销售车型名称不能为空", trigger: "blur"}
-        ],
-        sort: [
-          {required: true, message: "排序不能为空", trigger: "blur"}
-        ]
+        orderNo: undefined,
+        orderState: undefined
       }
-    };
+    }
+  },
+  computed: {
+    // 目标配置总价 = 目标 Variant 价 + 已选选装价
+    newTotal() {
+      if (!this.modify.variantCode) {
+        return null
+      }
+      const variant = this.variantList.find(item => item.variantCode === this.modify.variantCode)
+      if (!variant) {
+        return null
+      }
+      let total = Number(variant.variantPrice || 0)
+      const priceMap = this.optionPriceMap()
+      this.modify.optionCodes.forEach(code => {
+        total += Number(priceMap[code] || 0)
+      })
+      return total
+    },
+    diffText() {
+      if (this.newTotal === null || this.modify.currentTotal === null || this.modify.currentTotal === undefined) {
+        return ''
+      }
+      const diff = Number((this.newTotal - Number(this.modify.currentTotal)).toFixed(2))
+      if (diff > 0) {
+        return '差额 ￥' + diff.toFixed(2) + '（提交后生成补款任务）'
+      }
+      if (diff < 0) {
+        return '差额 ￥' + diff.toFixed(2) + '（提交后生成退款任务）'
+      }
+      return '无价格差额'
+    },
+    diffClass() {
+      if (this.newTotal === null || this.modify.currentTotal === null || this.modify.currentTotal === undefined) {
+        return ''
+      }
+      const diff = Number((this.newTotal - Number(this.modify.currentTotal)).toFixed(2))
+      if (diff > 0) {
+        return 'diff-up'
+      }
+      if (diff < 0) {
+        return 'diff-down'
+      }
+      return ''
+    }
   },
   created() {
-    this.getList();
+    this.getList()
   },
   methods: {
     /** 查询可改配车辆销售订单列表 */
     getList() {
-      this.loading = true;
-      listModelConfigChangeableOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.orderChangeConfigList = response.data.items;
-          this.total = response.data.total;
-          this.loading = false;
-        }
-      );
+      this.loading = true
+      listModelConfigChangeableOrder(this.addDateRange(this.queryParams, this.dateRange))
+        .then(response => {
+          this.orderChangeConfigList = response.data.items || []
+          this.total = response.data.total || 0
+        })
+        .catch(() => {})
+        .then(() => {
+          this.loading = false
+        })
     },
     /** 获取车辆销售订单状态标签 */
     getVehicleSaleOrderStateLabel(vehicleSaleOrderState) {
+      if (vehicleSaleOrderState === null || vehicleSaleOrderState === undefined) {
+        return '-'
+      }
       if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_sale_order_state) {
-        return vehicleSaleOrderState;
+        return vehicleSaleOrderState
       }
       const item = this.dict.type.iov_vehicle_sale_order_state.find(
         dict => dict.value == vehicleSaleOrderState
       )
       return item ? item.label : vehicleSaleOrderState
     },
-    /** 跳转账号页 */
-    openAccountTab(accountId) {
-      const params = { accountId: accountId};
-      this.$tab.openPage("账号管理", "/tsp/account", params);
+    /** 后端允许改配的状态：210 意向金已付 / 300 定金待付 / 310 定金已付 */
+    canModify(row) {
+      return [210, 300, 310].indexOf(Number(row.orderState)) >= 0
     },
-    /** 跳转销售车型页 */
-    openSaleModelTab(saleCode) {
-      const params = { saleCode: saleCode};
-      this.$tab.openPage("销售车型管理", "/otd/saleModel", params);
-    },
-    /** 跳转车型配置页 */
-    openModelConfigTab(modelConfigCode) {
-      const params = { modelConfigCode: modelConfigCode};
-      this.$tab.openPage("车型配置管理", "/tsp/vmd/modelConfig", params);
-    },
-    /** 查询销售车型配置列表 */
-    getListConfig(saleModelId) {
-      this.loadingConfig = true;
-      listSaleModelConfig(saleModelId).then(response => {
-          this.saleModelConfigList = response.data.items;
-          this.loadingConfig = false;
-        }
-      );
-    },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    /** 取消按钮（维护图片） */
-    cancelImages() {
-      this.openImages = false;
-      this.reset();
-    },
-    /** 取消按钮（车型配置列表） */
-    cancelConfigList() {
-      this.openConfigList = false;
-      this.reset();
-    },
-    /** 取消按钮（车型配置） */
-    cancelConfig() {
-      this.openConfig = false;
-      this.resetConfig();
-    },
-    /** 表单重置 */
-    reset() {
-      if (this.$refs.menu != undefined) {
-        this.$refs.menu.setCheckedKeys([]);
+    dash(value) {
+      if (value === null || value === undefined || value === '') {
+        return '-'
       }
-      this.menuExpand = false,
-        this.menuNodeAll = false,
-        this.deptExpand = true,
-        this.deptNodeAll = false,
-        this.form = {
-          saleCode: undefined,
-          modelName: undefined,
-          earnestMoney: true,
-          earnestMoneyPrice: undefined,
-          downPayment: true,
-          downPaymentPrice: undefined,
-          enable: true,
-          sort: 99,
-          images: ['']
-        };
-      this.resetForm("form");
+      return value
     },
-    /** 表单重置 */
-    resetConfig() {
-      this.formConfig = {
-        id: undefined,
-        saleCode: undefined,
-        type: undefined,
-        typeCode: undefined,
-        typeName: undefined,
-        typePrice: true,
-        typeDesc: undefined,
-        typeParam: undefined,
-        enable: true,
-        sort: 99,
-        typeImage: ['']
-      };
-      this.resetForm("formConfig");
+    timeText(value) {
+      if (value === null || value === undefined || value === '') {
+        return '-'
+      }
+      return this.parseTime(value) || '-'
+    },
+    moneyText(value) {
+      if (value === null || value === undefined || value === '') {
+        return '-'
+      }
+      const amount = (typeof value === 'object') ? value.amount : value
+      if (amount === null || amount === undefined || amount === '') {
+        return '-'
+      }
+      const num = Number(amount)
+      if (isNaN(num)) {
+        return String(amount)
+      }
+      return '￥' + num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    variantLabel(variant) {
+      const price = (variant.variantPrice === null || variant.variantPrice === undefined)
+        ? '' : '  ￥' + variant.variantPrice
+      return (variant.variantName || variant.variantCode) + '（' + variant.variantCode + '）' + price
+    },
+    /** 选装代码 → 价格 */
+    optionPriceMap() {
+      const map = {}
+      this.optionFamilies.forEach(family => {
+        (family.options || []).forEach(option => {
+          map[option.optionCode] = option.optionPrice
+        })
+      })
+      return map
+    },
+    openSaleModelTab(saleModelCode) {
+      if (!saleModelCode) {
+        return
+      }
+      this.$tab.openPage('销售车型管理', '/otd/saleModel', { saleCode: saleModelCode })
+    },
+    openModelConfigTab(modelConfigCode) {
+      if (!modelConfigCode) {
+        return
+      }
+      this.$tab.openPage('车型配置管理', '/tsp/vmd/modelConfig', { modelConfigCode: modelConfigCode })
+    },
+    handleDetail(row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法查询详情')
+        return
+      }
+      this.detailOrderId = row.orderId
+      this.detailVisible = true
+    },
+    /** 打开改配对话框：先取订单详情回填当前配置 */
+    handleModify(row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法改配')
+        return
+      }
+      this.variantList = []
+      this.optionFamilies = []
+      this.modify = {
+        visible: true,
+        loading: true,
+        loadingOptions: false,
+        submitting: false,
+        orderId: row.orderId,
+        orderNo: row.orderNo,
+        saleModel: row.saleModel,
+        modelCode: '',
+        currentConfigCode: row.modelConfigCode || row.configurationCode || '',
+        currentTotal: null,
+        variantCode: '',
+        optionCodes: [],
+        reason: ''
+      }
+      getOrderDetail(row.orderId)
+        .then(response => {
+          const detail = response.data || {}
+          this.modify.saleModel = detail.saleModel || row.saleModel
+          this.modify.modelCode = detail.modelCode || ''
+          this.modify.currentConfigCode = detail.configurationCode || this.modify.currentConfigCode
+          const dealTotal = detail.orderAmount && detail.orderAmount.dealPriceTotal
+          this.modify.currentTotal = (dealTotal && typeof dealTotal === 'object') ? dealTotal.amount : dealTotal
+          this.modify.variantCode = detail.variantCode || ''
+          this.modify.optionCodes = detail.optionCodes || []
+          this.loadVariants()
+        })
+        .catch(() => {})
+        .then(() => {
+          this.modify.loading = false
+        })
+    },
+    /** 加载可售版本 */
+    loadVariants() {
+      if (!this.modify.saleModel) {
+        this.$modal.msgError('该订单缺少销售车型编码，无法加载可改配版本')
+        return
+      }
+      getVariantPolicy(this.modify.saleModel, this.modify.modelCode)
+        .then(response => {
+          this.variantList = response.data || []
+          if (this.modify.variantCode) {
+            this.loadOptions()
+          }
+        })
+        .catch(() => {})
+    },
+    handleVariantChange() {
+      this.modify.optionCodes = []
+      this.loadOptions()
+    },
+    /** 按版本加载可选装（按选装族分组） */
+    loadOptions() {
+      if (!this.modify.variantCode) {
+        this.optionFamilies = []
+        return
+      }
+      this.modify.loadingOptions = true
+      getAvailableOptionPolicies(this.modify.saleModel, this.modify.variantCode)
+        .then(response => {
+          this.optionFamilies = response.data || []
+        })
+        .catch(() => {})
+        .then(() => {
+          this.modify.loadingOptions = false
+        })
+    },
+    /** 提交改配 */
+    submitModify() {
+      if (!this.modify.variantCode) {
+        this.$modal.msgError('请选择目标车型版本')
+        return
+      }
+      if (!this.modify.optionCodes.length) {
+        this.$modal.msgError('请至少选择一个选装配置（后端要求 optionCodes 非空）')
+        return
+      }
+      this.modify.submitting = true
+      modifyOrderConfig(this.modify.orderId, {
+        variantCode: this.modify.variantCode,
+        optionCodes: this.modify.optionCodes,
+        reason: this.modify.reason
+      })
+        .then(() => {
+          this.$modal.msgSuccess('改配已提交' + (this.diffText ? '，' + this.diffText : ''))
+          this.modify.visible = false
+          this.getList()
+        })
+        .catch(() => {})
+        .then(() => {
+          this.modify.submitting = false
+        })
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNum = 1;
-      this.getList();
+      this.queryParams.pageNum = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRange = [];
-      this.resetForm("queryForm");
-      this.handleQuery();
-    },
-    /** 多选框选中数据 */
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
-      this.single = selection.length != 1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加销售车型";
-      this.form = {
-        earnestMoney: true,
-        earnestMoneyPrice: 5000,
-        downPayment: true,
-        downPaymentPrice: 5000,
-        enable: true,
-        sort: 99
-      };
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const saleModelId = row.id || this.ids
-      getSaleModel(saleModelId).then(response => {
-        this.form = response.data;
-        this.open = true;
-      });
-      this.title = "修改销售车型";
-    },
-    /** 图片维护操作 */
-    handleImages(row) {
-      this.reset();
-      getSaleModel(row.id).then(response => {
-        this.form = response.data;
-        this.openImages = true;
-      });
-      this.title = "图片维护";
-    },
-    /** 车型配置操作 */
-    handleConfig(row) {
-      this.reset();
-      getSaleModel(row.id).then(response => {
-        this.form = response.data;
-      });
-      listSaleModelConfig(row.id).then(response => {
-        this.saleModelConfigList = response.data.items;
-        this.loadingConfig = false;
-        this.openConfigList = true;
-      });
-      this.title = "车型配置";
-    },
-    /** 获取销售车型配置类型 */
-    getSaleModelConfigTypeLabel(saleModelConfigType) {
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_sale_model_config_type) {
-        return saleModelConfigType;
-      }
-      const item = this.dict.type.iov_sale_model_config_type.find(
-        dict => dict.value === saleModelConfigType
-      )
-      return item ? item.label : saleModelConfigType
-    },
-    /** 添加图片 */
-    addImage() {
-      this.form.images.push('')
-    },
-    /** 添加配置图片 */
-    addConfigImage() {
-      this.formConfig.typeImage.push('')
-    },
-    /** 删除图片 */
-    removeImage(index) {
-      this.form.images.splice(index, 1)
-    },
-    /** 删除配置图片 */
-    removeConfigImage(index) {
-      this.formConfig.typeImage.splice(index, 1)
-    },
-    /** 验证图片URL是否有效 */
-    validateImage(index) {
-      const url = this.form.images[index]
-      if (url && !this.isValidImage(url)) {
-        this.$message.warning('请输入有效的图片URL地址')
-      }
-    },
-    /** 验证配置图片URL是否有效 */
-    validateConfigImage(index) {
-      const url = this.formConfig.typeImage[index]
-      if (url && !this.isValidImage(url)) {
-        this.$message.warning('请输入有效的图片URL地址')
-      }
-    },
-    /** 检查URL是否是有效的图片地址 */
-    isValidImage(url) {
-      return url && url.match(/\.(jpeg|jpg|gif|png)$/i) != null
-    },
-    /** 新增车型配置按钮操作 */
-    handleAddConfig(saleModelId) {
-      this.resetConfig();
-      getSaleModel(saleModelId).then(response => {
-        this.formConfig = {
-          saleCode: response.data.saleCode,
-          typeImage: [''],
-          enable: true,
-          sort: 99
-        };
-        this.openConfig = true;
-      });
-      this.title2 = "添加销售车型配置";
-    },
-    /** 修改车型配置按钮操作 */
-    handleUpdateConfig(row) {
-      this.resetConfig();
-      const saleModelConfigId = row.id || this.ids
-      getSaleModelConfig(this.form.id, saleModelConfigId).then(response => {
-        this.formConfig = response.data;
-        this.openConfig = true;
-      });
-      this.title2 = "修改销售车型配置";
-    },
-    /** 提交按钮 */
-    submitForm: function () {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateSaleModel(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addSaleModel(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
-    },
-    /** 提交按钮（维护图片） */
-    submitImages: function () {
-      if (this.form.id !== undefined) {
-        updateSaleModelImages(this.form).then(response => {
-          this.$modal.msgSuccess("修改成功");
-          this.openImages = false;
-          this.getList();
-        });
-      }
-    },
-    /** 提交按钮（车型配置） */
-    submitConfig: function () {
-      this.$refs["formConfig"].validate(valid => {
-        if (valid) {
-          if (this.formConfig.id !== undefined) {
-            updateSaleModelConfig(this.form.id, this.formConfig).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.openConfig = false;
-              this.getListConfig(this.form.id);
-            });
-          } else {
-            addSaleModelConfig(this.form.id, this.formConfig).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.openConfig = false;
-              this.getListConfig(this.form.id);
-            });
-          }
-        }
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const vehicleSaleOrderIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除车辆销售订单ID为"' + vehicleSaleOrderIds + '"的数据项？').then(function () {
-        return delVehicleSaleOrder(vehicleSaleOrderIds);
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
-    },
-    /** 删除配置按钮操作 */
-    handleDeleteConfig(saleModelId, row) {
-      const saleModelConfigIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除销售车型配置ID为"' + saleModelConfigIds + '"的数据项？').then(function () {
-        console.log(saleModelId);
-        return delSaleModelConfig(saleModelId, saleModelConfigIds);
-      }).then(() => {
-        this.getListConfig(saleModelId);
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('otd-vso/mpt/saleModel/export', {
-        ...this.queryParams
-      }, `sale_model_${new Date().getTime()}.xlsx`)
+      this.dateRange = []
+      this.resetForm('queryForm')
+      this.handleQuery()
     }
   }
-};
+}
 </script>
+
+<style scoped>
+.form-tip {
+  margin-left: 12px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.option-wrapper {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 8px 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.option-family {
+  margin-bottom: 8px;
+}
+
+.option-family-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.option-price {
+  color: #909399;
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.diff-up {
+  color: #e6a23c;
+}
+
+.diff-down {
+  color: #67c23a;
+}
+</style>
