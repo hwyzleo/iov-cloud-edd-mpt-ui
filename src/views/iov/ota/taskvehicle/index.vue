@@ -10,6 +10,21 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="任务状态" prop="vehicleTaskStatus">
+        <el-select
+          v-model="queryParams.vehicleTaskStatus"
+          placeholder="全部"
+          clearable
+          style="width: 150px"
+        >
+          <el-option
+            v-for="item in vehicleTaskStatusOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
           v-model="dateRange"
@@ -47,28 +62,14 @@
       <el-table-column label="车辆" prop="vin" width="180"/>
       <el-table-column label="任务名称" prop="taskName"/>
       <el-table-column label="活动名称" prop="activityName"/>
-      <el-table-column label="任务状态" prop="state" width="120" align="center">
+      <el-table-column label="任务状态" prop="vehicleTaskStatus" width="120" align="center">
         <template slot-scope="scope">
-          <span v-if="scope.row.state === 0">等待下载</span>
-          <span v-else-if="scope.row.state === 1">开始下载</span>
-          <span v-else-if="scope.row.state === 3">继续下载</span>
-          <span v-else-if="scope.row.state === 5">结束下载</span>
-          <span v-else-if="scope.row.state === 7">预约升级</span>
-          <span v-else-if="scope.row.state === 9">自动升级</span>
-          <span v-else-if="scope.row.state === 10">安装检测</span>
-          <span v-else-if="scope.row.state === 11">开始安装</span>
-          <span v-else-if="scope.row.state === 15">结束安装</span>
-          <span v-else-if="scope.row.state === 17">开始回滚</span>
-          <span v-else-if="scope.row.state === 19">结束回滚</span>
-          <span v-else-if="scope.row.state === 21">升级立即重启</span>
-          <span v-else-if="scope.row.state === 22">升级用户重启</span>
-          <span v-else-if="scope.row.state === 23">回滚立即重启</span>
-          <span v-else-if="scope.row.state === 24">回滚用户重启</span>
-          <span v-else-if="scope.row.state === 25">写配置字</span>
-          <span v-else-if="scope.row.state === 26">回滚配置字</span>
-          <span v-else-if="scope.row.state === 90">升级失败</span>
-          <span v-else-if="scope.row.state === 91">升级超时</span>
-          <span v-else>未知</span>
+          <span>{{ vehicleTaskStatusLabel(scope.row.vehicleTaskStatus) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="结果代码" prop="resultCode" width="140" align="center" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <span>{{ scope.row.resultCode || '--' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -147,7 +148,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="任务状态">{{ processData.vehicleTask.vehicleTaskStatus || '-' }}</el-form-item>
+              <el-form-item label="任务状态">{{ vehicleTaskStatusLabel(processData.vehicleTask.vehicleTaskStatus) }}</el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="最后失败原因">
@@ -361,6 +362,7 @@ import {
   listTaskVehicleRetryLogs,
   listTaskVehicleUpgradeLogs
 } from "@/api/iov/ota/taskvehicle";
+import { VEHICLE_TASK_STATUS_OPTIONS, vehicleTaskStatusLabel } from "@/views/iov/ota/vehicle/constants";
 
 export default {
   name: "TaskVehicle",
@@ -428,6 +430,8 @@ export default {
         pageNum: 1,
         pageSize: 10
       },
+      // 任务状态筛选项（与 VehicleTaskStatus 枚举、列表展示字典同源）
+      vehicleTaskStatusOptions: VEHICLE_TASK_STATUS_OPTIONS,
       // 表单参数
       form: {},
       // 表单校验
@@ -447,6 +451,8 @@ export default {
     }
   },
   methods: {
+    /** CR-012 VehicleTask 状态枚举名转中文文案（旧 tb_task_vehicle.state 数值码已删除） */
+    vehicleTaskStatusLabel,
     /** 查询升级任务列表 */
     getList() {
       this.loading = true;
