@@ -79,7 +79,7 @@
           clearable
           style="width: 150px"
         >
-          <el-option label="简体中文" value="zh"/>
+          <el-option label="简体中文" value="zh-Hans"/>
           <el-option label="英语" value="en"/>
         </el-select>
       </el-form-item>
@@ -126,7 +126,7 @@
       </el-table-column>
       <el-table-column label="语言" prop="language" width="100" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.language === 'zh' ? '简体中文' : scope.row.language === 'en' ? '英语' : scope.row.language }}</span>
+          <span>{{ scope.row.language === 'zh-Hans' ? '简体中文' : scope.row.language === 'en' ? '英语' : scope.row.language }}</span>
         </template>
       </el-table-column>
       <el-table-column label="首次登录时间" align="center" prop="firstLoginTime" width="160">
