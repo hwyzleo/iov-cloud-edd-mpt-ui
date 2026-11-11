@@ -32,3 +32,46 @@ export function delImageObject(objectId) {
     method: 'delete'
   })
 }
+
+// 申请默认素材上传（EDD-OSS-DSN-CR-002 §10.3.1）
+export function generateDefaultAsset(data) {
+  return request({
+    url: '/edd-oss/api/mpt/image/v1/objects/uploads',
+    method: 'post',
+    data: data
+  })
+}
+
+// 完成默认素材上传（EDD-OSS-DSN-CR-002 §10.3.2）
+export function completeDefaultAsset(objectId) {
+  return request({
+    url: '/edd-oss/api/mpt/image/v1/objects/uploads/' + objectId + '/complete',
+    method: 'post'
+  })
+}
+
+// 编辑默认素材名称与备注（EDD-OSS-DSN-CR-002 §10.3.3）
+export function updateImageAsset(objectId, data) {
+  return request({
+    url: '/edd-oss/api/mpt/image/v1/objects/' + objectId + '/asset',
+    method: 'put',
+    data: data
+  })
+}
+
+// 创建替换任务（EDD-OSS-DSN-CR-002 §10.3.4）
+export function generateImageReplacement(objectId, data) {
+  return request({
+    url: '/edd-oss/api/mpt/image/v1/objects/' + objectId + '/replacements',
+    method: 'post',
+    data: data
+  })
+}
+
+// 完成或恢复替换（EDD-OSS-DSN-CR-002 §10.3.5）
+export function completeImageReplacement(objectId, replacementId) {
+  return request({
+    url: '/edd-oss/api/mpt/image/v1/objects/' + objectId + '/replacements/' + replacementId + '/complete',
+    method: 'post'
+  })
+}
