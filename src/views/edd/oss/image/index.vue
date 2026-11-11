@@ -1,0 +1,401 @@
+<template>
+  <div class="app-container">
+    <!-- 查询条件 -->
+    <el-form v-show="showSearch" ref="queryForm" :model="queryParams" size="small" :inline="true">
+      <el-form-item label="调用方服务" prop="serviceName">
+        <el-input
+          v-model="queryParams.serviceName"
+          placeholder="精确匹配，如 edd-account"
+          clearable
+          style="width: 190px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="默认待上传+已上传" clearable style="width: 180px">
+          <el-option
+            v-for="item in statusOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="图片类型" prop="contentType">
+        <el-select v-model="queryParams.contentType" placeholder="实际/声明 MIME" clearable style="width: 180px">
+          <el-option
+            v-for="item in contentTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="原始文件名" prop="originalFilename">
+        <el-input
+          v-model="queryParams.originalFilename"
+          placeholder="前缀匹配"
+          clearable
+          style="width: 180px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="对象键" prop="objectKey">
+        <el-input
+          v-model="queryParams.objectKey"
+          placeholder="精确匹配"
+          clearable
+          style="width: 220px"
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="上传时间">
+        <el-date-picker
+          v-model="dateRange"
+          style="width: 240px"
+          value-format="timestamp"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button
+          type="primary"
+          plain
+          icon="el-icon-refresh"
+          size="mini"
+          :loading="loading"
+          @click="getList"
+        >刷新</el-button>
+      </el-col>
+      <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
+    </el-row>
+
+    <el-alert
+      type="info"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+      title="默认展示「待上传 + 已上传」记录，显式筛选状态为「已删除」可查询历史记录；仅已上传对象可预览与删除，删除会同步删除 COS 对象并保留数据库记录。上传时间范围只匹配已完成上传的记录。"
+    />
+
+    <el-table v-loading="loading" :data="imageList">
+      <el-table-column label="原始文件名" prop="originalFilename" min-width="170" show-overflow-tooltip />
+      <el-table-column label="状态" width="110" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="imageStatusTagType(scope.row.status)" size="mini">{{ imageStatusLabel(scope.row.status) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="调用方服务" prop="serviceName" min-width="140" show-overflow-tooltip />
+      <el-table-column label="图片类型" width="110" align="center">
+        <template slot-scope="scope">
+          {{ imageContentTypeLabel(scope.row.actualContentType || scope.row.declaredContentType) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="大小" width="100" align="center">
+        <template slot-scope="scope">
+          {{ formatFileSize(scope.row.actualSize != null ? scope.row.actualSize : scope.row.declaredSize) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="对象键" prop="objectKey" min-width="260" show-overflow-tooltip />
+      <el-table-column label="上传时间" width="160" align="center">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.uploadTime) || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="凭证过期时间" width="180" align="center">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.expireTime) || '-' }}</span>
+          <el-tag v-if="isPendingExpired(scope.row)" type="danger" size="mini" style="margin-left: 4px">已过期</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" fixed="right" width="210" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button
+            v-hasPermi="['oss:image:query']"
+            size="mini"
+            type="text"
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
+          >详情</el-button>
+          <el-button
+            v-hasPermi="['oss:image:preview']"
+            size="mini"
+            type="text"
+            icon="el-icon-picture-outline"
+            :disabled="scope.row.status !== 'UPLOADED'"
+            @click="handlePreview(scope.row)"
+          >预览</el-button>
+          <el-button
+            v-hasPermi="['oss:image:remove']"
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            :disabled="scope.row.status !== 'UPLOADED'"
+            @click="handleDelete(scope.row)"
+          >删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination
+      v-show="total > 0"
+      :total="total"
+      :page.sync="queryParams.pageNum"
+      :limit.sync="queryParams.pageSize"
+      @pagination="getList"
+    />
+
+    <!-- 图片对象详情 -->
+    <el-dialog title="图片对象详情" :visible.sync="openDetail" width="900px" append-to-body>
+      <div v-loading="loadingDetail" style="max-height: 60vh; overflow-y: auto;">
+        <el-descriptions title="上传任务" :column="2" border size="small">
+          <el-descriptions-item label="对象标识">{{ detail.objectId }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="imageStatusTagType(detail.status)" size="mini">{{ imageStatusLabel(detail.status) }}</el-tag>
+            <el-tag v-if="isPendingExpired(detail)" type="danger" size="mini" style="margin-left: 4px">已过期</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="调用方服务">{{ detail.serviceName }}</el-descriptions-item>
+          <el-descriptions-item label="原始文件名">{{ detail.originalFilename }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div style="margin: 16px 0 8px; font-weight: bold;">存储信息</div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="存储提供方">{{ storageProviderLabel(detail.provider) }}</el-descriptions-item>
+          <el-descriptions-item label="地域">{{ detail.region }}</el-descriptions-item>
+          <el-descriptions-item label="存储桶">{{ detail.bucketName }}</el-descriptions-item>
+          <el-descriptions-item label="访问权限">{{ accessPermissionLabel(detail.permission) }}</el-descriptions-item>
+          <el-descriptions-item label="对象键" :span="2">{{ detail.objectKey }}</el-descriptions-item>
+          <el-descriptions-item label="访问地址" :span="2">
+            <template v-if="detail.accessUrl">
+              <el-link :href="detail.accessUrl" type="primary" target="_blank" rel="noopener noreferrer">{{ detail.accessUrl }}</el-link>
+              <el-button size="mini" type="text" icon="el-icon-document-copy" @click="copyText(detail.accessUrl)">复制</el-button>
+            </template>
+            <span v-else>-</span>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div style="margin: 16px 0 8px; font-weight: bold;">声明与核验信息</div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="声明类型">{{ imageContentTypeLabel(detail.declaredContentType) }}</el-descriptions-item>
+          <el-descriptions-item label="声明大小">{{ formatFileSize(detail.declaredSize) }}</el-descriptions-item>
+          <el-descriptions-item label="实际类型">{{ imageContentTypeLabel(detail.actualContentType) }}</el-descriptions-item>
+          <el-descriptions-item label="实际大小">{{ formatFileSize(detail.actualSize) }}</el-descriptions-item>
+          <el-descriptions-item label="ETag" :span="2">{{ detail.etag || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div style="margin: 16px 0 8px; font-weight: bold;">时间与审计</div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="凭证过期时间">{{ parseTime(detail.expireTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="上传完成时间">{{ parseTime(detail.uploadTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="删除时间">{{ parseTime(detail.deleteTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="删除人">{{ detail.deleteBy || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建方">{{ detail.createBy || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ parseTime(detail.createTime) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="修改方">{{ detail.modifyBy || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="修改时间">{{ parseTime(detail.modifyTime) || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openDetail = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 图片预览 -->
+    <el-dialog title="图片预览" :visible.sync="openPreview" width="760px" append-to-body>
+      <div v-loading="loadingPreview" style="text-align: center; min-height: 120px;">
+        <el-image
+          v-if="preview.previewUrl"
+          :src="preview.previewUrl"
+          :preview-src-list="[preview.previewUrl]"
+          fit="contain"
+          style="max-height: 60vh;"
+        >
+          <div slot="error" class="image-slot">
+            <i class="el-icon-picture-outline" style="font-size: 24px; color: #c0c4cc" />
+            <p style="color: #909399; margin: 8px 0 0;">图片加载失败或已被删除</p>
+          </div>
+        </el-image>
+        <el-empty v-else description="当前状态不可预览" :image-size="80" />
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openPreview = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { listImageObject, getImageObject, previewImageObject, delImageObject } from '@/api/edd/oss/image'
+import {
+  IMAGE_STATUS_OPTIONS,
+  IMAGE_CONTENT_TYPE_OPTIONS,
+  imageStatusLabel,
+  imageStatusTagType,
+  imageContentTypeLabel,
+  storageProviderLabel,
+  accessPermissionLabel,
+  formatFileSize
+} from '@/views/edd/oss/oss-options'
+
+export default {
+  name: 'OssImage',
+  data() {
+    return {
+      // 状态选项（后端缺省为 PENDING + UPLOADED）
+      statusOptions: IMAGE_STATUS_OPTIONS,
+      // 图片 MIME 白名单
+      contentTypeOptions: IMAGE_CONTENT_TYPE_OPTIONS,
+      // 遮罩层
+      loading: false,
+      // 详情遮罩层
+      loadingDetail: false,
+      // 预览遮罩层
+      loadingPreview: false,
+      // 显示搜索条件
+      showSearch: true,
+      // 总条数
+      total: 0,
+      // 图片对象列表
+      imageList: [],
+      // 详情数据
+      detail: {},
+      // 预览数据
+      preview: {},
+      // 上传时间范围（epoch 毫秒，value-format=timestamp）
+      dateRange: [],
+      // 查询参数
+      queryParams: {
+        pageNum: 1,
+        pageSize: 10,
+        serviceName: undefined,
+        status: undefined,
+        contentType: undefined,
+        objectKey: undefined,
+        originalFilename: undefined
+      },
+      // 对话框显示控制
+      openDetail: false,
+      openPreview: false
+    }
+  },
+  created() {
+    this.getList()
+  },
+  methods: {
+    imageStatusLabel,
+    imageStatusTagType,
+    imageContentTypeLabel,
+    storageProviderLabel,
+    accessPermissionLabel,
+    formatFileSize,
+    /** 查询图片对象列表 */
+    getList() {
+      this.loading = true
+      listImageObject(this.buildQueryParams()).then(response => {
+        const data = response.data || {}
+        this.imageList = Array.isArray(data.items) ? data.items : []
+        this.total = data.total || 0
+        this.loading = false
+      }).catch(() => {
+        this.loading = false
+      })
+    },
+    /** 组装查询参数：日期范围转换为后端要求的 epoch 毫秒上下界 */
+    buildQueryParams() {
+      const params = Object.assign({}, this.queryParams)
+      if (Array.isArray(this.dateRange) && this.dateRange.length === 2 && this.dateRange[0] && this.dateRange[1]) {
+        params.uploadBeginTime = Number(this.dateRange[0])
+        // 结束日期按当日 23:59:59.999 处理
+        params.uploadEndTime = Number(this.dateRange[1]) + 24 * 60 * 60 * 1000 - 1
+      }
+      return params
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.queryParams.pageNum = 1
+      this.getList()
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.dateRange = []
+      this.resetForm('queryForm')
+      this.handleQuery()
+    },
+    /** 待上传任务是否已过期（过期不产生 EXPIRED 状态，仅由时间体现） */
+    isPendingExpired(row) {
+      if (!row || row.status !== 'PENDING' || !row.expireTime) return false
+      return Number(row.expireTime) < Date.now()
+    },
+    /** 详情按钮操作 */
+    handleDetail(row) {
+      this.openDetail = true
+      this.loadingDetail = true
+      this.detail = {}
+      getImageObject(row.objectId).then(response => {
+        this.detail = response.data || {}
+        this.loadingDetail = false
+      }).catch(() => {
+        this.loadingDetail = false
+        this.openDetail = false
+      })
+    },
+    /** 预览按钮操作 */
+    handlePreview(row) {
+      this.openPreview = true
+      this.loadingPreview = true
+      this.preview = {}
+      previewImageObject(row.objectId).then(response => {
+        this.preview = response.data || {}
+        this.loadingPreview = false
+        if (!this.preview.previewable) {
+          this.$modal.msgWarning('当前状态不可预览（仅已上传对象提供预览地址）')
+        }
+      }).catch(() => {
+        this.loadingPreview = false
+        this.openPreview = false
+      })
+    },
+    /** 删除按钮操作（仅 UPLOADED 可执行，删除 COS 对象并保留数据库记录） */
+    handleDelete(row) {
+      this.$modal.confirm('确认删除图片「' + row.originalFilename + '」？该操作将先删除 COS 对象，再把记录置为已删除且不可恢复。')
+        .then(() => {
+          return delImageObject(row.objectId)
+        })
+        .then(() => {
+          this.$modal.msgSuccess('删除成功')
+          this.getList()
+        })
+        .catch(() => {})
+    },
+    /** 复制文本到剪贴板 */
+    copyText(text) {
+      if (!text) return
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$modal.msgSuccess('复制成功')
+        }).catch(() => {
+          this.$modal.msgError('复制失败')
+        })
+      } else {
+        const input = document.createElement('textarea')
+        input.value = text
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+        this.$modal.msgSuccess('复制成功')
+      }
+    }
+  }
+}
+</script>
