@@ -187,7 +187,7 @@
             size="mini"
             type="text"
             icon="el-icon-delete"
-            :disabled="scope.row.status !== 'UPLOADED'"
+            :disabled="scope.row.status === 'DELETED'"
             @click="handleDelete(scope.row)"
           >删除</el-button>
         </template>
@@ -242,7 +242,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="uploadOpen = false">取 消</el-button>
-        <el-button type="primary" :loading="uploading" @click="submitUpload">上 传</el-button>
+        <el-button type="primary" :loading="uploading" :disabled="!!uploadResultUrl" @click="submitUpload">上 传</el-button>
       </div>
     </el-dialog>
 
@@ -483,6 +483,8 @@ export default {
       uploadFile: null,
       uploadFileList: [],
       uploadResultUrl: null,
+      // 进行中的上传任务：失败后复用同一 objectId/预签名地址重试，避免产生多余 PENDING 记录
+      uploadTask: null,
       // 编辑素材
       editOpen: false,
       editing: false,
@@ -606,6 +608,7 @@ export default {
       this.uploadFile = null
       this.uploadFileList = []
       this.uploadResultUrl = null
+      this.uploadTask = null
       this.uploadOpen = true
       this.$nextTick(() => {
         if (this.$refs.uploadForm) this.$refs.uploadForm.clearValidate()
@@ -662,34 +665,79 @@ export default {
     },
     /** 提交默认素材上传：申请 → 浏览器直传 COS → 完成确认 */
     submitUpload() {
-      if (this.uploading) return
+      if (this.uploading || this.uploadResultUrl) return
       this.$refs.uploadForm.validate(valid => {
         if (!valid) return
         if (!this.validateSelectedFile(this.uploadFile)) return
         const file = this.uploadFile
         const contentType = this.resolveContentType(file)
         this.uploading = true
-        generateDefaultAsset({
-          assetName: this.uploadForm.assetName,
-          description: this.uploadForm.description,
-          originalFilename: file.name,
-          contentType: contentType,
-          size: file.size
-        }).then(response => {
-          const task = response.data || {}
-          return this.putObjectToCos(task.uploadUrl, file, task.contentType || contentType)
-            .then(() => completeDefaultAsset(task.objectId))
+        let stage = '申请上传'
+        const prepare = this.uploadTask && this.uploadTask.file === file
+          ? Promise.resolve(this.uploadTask)
+          : generateDefaultAsset({
+            assetName: this.uploadForm.assetName,
+            description: this.uploadForm.description,
+            originalFilename: file.name,
+            contentType: contentType,
+            size: file.size
+          }).then(response => {
+            const data = response.data || {}
+            const task = {
+              objectId: data.objectId,
+              uploadUrl: data.uploadUrl,
+              contentType: data.contentType || contentType,
+              uploaded: false,
+              file: file
+            }
+            this.uploadTask = task
+            return task
+          })
+        prepare.then(task => {
+          if (!task.uploaded) {
+            stage = '图片直传 COS'
+          }
+          const upload = task.uploaded
+            ? Promise.resolve()
+            : this.putObjectToCos(task.uploadUrl, file, task.contentType).then(() => {
+              task.uploaded = true
+            })
+          return upload.then(() => {
+            stage = '完成确认'
+            return completeDefaultAsset(task.objectId)
+          })
         }).then(response => {
           const data = response.data || {}
           this.uploadResultUrl = data.accessUrl || null
           this.uploading = false
+          this.uploadTask = null
+          this.uploadFile = null
+          this.uploadFileList = []
+          if (this.$refs.uploadFile) this.$refs.uploadFile.clearFiles()
           this.$modal.msgSuccess('素材上传成功')
           this.getList()
-        }).catch(() => {
-          // 申请、直传或完成确认失败：不伪造成功状态，保留对话框允许重试
+        }).catch(error => {
+          // 申请、直传或完成确认失败：不伪造成功状态，保留任务与文件允许重试
           this.uploading = false
+          this.notifyStageFailure(stage, error)
         })
       })
+    },
+    /**
+     * 分阶段提示失败原因：浏览器直传 COS 使用 fetch，不经平台 axios 拦截器，
+     * 必须在此显式提示，否则用户只会看到无响应。
+     */
+    notifyStageFailure(stage, error) {
+      console.error('[OSS] ' + stage + ' 失败', error)
+      if (stage === '图片直传 COS') {
+        const detail = error && error.message ? error.message : '未知错误'
+        this.$modal.msgError('图片直传 COS 失败（' + detail + '）。请用浏览器开发者工具 Network 查看 OPTIONS/PUT 请求：多为 Bucket CORS 未允许当前站点执行 PUT 或未允许 Content-Type 请求头，也可能是预签名地址已过期或图片超出限制。')
+        return
+      }
+      // 申请与完成确认走平台 axios 拦截器，HTTP 错误已由拦截器提示，避免重复弹框
+      if (!(error && error.response)) {
+        this.$modal.msgError(stage + '失败：' + (error && error.message ? error.message : '网络或未知错误'))
+      }
     },
     /** 浏览器直传 COS：独立 fetch，仅携带 Content-Type，不携带后台凭证或 Cookie */
     putObjectToCos(uploadUrl, file, contentType) {
@@ -700,7 +748,7 @@ export default {
         credentials: 'omit'
       }).then(response => {
         if (!response.ok) {
-          throw new Error('COS upload failed with status ' + response.status)
+          throw new Error('COS 返回 HTTP ' + response.status)
         }
         return response
       })
@@ -770,6 +818,7 @@ export default {
       const contentType = this.resolveContentType(file)
       const target = this.replaceTarget
       this.replacing = true
+      let stage = '申请替换任务'
       let task = this.replaceTask
       const prepare = task && task.objectId === target.objectId && task.file === file
         ? Promise.resolve(task)
@@ -791,27 +840,37 @@ export default {
           return task
         })
       prepare.then(current => {
+        if (!current.uploaded) {
+          stage = '图片直传 COS'
+        }
         const upload = current.uploaded
           ? Promise.resolve()
           : this.putObjectToCos(current.uploadUrl, file, current.contentType).then(() => {
             current.uploaded = true
           })
-        return upload.then(() => completeImageReplacement(current.objectId, current.replacementId))
+        return upload.then(() => {
+          stage = '完成替换'
+          return completeImageReplacement(current.objectId, current.replacementId)
+        })
       }).then(() => {
         this.$modal.msgSuccess('替换成功，公开 URL 保持不变')
         this.replacing = false
         this.replaceOpen = false
         this.replaceTask = null
         this.getList()
-      }).catch(() => {
+      }).catch(error => {
         // 失败时保留任务与文件，允许使用同一 replacementId 重试
         this.replacing = false
+        this.notifyStageFailure(stage, error)
       })
     },
-    /** 删除按钮操作（仅 UPLOADED 可执行，删除 COS 对象并保留数据库记录） */
+    /** 删除按钮操作：UPLOADED 删除 COS 对象；PENDING 清理未完成确认的记录（BUGFIX-001） */
     handleDelete(row) {
       const label = row.assetName || row.originalFilename
-      this.$modal.confirm('确认删除素材「' + label + '」？该操作将先删除 COS 对象，再把记录置为已删除且不可恢复；替换进行中的素材不允许删除。')
+      const message = row.status === 'PENDING'
+        ? '确认清理「' + label + '」？该记录尚未完成上传，将尝试删除 COS 对象并把记录置为已删除且不可恢复；之后可重新上传。'
+        : '确认删除素材「' + label + '」？该操作将先删除 COS 对象，再把记录置为已删除且不可恢复；替换进行中的素材不允许删除。'
+      this.$modal.confirm(message)
         .then(() => {
           return delImageObject(row.objectId)
         })
