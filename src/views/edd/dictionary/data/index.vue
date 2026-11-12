@@ -194,10 +194,11 @@ export default {
     },
     getList() {
       this.loading = true;
-      getDictionaryData(this.dictionaryInfo.id).then(response => {
-        if (response.data) {
-          this.dataList = response.data;
-          this.total = response.data.length;
+      getDictionaryData(this.dictionaryInfo.id, this.queryParams).then(response => {
+        const page = response.data;
+        if (page && Array.isArray(page.items)) {
+          this.dataList = page.items;
+          this.total = page.total || 0;
         } else {
           this.dataList = [];
           this.total = 0;

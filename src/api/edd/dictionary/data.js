@@ -1,9 +1,10 @@
 import request from '@/utils/request'
 
-export function getDictionaryData(dictionaryId) {
+export function getDictionaryData(dictionaryId, query) {
   return request({
     url: '/edd-dict/api/mpt/dictionary/v1/' + dictionaryId + '/data',
-    method: 'get'
+    method: 'get',
+    params: query
   })
 }
 
