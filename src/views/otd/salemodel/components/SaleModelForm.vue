@@ -458,7 +458,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '~@/assets/styles/form-section.scss';
+
 .image-field {
   display: flex;
   align-items: center;
@@ -619,9 +621,5 @@ export default {
   color: #909399;
   font-size: 12px;
   line-height: 18px;
-}
-
-::v-deep .el-divider--horizontal {
-  margin: 8px 0 18px;
 }
 </style>

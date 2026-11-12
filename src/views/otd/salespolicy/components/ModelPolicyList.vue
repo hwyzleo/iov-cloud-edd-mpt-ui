@@ -91,11 +91,13 @@
     <el-dialog
       :title="dialogTitle"
       :visible.sync="dialogOpen"
-      width="600px"
+      width="960px"
       append-to-body
+      class="scrollbar"
+      :close-on-click-modal="false"
       @open="resetImageUploadState"
     >
-      <el-form ref="policyForm" :model="policyForm" :rules="policyRules" label-width="120px">
+      <el-form ref="policyForm" :model="policyForm" :rules="policyRules" label-width="110px" size="small">
         <el-alert
           title="提示"
           type="info"
@@ -107,40 +109,85 @@
             营销信息将在提交时更新，GET接口不再返回这些字段。
           </template>
         </el-alert>
-        <el-form-item label="车型" prop="modelCode">
-          <el-input v-model="policyForm.modelCode" disabled />
-        </el-form-item>
-        <el-form-item label="销售状态" prop="saleStatus">
-          <el-radio-group v-model="policyForm.saleStatus">
-            <el-radio label="active">在售</el-radio>
-            <el-radio label="off_shelf">下架</el-radio>
-            <el-radio label="coming_soon">即将上市</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="营销名称">
-          <el-input v-model="policyForm.marketingName" placeholder="请输入营销名称"/>
-        </el-form-item>
+
+        <el-divider content-position="left">基本信息</el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="车型" prop="modelCode">
+              <el-input v-model="policyForm.modelCode" disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="销售状态" prop="saleStatus">
+              <el-radio-group v-model="policyForm.saleStatus">
+                <el-radio label="active">在售</el-radio>
+                <el-radio label="off_shelf">下架</el-radio>
+                <el-radio label="coming_soon">即将上市</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">营销信息</el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="营销名称">
+              <el-input v-model="policyForm.marketingName" placeholder="请输入营销名称"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序权重">
+              <el-input-number
+                v-model="policyForm.sortWeight"
+                controls-position="right"
+                :min="0"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="营销图片">
           <MarketingImageField ref="marketingImageField" v-model="policyForm.marketingImage"/>
         </el-form-item>
         <el-form-item label="营销文案">
-          <el-input v-model="policyForm.marketingCopy" type="textarea" placeholder="请输入营销文案"/>
+          <el-input v-model="policyForm.marketingCopy" type="textarea" :rows="3" placeholder="请输入营销文案"/>
         </el-form-item>
-        <el-form-item label="可售区域">
-          <el-input v-model="policyForm.availableRegions" placeholder="请输入可售区域，多个用逗号分隔"/>
-        </el-form-item>
-        <el-form-item label="销售渠道">
-          <el-input v-model="policyForm.channels" placeholder="请输入销售渠道，多个用逗号分隔"/>
-        </el-form-item>
-        <el-form-item label="排序权重">
-          <el-input-number v-model="policyForm.sortWeight" controls-position="right" :min="0"/>
-        </el-form-item>
-        <el-form-item label="生效时间">
-          <el-date-picker v-model="policyForm.effectiveFrom" type="datetime" placeholder="请选择生效时间"/>
-        </el-form-item>
-        <el-form-item label="失效时间">
-          <el-date-picker v-model="policyForm.effectiveTo" type="datetime" placeholder="请选择失效时间"/>
-        </el-form-item>
+
+        <el-divider content-position="left">销售范围与有效期</el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="可售区域">
+              <el-input v-model="policyForm.availableRegions" placeholder="请输入可售区域，多个用逗号分隔"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="销售渠道">
+              <el-input v-model="policyForm.channels" placeholder="请输入销售渠道，多个用逗号分隔"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="生效时间">
+              <el-date-picker
+                v-model="policyForm.effectiveFrom"
+                type="datetime"
+                placeholder="请选择生效时间"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="失效时间">
+              <el-date-picker
+                v-model="policyForm.effectiveTo"
+                type="datetime"
+                placeholder="请选择失效时间"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitPolicyForm">确 定</el-button>
@@ -317,3 +364,7 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import '~@/assets/styles/form-section.scss';
+</style>

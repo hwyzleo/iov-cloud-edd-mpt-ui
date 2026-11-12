@@ -1,45 +1,104 @@
 <template>
-  <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body @close="handleClose">
-    <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-      <el-form-item label="选项值" prop="optionCode">
-        <el-input v-model="form.optionCode" :readonly="form.id !== undefined" placeholder="请输入选项值"/>
-      </el-form-item>
-      <el-form-item label="销售状态" prop="saleStatus">
-        <el-select v-model="form.saleStatus" placeholder="请选择销售状态">
-          <el-option label="上架" value="active"/>
-          <el-option label="下架" value="off_shelf"/>
-          <el-option label="即将上市" value="coming_soon"/>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="选项值价格" prop="optionPrice">
-        <el-input-number v-model="form.optionPrice" :precision="2" :min="0" controls-position="right"/>
-      </el-form-item>
-      <el-form-item label="可售区域">
-        <el-input v-model="form.availableRegions" placeholder="请输入可售区域，多个用逗号分隔"/>
-      </el-form-item>
-      <el-form-item label="销售渠道">
-        <el-input v-model="form.channels" placeholder="请输入销售渠道，多个用逗号分隔"/>
-      </el-form-item>
-      <el-form-item label="捆绑销售">
-        <el-input v-model="form.bundleWith" placeholder="请输入捆绑销售选项代码，多个用逗号分隔"/>
-      </el-form-item>
-      <el-form-item label="互斥选项">
-        <el-input v-model="form.mutexWith" placeholder="请输入互斥选项代码，多个用逗号分隔"/>
-      </el-form-item>
+  <el-dialog
+    :title="title"
+    :visible.sync="dialogVisible"
+    width="960px"
+    append-to-body
+    class="scrollbar"
+    :close-on-click-modal="false"
+    @close="handleClose"
+  >
+    <el-form ref="form" :model="form" :rules="rules" label-width="110px" size="small">
+      <el-divider content-position="left">基本信息</el-divider>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="选项值" prop="optionCode">
+            <el-input v-model="form.optionCode" :readonly="form.id !== undefined" placeholder="请输入选项值"/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="销售状态" prop="saleStatus">
+            <el-select v-model="form.saleStatus" placeholder="请选择销售状态" style="width: 100%">
+              <el-option label="上架" value="active"/>
+              <el-option label="下架" value="off_shelf"/>
+              <el-option label="即将上市" value="coming_soon"/>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="选项值价格" prop="optionPrice">
+            <el-input-number
+              v-model="form.optionPrice"
+              :precision="2"
+              :min="0"
+              controls-position="right"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="排序权重">
+            <el-input-number v-model="form.sortWeight" controls-position="right" :min="0" style="width: 100%"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="生效时间">
+            <el-date-picker
+              v-model="form.effectiveFrom"
+              type="datetime"
+              placeholder="请选择生效时间"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="失效时间">
+            <el-date-picker
+              v-model="form.effectiveTo"
+              type="datetime"
+              placeholder="请选择失效时间"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-divider content-position="left">销售范围与互斥</el-divider>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="可售区域">
+            <el-input v-model="form.availableRegions" placeholder="请输入可售区域，多个用逗号分隔"/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="销售渠道">
+            <el-input v-model="form.channels" placeholder="请输入销售渠道，多个用逗号分隔"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="捆绑销售">
+            <el-input v-model="form.bundleWith" placeholder="捆绑选项代码，多个用逗号分隔"/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="互斥选项">
+            <el-input v-model="form.mutexWith" placeholder="互斥选项代码，多个用逗号分隔"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-divider content-position="left">营销信息</el-divider>
       <el-form-item label="营销标题">
         <el-input v-model="form.marketingTitle" placeholder="请输入营销标题"/>
       </el-form-item>
       <el-form-item label="营销图片">
         <MarketingImageField ref="marketingImageField" v-model="form.marketingImage"/>
-      </el-form-item>
-      <el-form-item label="排序权重">
-        <el-input-number v-model="form.sortWeight" controls-position="right" :min="0"/>
-      </el-form-item>
-      <el-form-item label="生效时间">
-        <el-date-picker v-model="form.effectiveFrom" type="datetime" placeholder="请选择生效时间"/>
-      </el-form-item>
-      <el-form-item label="失效时间">
-        <el-date-picker v-model="form.effectiveTo" type="datetime" placeholder="请选择失效时间"/>
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
@@ -218,3 +277,7 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import '~@/assets/styles/form-section.scss';
+</style>

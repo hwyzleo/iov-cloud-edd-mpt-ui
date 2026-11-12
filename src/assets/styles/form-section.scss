@@ -1,0 +1,14 @@
+/**
+ * 弹窗表单分区排版（供各业务表单 <style lang="scss" scoped> 引入）
+ * - 表单以 el-divider 分区 + el-row 多列栅格组织，这里统一收敛分区标题的间距与层级
+ * - 引入方需保持 scoped，样式不会外泄到其他组件
+ */
+::v-deep .el-divider--horizontal {
+  margin: 4px 0 16px;
+}
+
+::v-deep .el-divider__text {
+  color: #303133;
+  font-weight: 600;
+  background-color: #fff;
+}
