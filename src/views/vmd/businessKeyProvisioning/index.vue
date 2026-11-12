@@ -9,13 +9,13 @@
 import BlockingGovernance from './blockingGovernance'
 
 /**
- * 业务密钥开通批次——运维"一键清理阻塞"独立治理页（VMD-DSN-CR-065）。
+ * 业务密钥开通批次——运维"一键清理阻塞"独立治理页（SEC-VIAM-DSN-CR-002 / 原 VMD-DSN-CR-065 语义迁入 VIAM）。
  *
  * 支持从告警/监控按 requestId 深链跳转：
  *   - ?requestId=xxx              真实开通批次 requestId（kp-*），直接进入诊断
  *   - ?certificateRequestId=xxx   证书申请 requestId（MPT-CERT-*），先证书维度寻址再定位批次
- * 两套 ID 不得混用（后端诊断/清理接口仅接受 kp-*）。
- * 页面仅做 UI 编排，权限（vmd:security:businessKey:provisioning:query/terminate）
+ * 两套 ID 不得混用（VIAM 诊断/清理接口仅接受 kp-*，清阻断还需 expectedState + expectedModifyTime 门禁）。
+ * 页面仅做 UI 编排，权限（viam:businessKey:provisioning:query / viam:businessKey:diagnosis / viam:businessKey:clearBlocking）
  * 由按钮 v-hasPermi 与服务端 RBAC 双重约束。
  */
 export default {

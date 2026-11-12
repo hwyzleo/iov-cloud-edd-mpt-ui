@@ -48,8 +48,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="来源系统" prop="source">
-        <el-select v-model="queryParams.source" placeholder="请选择来源" clearable style="width: 160px">
+      <el-form-item label="来源系统" prop="sourceSystem">
+        <el-select v-model="queryParams.sourceSystem" placeholder="请选择来源" clearable style="width: 160px">
           <el-option
             v-for="item in sourceOptions"
             :key="item.value"
@@ -78,7 +78,7 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+          v-hasPermi="['viam:certificate:compensate']"
           type="primary"
           plain
           icon="el-icon-plus"
@@ -109,12 +109,12 @@
       <el-table-column label="业务请求ID" prop="requestId" min-width="180" show-overflow-tooltip />
       <el-table-column label="有效期至" prop="notAfter" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.notAfter, '{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ fmtTime(scope.row.notAfter, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="签发时间" prop="issuedAt" align="center" width="140">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.issuedAt, '{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ fmtTime(scope.row.issuedAt, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="最后操作人" prop="lastOperator" align="center" width="110" show-overflow-tooltip />
@@ -122,7 +122,7 @@
       <el-table-column label="操作" align="center" fixed="right" width="280" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
-            v-hasPermi="['vmd:security:vehicleCertificate:query']"
+            v-hasPermi="['viam:certificate:query']"
             size="mini"
             type="text"
             icon="el-icon-view"
@@ -130,7 +130,7 @@
           >详情
           </el-button>
           <el-button
-            v-hasPermi="['vmd:security:vehicleCertificate:query']"
+            v-hasPermi="['viam:certificate:query']"
             size="mini"
             type="text"
             icon="el-icon-download"
@@ -139,34 +139,34 @@
           >获取证书
           </el-button>
           <el-dropdown
-            v-hasPermi="['vmd:security:businessKey:provisioning:query', 'vmd:security:vehicleCertificate:compensate', 'vmd:security:vehicleCertificate:confirm']"
+            v-hasPermi="['viam:businessKey:provisioning:query', 'viam:certificate:compensate', 'viam:certificate:confirmInstalled']"
             size="mini"
             @command="(command) => handleCommand(command, scope.row)"
           >
             <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item
-                v-hasPermi="['vmd:security:businessKey:provisioning:query']"
+                v-hasPermi="['viam:businessKey:provisioning:query']"
                 command="handleBlockingGovernance"
                 icon="el-icon-warning-outline"
               >业务密钥阻塞治理
               </el-dropdown-item>
               <el-dropdown-item
-                v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+                v-hasPermi="['viam:certificate:compensate']"
                 command="handleReconcile"
                 icon="el-icon-refresh"
                 :disabled="!canReconcile(scope.row.status)"
               >对账
               </el-dropdown-item>
               <el-dropdown-item
-                v-hasPermi="['vmd:security:vehicleCertificate:confirm']"
+                v-hasPermi="['viam:certificate:confirmInstalled']"
                 command="handleConfirmInstalled"
                 icon="el-icon-finished"
                 :disabled="!canConfirm(scope.row.status)"
               >安装补录
               </el-dropdown-item>
               <el-dropdown-item
-                v-hasPermi="['vmd:security:vehicleCertificate:compensate']"
+                v-hasPermi="['viam:certificate:reissue']"
                 command="handleReissue"
                 icon="el-icon-refresh-right"
                 :disabled="!canReissue(scope.row.status)"
@@ -206,17 +206,15 @@
           <el-descriptions-item label="证书指纹(SHA-256)" :span="2">{{ detail.certificateFingerprint }}</el-descriptions-item>
           <el-descriptions-item label="Subject" :span="2">{{ detail.subject }}</el-descriptions-item>
           <el-descriptions-item label="Issuer" :span="2">{{ detail.issuer }}</el-descriptions-item>
-          <el-descriptions-item label="有效期开始">{{ parseTime(detail.notBefore) }}</el-descriptions-item>
-          <el-descriptions-item label="有效期结束">{{ parseTime(detail.notAfter) }}</el-descriptions-item>
-          <el-descriptions-item label="签发时间">{{ parseTime(detail.issuedAt) }}</el-descriptions-item>
-          <el-descriptions-item label="安装确认时间">{{ parseTime(detail.confirmedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="有效期开始">{{ fmtTime(detail.notBefore) }}</el-descriptions-item>
+          <el-descriptions-item label="有效期结束">{{ fmtTime(detail.notAfter) }}</el-descriptions-item>
+          <el-descriptions-item label="签发时间">{{ fmtTime(detail.issuedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="安装确认时间">{{ fmtTime(detail.confirmedAt) }}</el-descriptions-item>
           <el-descriptions-item label="人工补偿原因" :span="2">{{ detail.compensationReason }}</el-descriptions-item>
           <el-descriptions-item label="关联工单号">{{ detail.ticketNo }}</el-descriptions-item>
           <el-descriptions-item label="最后操作人">{{ detail.lastOperator }}</el-descriptions-item>
-          <el-descriptions-item label="最后操作时间">{{ parseTime(detail.lastOperationAt) }}</el-descriptions-item>
+          <el-descriptions-item label="最后操作时间">{{ fmtTime(detail.lastOperationAt) }}</el-descriptions-item>
           <el-descriptions-item label="最近失败原因">{{ detail.failReason }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ parseTime(detail.createTime) }}</el-descriptions-item>
-          <el-descriptions-item label="修改时间">{{ parseTime(detail.modifyTime) }}</el-descriptions-item>
         </el-descriptions>
 
         <div style="margin: 16px 0 8px; font-weight: bold;">操作审计时间线</div>
@@ -224,7 +222,7 @@
           <el-timeline-item
             v-for="(op, index) in detail.operations"
             :key="index"
-            :timestamp="parseTime(op.occurredAt)"
+            :timestamp="fmtTime(op.occurredAt)"
             placement="top"
           >
             <el-card shadow="never" :body-style="{ padding: '10px' }">
@@ -295,8 +293,8 @@
         <el-form-item label="业务请求ID" prop="requestId">
           <el-input v-model="compensateForm.requestId" placeholder="可选，已存在时进入幂等比对" />
         </el-form-item>
-        <el-form-item label="MES原请求号" prop="originalMesRequestId">
-          <el-input v-model="compensateForm.originalMesRequestId" placeholder="可选，命中既有记录时引导对账" />
+        <el-form-item label="MES原请求号" prop="originalRequestId">
+          <el-input v-model="compensateForm.originalRequestId" placeholder="可选，命中既有记录时引导对账" />
         </el-form-item>
         <el-form-item label="工厂编号" prop="facilityNo">
           <el-input v-model="compensateForm.facilityNo" placeholder="可选" />
@@ -479,14 +477,14 @@
 
 <script>
 import {
-  listVehicleCertificate,
-  getVehicleCertificate,
-  compensateVehicleCertificate,
-  reconcileVehicleCertificate,
-  confirmInstalledVehicleCertificate,
-  queryVehicleCertificateBody,
-  reissueVehicleCertificate
-} from '@/api/vmd/vehicleCertificate'
+  listCertificate,
+  getCertificateDetail,
+  compensateCertificate,
+  reconcileCertificate,
+  confirmInstalledCertificate,
+  queryCertificateMaterial,
+  reissueCertificate
+} from '@/api/viam/certificate'
 import BlockingGovernance from '@/views/vmd/businessKeyProvisioning/blockingGovernance'
 
 export default {
@@ -526,6 +524,7 @@ export default {
         RECONCILE: '对账',
         CONFIRM_INSTALLED: '安装补录',
         QUERY: '获取证书',
+        QUERY_CERTIFICATE: '获取证书',
         REISSUE: '重新签发'
       },
       // 遮罩层
@@ -553,7 +552,7 @@ export default {
         deviceSn: undefined,
         certSn: undefined,
         status: undefined,
-        source: undefined
+        sourceSystem: undefined
       },
       // 对话框显示控制
       openDetail: false,
@@ -579,6 +578,7 @@ export default {
         deviceSn: [{ required: true, message: '设备SN不能为空', trigger: 'blur' }],
         certificateProfile: [{ required: true, message: '证书Profile不能为空', trigger: 'blur' }],
         csrDerBase64: [{ required: true, message: 'CSR不能为空', trigger: 'blur' }],
+        ticketNo: [{ required: true, message: '工单号不能为空', trigger: 'blur' }],
         reason: [{ required: true, message: '补偿原因不能为空', trigger: 'blur' }]
       },
       // 对账表单
@@ -632,10 +632,20 @@ export default {
     }
   },
   methods: {
+    /**
+     * 时间展示：后端返回 ISO-8601（UTC，带 Z），先转 Date 再格式化。
+     * 直接字符串交给 parseTime 会残留 Z 后缀导致部分浏览器解析失败。
+     */
+    fmtTime(value, pattern) {
+      if (!value) return ''
+      const date = value instanceof Date ? value : new Date(value)
+      if (isNaN(date.getTime())) return ''
+      return this.parseTime(date, pattern)
+    },
     /** 查询证书申请记录列表 */
     getList() {
       this.loading = true
-      listVehicleCertificate(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+      listCertificate(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
         this.certificateList = response.data.items
         this.total = response.data.total
         this.loading = false
@@ -666,13 +676,13 @@ export default {
     canConfirm(status) {
       return status === 'ISSUED_NOT_CONFIRMED' || status === 'INSTALL_FAILED'
     },
-    /** 是否允许对账（仅申请未定案态：已请求/签发中/待对账） */
+    /** 是否允许对账（后端允许集：签发中/待对账/失败） */
     canReconcile(status) {
-      return status === 'REQUESTED' || status === 'ISSUING' || status === 'PENDING_RECONCILE'
+      return status === 'ISSUING' || status === 'PENDING_RECONCILE' || status === 'FAILED'
     },
-    /** 是否允许获取证书本体（仅已签发未确认/已激活，只读重取） */
+    /** 是否允许获取证书本体（后端允许集：已签发未确认/已激活/已过期，只读重取） */
     canQuery(status) {
-      return status === 'ISSUED_NOT_CONFIRMED' || status === 'ACTIVE'
+      return status === 'ISSUED_NOT_CONFIRMED' || status === 'ACTIVE' || status === 'EXPIRED'
     },
     /** 是否允许重新签发/续期（已定案态：已签发未确认/已激活/安装失败/已过期） */
     canReissue(status) {
@@ -695,7 +705,7 @@ export default {
       this.detail = {}
       this.openDetail = true
       this.loadingDetail = true
-      getVehicleCertificate(row.id).then(response => {
+      getCertificateDetail(row.requestId).then(response => {
         this.detail = response.data
         this.loadingDetail = false
       }).catch(() => {
@@ -737,7 +747,7 @@ export default {
         certificateProfile: 'TBOX_TSP_CLIENT',
         csrDerBase64: undefined,
         requestId: undefined,
-        originalMesRequestId: undefined,
+        originalRequestId: undefined,
         facilityNo: undefined,
         lineCode: undefined,
         ticketNo: undefined,
@@ -753,12 +763,13 @@ export default {
       this.$refs['compensateForm'].validate(valid => {
         if (!valid) return
         this.submitting = true
-        compensateVehicleCertificate(this.compensateForm).then(response => {
+        compensateCertificate(this.compensateForm).then(response => {
           const data = response.data || {}
-          this.$modal.msgSuccess('补申请已提交，当前状态：' + this.statusLabel(data.status || ''))
+          this.$modal.msgSuccess('补申请已提交，requestId：' + (data.requestId || '-') +
+            '，当前状态：' + this.statusLabel(data.status || ''))
           this.openCompensate = false
           this.getList()
-          this.maybeShowCert(data)
+          this.hintMaterial(data)
         }).finally(() => {
           this.submitting = false
         })
@@ -767,7 +778,7 @@ export default {
     /** 对账按钮操作 */
     handleReconcile(row) {
       this.reconcileForm = {
-        id: row.id,
+        requestId: row.requestId,
         vin: row.vin,
         status: row.status,
         reason: undefined
@@ -777,12 +788,12 @@ export default {
     /** 提交对账 */
     submitReconcile() {
       this.submitting = true
-      reconcileVehicleCertificate(this.reconcileForm.id, { reason: this.reconcileForm.reason }).then(response => {
+      reconcileCertificate(this.reconcileForm.requestId, { reason: this.reconcileForm.reason }).then(response => {
         const data = response.data || {}
         this.$modal.msgSuccess('对账完成，当前状态：' + this.statusLabel(data.status || ''))
         this.openReconcile = false
         this.getList()
-        this.maybeShowCert(data)
+        this.hintMaterial(data)
       }).finally(() => {
         this.submitting = false
       })
@@ -790,7 +801,7 @@ export default {
     /** 安装补录按钮操作 */
     handleConfirmInstalled(row) {
       this.confirmForm = {
-        id: row.id,
+        requestId: row.requestId,
         vin: row.vin,
         certSn: row.certSn,
         deviceSn: row.deviceSn,
@@ -817,7 +828,7 @@ export default {
           ticketNo: this.confirmForm.ticketNo,
           reason: this.confirmForm.reason
         }
-        confirmInstalledVehicleCertificate(this.confirmForm.id, data).then(response => {
+        confirmInstalledCertificate(this.confirmForm.requestId, data).then(response => {
           const result = response.data || {}
           this.$modal.msgSuccess('安装结果已补录，当前状态：' + this.statusLabel(result.status || ''))
           this.openConfirm = false
@@ -830,7 +841,7 @@ export default {
     /** 重新签发按钮操作 */
     handleReissue(row) {
       this.reissueForm = {
-        id: row.id,
+        requestId: row.requestId,
         vin: row.vin,
         deviceSn: row.deviceSn,
         status: row.status,
@@ -853,12 +864,13 @@ export default {
           ticketNo: this.reissueForm.ticketNo,
           reason: this.reissueForm.reason
         }
-        reissueVehicleCertificate(this.reissueForm.id, data).then(response => {
+        reissueCertificate(this.reissueForm.requestId, data).then(response => {
           const result = response.data || {}
-          this.$modal.msgSuccess('重新签发完成，当前状态：' + this.statusLabel(result.status || ''))
+          this.$modal.msgSuccess('重新签发完成，新申请 requestId：' + (result.requestId || '-') +
+            '，当前状态：' + this.statusLabel(result.status || ''))
           this.openReissue = false
           this.getList()
-          this.maybeShowCert(result)
+          this.hintMaterial(result)
         }).finally(() => {
           this.submitting = false
         })
@@ -867,7 +879,7 @@ export default {
     /** 获取证书本体（只读重取，展示供注入设备） */
     handleQueryCert(row) {
       this.submitting = true
-      queryVehicleCertificateBody(row.id).then(response => {
+      queryCertificateMaterial(row.requestId).then(response => {
         const data = response.data || {}
         if (data.certificateDerBase64) {
           this.maybeShowCert(data)
@@ -877,6 +889,15 @@ export default {
       }).finally(() => {
         this.submitting = false
       })
+    },
+    /** 写操作不返回证书本体：若已签发则提示改用「获取证书」*/
+    hintMaterial(data) {
+      if (!data || data.certificateDerBase64) {
+        return
+      }
+      if (data.status === 'ISSUED_NOT_CONFIRMED' || data.status === 'ACTIVE') {
+        this.$modal.msgInfo('证书已签发；如需证书本体注入设备，请点击该行「获取证书」')
+      }
     },
     /** 若响应含已签发证书本体则弹窗展示，供手动注入设备 */
     maybeShowCert(data) {
