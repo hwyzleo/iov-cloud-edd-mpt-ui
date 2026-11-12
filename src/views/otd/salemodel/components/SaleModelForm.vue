@@ -188,7 +188,7 @@ export default {
     formData: {
       handler(val) {
         if (val && Object.keys(val).length > 0) {
-          this.form = { ...val }
+          this.form = this.normalizeForm(val)
         } else {
           this.resetForm()
         }
@@ -205,6 +205,38 @@ export default {
       listSeries({ page: 1, size: 1000, includeInactive: false }).then(response => {
         this.carlineOptions = response.data.rows
       })
+    },
+    /**
+     * 详情接口返回的可用值 → 表单可用值（CR-003 §7）：
+     * availableRegions / channels 后端以数组返回，入参却以逗号分隔字符串提交，需双向归一化；
+     * effectiveFrom / effectiveTo 后端以秒级时间戳返回，日期组件需要 Date。
+     */
+    normalizeForm(data) {
+      return {
+        ...data,
+        images: Array.isArray(data.images) ? [...data.images] : (data.images ? [data.images] : []),
+        availableRegions: this.toCommaText(data.availableRegions),
+        channels: this.toCommaText(data.channels),
+        effectiveFrom: this.toDateValue(data.effectiveFrom),
+        effectiveTo: this.toDateValue(data.effectiveTo)
+      }
+    },
+    toCommaText(value) {
+      if (Array.isArray(value)) return value.join(', ')
+      if (value === null || value === undefined || value === '') return undefined
+      return String(value)
+    },
+    toCommaList(value) {
+      const list = Array.isArray(value) ? value : (value ? String(value).split(',') : [])
+      return list.map(item => String(item).trim()).filter(item => item)
+    },
+    toDateValue(value) {
+      if (value === null || value === undefined || value === '') return undefined
+      // 秒级时间戳（10 位）换算成毫秒，避免日期组件把它当成 1970 年附近的毫秒值
+      if (typeof value === 'number' || /^\d{10}$/.test(String(value))) {
+        return new Date(Number(value) * 1000)
+      }
+      return value
     },
     resetForm() {
       this.form = {
@@ -230,8 +262,8 @@ export default {
         if (valid) {
           const submitData = {
             ...this.form,
-            availableRegions: this.form.availableRegions ? this.form.availableRegions.split(',').map(s => s.trim()).filter(s => s) : [],
-            channels: this.form.channels ? this.form.channels.split(',').map(s => s.trim()).filter(s => s) : [],
+            availableRegions: this.toCommaList(this.form.availableRegions),
+            channels: this.toCommaList(this.form.channels),
             effectiveFrom: this.form.effectiveFrom ? Math.floor(new Date(this.form.effectiveFrom).getTime() / 1000) : null,
             effectiveTo: this.form.effectiveTo ? Math.floor(new Date(this.form.effectiveTo).getTime() / 1000) : null
           }
