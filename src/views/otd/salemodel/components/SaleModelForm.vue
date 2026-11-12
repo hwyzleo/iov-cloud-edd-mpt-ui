@@ -1,25 +1,88 @@
 <template>
-  <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-    <el-form ref="form" :model="form" :rules="rules" label-width="120px">
-      <el-form-item label="销售代码" prop="saleModelCode">
-        <el-input v-model="form.saleModelCode" :readonly="form.id !== undefined" placeholder="请输入销售代码" />
-      </el-form-item>
-      <el-form-item label="销售车型名称" prop="modelName">
-        <el-input v-model="form.modelName" placeholder="请输入销售车型名称" />
-      </el-form-item>
-      <el-form-item label="车系代码" prop="carlineCode">
-        <el-select v-model="form.carlineCode" :disabled="form.id !== undefined" placeholder="请选择车系" clearable>
-          <el-option
-            v-for="carline in carlineOptions"
-            :key="carline.code"
-            :label="carline.nameLocal + '(' + carline.name + ')'"
-            :value="carline.code"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="图标">
+  <el-dialog
+    :title="title"
+    :visible.sync="open"
+    width="960px"
+    append-to-body
+    class="scrollbar"
+    :close-on-click-modal="false"
+  >
+    <el-form ref="form" :model="form" :rules="rules" label-width="110px" size="small">
+      <el-divider content-position="left">基本信息</el-divider>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="销售代码" prop="saleModelCode">
+            <el-input v-model="form.saleModelCode" :readonly="form.id !== undefined" placeholder="请输入销售代码" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="销售车型名称" prop="modelName">
+            <el-input v-model="form.modelName" placeholder="请输入销售车型名称" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="车系代码" prop="carlineCode">
+            <el-select
+              v-model="form.carlineCode"
+              :disabled="form.id !== undefined"
+              placeholder="请选择车系"
+              clearable
+              style="width: 100%"
+            >
+              <el-option
+                v-for="carline in carlineOptions"
+                :key="carline.code"
+                :label="carline.nameLocal + '(' + carline.name + ')'"
+                :value="carline.code"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="上下架状态">
+            <el-radio-group v-model="form.listingStatus">
+              <el-radio label="active">上架</el-radio>
+              <el-radio label="off_shelf">下架</el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="8">
+          <el-form-item label="排序权重" prop="sortWeight">
+            <el-input-number v-model="form.sortWeight" controls-position="right" :min="0" style="width: 100%" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="启用意向金">
+            <el-switch v-model="form.earnestMoney" :active-value="true" :inactive-value="false" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="启用定金">
+            <el-switch v-model="form.downPayment" :active-value="true" :inactive-value="false" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="生效时间" prop="effectiveFrom">
+            <el-date-picker v-model="form.effectiveFrom" type="datetime" placeholder="请选择生效时间" style="width: 100%" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="失效时间">
+            <el-date-picker v-model="form.effectiveTo" type="datetime" placeholder="请选择失效时间" style="width: 100%" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-divider content-position="left">图片素材</el-divider>
+      <el-form-item label="展示图标">
         <div class="image-field">
-          <el-input v-model="form.icon" placeholder="请输入图标URL或点击上传" />
+          <el-input v-model="form.icon" clearable placeholder="请输入图标URL或点击上传" />
           <el-upload
             class="image-field-upload"
             action="#"
@@ -30,85 +93,92 @@
           >
             <el-button size="small" :loading="uploadingKey === 'icon'" icon="el-icon-upload2">上传</el-button>
           </el-upload>
-        </div>
-        <el-image
-          v-if="form.icon && isValidImage(form.icon)"
-          :src="form.icon"
-          style="width: 100px; margin-top: 5px;"
-          fit="cover"
-        >
-          <div slot="error" class="image-slot">
-            <i class="el-icon-picture-outline"></i>
-          </div>
-        </el-image>
-      </el-form-item>
-      <el-form-item
-        v-for="(image, index) in form.images"
-        :key="'image-' + index"
-        :label="'图片 ' + (index + 1)"
-      >
-        <div class="image-field">
-          <el-input v-model="form.images[index]" placeholder="请输入图片URL或点击上传" />
-          <el-upload
-            class="image-field-upload"
-            action="#"
-            :auto-upload="false"
-            :show-file-list="false"
-            :disabled="uploadingKey !== null"
-            :on-change="file => handleImageUpload(file, index)"
+          <el-image
+            v-if="form.icon && isValidImage(form.icon)"
+            :src="form.icon"
+            :preview-src-list="[form.icon]"
+            class="image-field__preview"
+            fit="cover"
           >
-            <el-button
-              size="small"
-              :loading="uploadingKey === ('image-' + index)"
-              icon="el-icon-upload2"
-            >上传</el-button>
-          </el-upload>
-          <el-button size="small" icon="el-icon-delete" @click="removeImage(index)">删除</el-button>
-        </div>
-        <el-image
-          v-if="form.images[index] && isValidImage(form.images[index])"
-          :src="form.images[index]"
-          style="width: 100%; margin-top: 5px;"
-          fit="cover"
-        >
-          <div slot="error" class="image-slot">
-            <i class="el-icon-picture-outline"></i>
+            <div slot="error" class="image-field__placeholder">
+              <i class="el-icon-picture-outline" />
+            </div>
+          </el-image>
+          <div v-else class="image-field__placeholder">
+            <i class="el-icon-picture-outline" />
           </div>
-        </el-image>
+        </div>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-plus" size="mini" @click="addImage">添加图片</el-button>
+      <el-form-item label="车型图片">
+        <div class="image-list">
+          <div v-for="(image, index) in form.images" :key="'image-' + index" class="image-card">
+            <div class="image-card__thumb">
+              <el-image
+                v-if="image && isValidImage(image)"
+                :src="image"
+                :preview-src-list="[image]"
+                fit="cover"
+              >
+                <div slot="error" class="image-card__empty">
+                  <i class="el-icon-picture-outline" />
+                </div>
+              </el-image>
+              <div v-else class="image-card__empty">
+                <i class="el-icon-picture-outline" />
+                <span>暂无图片</span>
+              </div>
+              <span class="image-card__badge">{{ index + 1 }}</span>
+              <el-button
+                class="image-card__remove"
+                type="text"
+                icon="el-icon-delete"
+                title="删除该图片"
+                @click="removeImage(index)"
+              />
+            </div>
+            <div class="image-card__actions">
+              <el-input v-model="form.images[index]" size="small" clearable placeholder="图片URL" />
+              <el-upload
+                class="image-field-upload"
+                action="#"
+                :auto-upload="false"
+                :show-file-list="false"
+                :disabled="uploadingKey !== null"
+                :on-change="file => handleImageUpload(file, index)"
+              >
+                <el-button
+                  size="small"
+                  :loading="uploadingKey === ('image-' + index)"
+                  icon="el-icon-upload2"
+                  title="上传图片"
+                />
+              </el-upload>
+            </div>
+          </div>
+          <div class="image-card image-card--add" @click="addImage">
+            <i class="el-icon-plus" />
+            <span>添加图片</span>
+          </div>
+        </div>
+        <div class="image-list__hint">支持 JPEG / PNG / WebP，单张大小不超过 10 MiB</div>
       </el-form-item>
-      <el-form-item label="启用意向金">
-        <el-switch v-model="form.earnestMoney" :active-value="true" :inactive-value="false" />
-      </el-form-item>
-      <el-form-item label="启用定金">
-        <el-switch v-model="form.downPayment" :active-value="true" :inactive-value="false" />
-      </el-form-item>
+
+      <el-divider content-position="left">营销与销售范围</el-divider>
       <el-form-item label="营销文案">
-        <el-input v-model="form.marketingCopy" type="textarea" placeholder="请输入营销文案" />
+        <el-input v-model="form.marketingCopy" type="textarea" :rows="3" placeholder="请输入营销文案" />
       </el-form-item>
-      <el-form-item label="排序权重" prop="sortWeight">
-        <el-input-number v-model="form.sortWeight" controls-position="right" :min="0" />
-      </el-form-item>
-      <el-form-item label="可售区域">
-        <el-input v-model="form.availableRegions" placeholder="请输入可售区域，多个用逗号分隔" />
-      </el-form-item>
-      <el-form-item label="销售渠道">
-        <el-input v-model="form.channels" placeholder="请输入销售渠道，多个用逗号分隔" />
-      </el-form-item>
-      <el-form-item label="生效时间" prop="effectiveFrom">
-        <el-date-picker v-model="form.effectiveFrom" type="datetime" placeholder="请选择生效时间" />
-      </el-form-item>
-      <el-form-item label="失效时间">
-        <el-date-picker v-model="form.effectiveTo" type="datetime" placeholder="请选择失效时间" />
-      </el-form-item>
-      <el-form-item label="上下架状态">
-        <el-radio-group v-model="form.listingStatus">
-          <el-radio label="active">上架</el-radio>
-          <el-radio label="off_shelf">下架</el-radio>
-        </el-radio-group>
-      </el-form-item>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="可售区域">
+            <el-input v-model="form.availableRegions" placeholder="请输入可售区域，多个用逗号分隔" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="销售渠道">
+            <el-input v-model="form.channels" placeholder="请输入销售渠道，多个用逗号分隔" />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -402,5 +472,156 @@ export default {
 .image-field-upload,
 .image-field .el-button {
   margin-left: 8px;
+}
+
+/* 图标：输入框 + 上传按钮 + 右侧缩略图，保持单行高度 */
+.image-field__preview,
+.image-field__placeholder {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin-left: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.image-field__preview {
+  display: block;
+}
+
+.image-field__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c4cc;
+  background: #f5f7fa;
+  font-size: 16px;
+}
+
+/* 车型图片：卡片网格，缩略图 + URL + 上传，避免整屏大图把弹窗拉得很长 */
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -12px;
+  line-height: normal;
+}
+
+.image-card {
+  width: 176px;
+  margin: 0 12px 12px 0;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.image-card__thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 108px;
+  background: #f5f7fa;
+}
+
+.image-card__thumb .el-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-card__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+.image-card__empty i {
+  margin-bottom: 4px;
+  font-size: 22px;
+}
+
+.image-card__badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.image-card__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+}
+
+.image-card__remove:hover,
+.image-card__remove:focus {
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+}
+
+.image-card__actions {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-top: 1px solid #ebeef5;
+}
+
+.image-card__actions .el-input {
+  flex: 1;
+}
+
+.image-card--add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  border-style: dashed;
+  color: #8c939d;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.image-card--add:hover {
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.image-card--add i {
+  margin-bottom: 6px;
+  font-size: 20px;
+}
+
+.image-card--add span {
+  font-size: 12px;
+}
+
+.image-list__hint {
+  margin-top: -4px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+::v-deep .el-divider--horizontal {
+  margin: 8px 0 18px;
 }
 </style>
