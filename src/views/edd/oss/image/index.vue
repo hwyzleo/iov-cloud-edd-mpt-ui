@@ -559,10 +559,9 @@ export default {
       this.resetForm('queryForm')
       this.handleQuery()
     },
-    /** 调用方服务展示：后台上传记录展示为 EDD-OSS */
+    /** 调用方服务展示：统一按后端落库值小写展示（含后台上传的 edd-oss） */
     serviceNameLabel(serviceName) {
-      if (!serviceName) return '-'
-      return serviceName === DEFAULT_ASSET_SERVICE ? 'EDD-OSS' : serviceName
+      return serviceName || '-'
     },
     /** 是否后台上传的默认素材 */
     isDefaultAsset(row) {

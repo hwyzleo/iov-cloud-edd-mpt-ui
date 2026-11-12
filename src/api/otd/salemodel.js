@@ -59,3 +59,21 @@ export function syncMdmData(saleModelCode) {
     method: 'post'
   })
 }
+
+// 申请销售车型图片上传凭证（OTD-VSO-DSN-CR-003 §4.1）
+export function createSaleModelImageTicket(data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/upload/tickets',
+    method: 'post',
+    data: data
+  })
+}
+
+// 完成销售车型图片上传确认（OTD-VSO-DSN-CR-003 §4.2）
+export function completeSaleModelImage(objectId, data) {
+  return request({
+    url: '/otd-vso/api/mpt/saleModel/v1/upload/tickets/' + objectId + '/complete',
+    method: 'post',
+    data: data
+  })
+}

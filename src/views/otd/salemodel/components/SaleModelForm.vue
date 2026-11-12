@@ -18,7 +18,19 @@
         </el-select>
       </el-form-item>
       <el-form-item label="图标">
-        <el-input v-model="form.icon" placeholder="请输入图标URL" />
+        <div class="image-field">
+          <el-input v-model="form.icon" placeholder="请输入图标URL或点击上传" />
+          <el-upload
+            class="image-field-upload"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :disabled="uploadingKey !== null"
+            :on-change="file => handleImageUpload(file, 'icon')"
+          >
+            <el-button size="small" :loading="uploadingKey === 'icon'" icon="el-icon-upload2">上传</el-button>
+          </el-upload>
+        </div>
         <el-image
           v-if="form.icon && isValidImage(form.icon)"
           :src="form.icon"
@@ -35,9 +47,24 @@
         :key="'image-' + index"
         :label="'图片 ' + (index + 1)"
       >
-        <el-input v-model="form.images[index]" placeholder="请输入图片URL">
-          <el-button slot="append" icon="el-icon-delete" @click="removeImage(index)" />
-        </el-input>
+        <div class="image-field">
+          <el-input v-model="form.images[index]" placeholder="请输入图片URL或点击上传" />
+          <el-upload
+            class="image-field-upload"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :disabled="uploadingKey !== null"
+            :on-change="file => handleImageUpload(file, index)"
+          >
+            <el-button
+              size="small"
+              :loading="uploadingKey === ('image-' + index)"
+              icon="el-icon-upload2"
+            >上传</el-button>
+          </el-upload>
+          <el-button size="small" icon="el-icon-delete" @click="removeImage(index)">删除</el-button>
+        </div>
         <el-image
           v-if="form.images[index] && isValidImage(form.images[index])"
           :src="form.images[index]"
@@ -91,8 +118,17 @@
 </template>
 
 <script>
-import { addSaleModel, updateSaleModel } from '@/api/otd/salemodel'
+import { addSaleModel, updateSaleModel, createSaleModelImageTicket, completeSaleModelImage } from '@/api/otd/salemodel'
 import { listSeries } from '@/api/mdm/carline'
+
+// 单张图片最大字节数（10 MiB），与 EDD-OSS 图片白名单一致
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024
+// 允许的扩展名与 MIME 映射（与后端 ImageMimeType 白名单一致）
+const ALLOWED_EXTENSIONS = {
+  'image/jpeg': ['jpg', 'jpeg'],
+  'image/png': ['png'],
+  'image/webp': ['webp']
+}
 
 export default {
   name: 'SaleModelForm',
@@ -113,6 +149,8 @@ export default {
   data() {
     return {
       carlineOptions: [],
+      // 当前上传中的字段标识：'icon' 或 'image-{index}'，同一时间只允许一个上传任务
+      uploadingKey: null,
       form: {
         id: undefined,
         saleModelCode: undefined,
@@ -214,6 +252,97 @@ export default {
     addImage() {
       this.form.images.push('')
     },
+    /**
+     * 上传图片（OTD-VSO-DSN-CR-003 §7）：前端预校验 → 申请凭证 → 浏览器直传 COS → 完成确认 → 回填地址
+     * 失败不覆盖字段原值，按阶段提示。
+     */
+    handleImageUpload(file, target) {
+      const raw = file && file.raw
+      if (!raw || this.uploadingKey !== null) return
+      const contentType = this.resolveContentType(raw)
+      if (!contentType) {
+        this.$modal.msgError('仅支持 JPEG / PNG / WebP 图片')
+        return
+      }
+      if (!raw.size || raw.size > MAX_IMAGE_SIZE) {
+        this.$modal.msgError('图片大小必须大于 0 且不超过 10 MiB')
+        return
+      }
+      this.uploadingKey = target === 'icon' ? 'icon' : 'image-' + target
+      let stage = '申请上传凭证'
+      createSaleModelImageTicket({
+        originalFilename: raw.name,
+        contentType: contentType,
+        size: raw.size
+      }).then(response => {
+        const ticket = response.data || {}
+        if (!ticket.objectId || !ticket.uploadUrl) {
+          throw new Error('未获取到有效上传凭证')
+        }
+        stage = '图片直传 COS'
+        return this.putObjectToCos(ticket.uploadUrl, raw, ticket.contentType || contentType).then(() => {
+          stage = '完成确认'
+          return completeSaleModelImage(ticket.objectId, { uploadToken: ticket.uploadToken })
+        })
+      }).then(response => {
+        const result = response.data || {}
+        if (!result.accessUrl) {
+          throw new Error('完成确认未返回可访问地址')
+        }
+        if (target === 'icon') {
+          this.$set(this.form, 'icon', result.accessUrl)
+        } else {
+          this.$set(this.form.images, target, result.accessUrl)
+        }
+        this.uploadingKey = null
+        this.$modal.msgSuccess('上传成功')
+      }).catch(error => {
+        this.uploadingKey = null
+        this.notifyUploadFailure(stage, error)
+      })
+    },
+    /**
+     * 分阶段提示失败原因：浏览器直传 COS 使用 fetch，不经平台 axios 拦截器，
+     * 必须在此显式提示，否则用户只会看到无响应。
+     */
+    notifyUploadFailure(stage, error) {
+      console.error('[销售车型图片上传] ' + stage + ' 失败', error)
+      if (stage === '图片直传 COS') {
+        const detail = error && error.message ? error.message : '未知错误'
+        this.$modal.msgError('图片直传 COS 失败（' + detail + '）。请用浏览器开发者工具 Network 查看 OPTIONS/PUT 请求：多为 Bucket CORS 未允许当前站点执行 PUT 或未允许 Content-Type 请求头，也可能是预签名地址已过期或图片超出限制。')
+        return
+      }
+      // 申请与完成确认走平台 axios 拦截器，HTTP 错误已由拦截器提示，避免重复弹框
+      if (!(error && error.response)) {
+        this.$modal.msgError(stage + '失败：' + (error && error.message ? error.message : '网络或未知错误'))
+      }
+    },
+    /** 浏览器直传 COS：独立 fetch，仅携带 Content-Type，不携带后台凭证或 Cookie */
+    putObjectToCos(uploadUrl, file, contentType) {
+      return fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType },
+        body: file,
+        credentials: 'omit'
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('COS 返回 HTTP ' + response.status)
+        }
+        return response
+      })
+    },
+    /** 解析并校验文件 MIME 与扩展名一致性 */
+    resolveContentType(file) {
+      const name = file.name || ''
+      const ext = (name.indexOf('.') >= 0 ? name.split('.').pop() : '').toLowerCase()
+      let contentType = (file.type || '').toLowerCase()
+      if (!ALLOWED_EXTENSIONS[contentType]) {
+        contentType = Object.keys(ALLOWED_EXTENSIONS).find(mime => ALLOWED_EXTENSIONS[mime].indexOf(ext) >= 0)
+      }
+      if (!contentType) return null
+      if (ALLOWED_EXTENSIONS[contentType].indexOf(ext) < 0) return null
+      return contentType
+    },
     removeImage(index) {
       this.form.images.splice(index, 1)
     },
@@ -226,3 +355,20 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.image-field {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.image-field .el-input {
+  flex: 1;
+}
+
+.image-field-upload,
+.image-field .el-button {
+  margin-left: 8px;
+}
+</style>
