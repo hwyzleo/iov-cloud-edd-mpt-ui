@@ -30,7 +30,7 @@
         <el-input v-model="form.marketingTitle" placeholder="请输入营销标题"/>
       </el-form-item>
       <el-form-item label="营销图片">
-        <el-input v-model="form.marketingImage" placeholder="请输入营销图片URL"/>
+        <MarketingImageField ref="marketingImageField" v-model="form.marketingImage"/>
       </el-form-item>
       <el-form-item label="排序权重">
         <el-input-number v-model="form.sortWeight" controls-position="right" :min="0"/>
@@ -51,9 +51,13 @@
 
 <script>
 import { createOptionPolicy, updateOptionPolicy } from '@/api/otd/salespolicy'
+import MarketingImageField from './MarketingImageField.vue'
 
 export default {
   name: 'OptionPolicyForm',
+  components: {
+    MarketingImageField
+  },
   props: {
     open: {
       type: Boolean,
@@ -115,6 +119,8 @@ export default {
     open: {
       handler(val) {
         this.dialogVisible = val
+        // 打开/关闭时丢弃上一轮营销图片上传的迟到结果，避免串到新记录
+        this.$nextTick(() => this.resetImageUploadState())
       },
       immediate: true
     },
@@ -149,6 +155,11 @@ export default {
       }
     },
     submitForm() {
+      // 营销图片仍在直传/确认中时不提交，避免未回填地址就保存
+      if (this.isImageUploading()) {
+        this.$modal.msgWarning('营销图片正在上传，请等待上传完成后再保存')
+        return
+      }
       this.$refs['form'].validate(valid => {
         if (valid) {
           // 校验bundleWith和mutexWith是否矛盾
@@ -193,6 +204,16 @@ export default {
     },
     handleClose() {
       this.$emit('update:open', false)
+    },
+    /** 营销图片字段上传状态（OTD-VSO-DSN-CR-004 §4.2） */
+    isImageUploading() {
+      const field = this.$refs.marketingImageField
+      return !!(field && field.isUploading && field.isUploading())
+    },
+    /** 丢弃营销图片上传的迟到结果 */
+    resetImageUploadState() {
+      const field = this.$refs.marketingImageField
+      if (field && field.resetUploadState) field.resetUploadState()
     }
   }
 }

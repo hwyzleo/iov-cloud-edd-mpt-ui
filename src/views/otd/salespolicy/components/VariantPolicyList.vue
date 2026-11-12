@@ -114,7 +114,13 @@
     </el-table>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogOpen" width="600px" append-to-body>
+    <el-dialog
+      :title="dialogTitle"
+      :visible.sync="dialogOpen"
+      width="600px"
+      append-to-body
+      @open="resetImageUploadState"
+    >
       <el-form ref="policyForm" :model="policyForm" :rules="policyRules" label-width="120px">
         <el-alert
           title="提示"
@@ -150,7 +156,7 @@
           <el-input v-model="policyForm.marketingName" placeholder="请输入营销名称"/>
         </el-form-item>
         <el-form-item label="营销图片">
-          <el-input v-model="policyForm.marketingImage" placeholder="请输入营销图片URL"/>
+          <MarketingImageField ref="marketingImageField" v-model="policyForm.marketingImage"/>
         </el-form-item>
         <el-form-item label="营销文案">
           <el-input v-model="policyForm.marketingCopy" type="textarea" placeholder="请输入营销文案"/>
@@ -181,9 +187,13 @@
 
 <script>
 import { getVariantPolicy, getVariantPolicyDetail, createVariantPolicy, deleteVariantPolicy, getModelPolicy } from '@/api/otd/salespolicy'
+import MarketingImageField from './MarketingImageField.vue'
 
 export default {
   name: 'VariantPolicyList',
+  components: {
+    MarketingImageField
+  },
   props: {
     saleModelCode: {
       type: String,
@@ -333,6 +343,11 @@ export default {
       }).catch(() => {})
     },
     submitPolicyForm() {
+      // 营销图片仍在直传/确认中时不提交，避免未回填地址就保存
+      if (this.isImageUploading()) {
+        this.$modal.msgWarning('营销图片正在上传，请等待上传完成后再保存')
+        return
+      }
       this.$refs['policyForm'].validate(valid => {
         if (valid) {
           const submitData = {
@@ -349,6 +364,18 @@ export default {
             this.getList()
           }).catch(() => {})
         }
+      })
+    },
+    /** 营销图片字段上传状态（OTD-VSO-DSN-CR-004 §4.2） */
+    isImageUploading() {
+      const field = this.$refs.marketingImageField
+      return !!(field && field.isUploading && field.isUploading())
+    },
+    /** 打开或切换记录时丢弃上一次营销图片上传的迟到结果 */
+    resetImageUploadState() {
+      this.$nextTick(() => {
+        const field = this.$refs.marketingImageField
+        if (field && field.resetUploadState) field.resetUploadState()
       })
     }
   }
