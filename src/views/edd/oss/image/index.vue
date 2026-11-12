@@ -99,12 +99,42 @@
     />
 
     <el-table v-loading="loading" :data="imageList">
-      <el-table-column label="素材名称" min-width="150" show-overflow-tooltip>
+      <el-table-column label="素材名称" min-width="130">
         <template slot-scope="scope">
-          {{ scope.row.assetName || scope.row.originalFilename || '-' }}
+          <div class="cell-with-copy">
+            <span class="cell-ellipsis" :title="scope.row.assetName || scope.row.originalFilename || '-'">
+              {{ scope.row.assetName || scope.row.originalFilename || '-' }}
+            </span>
+            <el-button
+              v-if="scope.row.assetName || scope.row.originalFilename"
+              class="cell-copy"
+              type="text"
+              size="mini"
+              icon="el-icon-document-copy"
+              title="复制"
+              @click.stop="copyText(scope.row.assetName || scope.row.originalFilename)"
+            />
+          </div>
         </template>
       </el-table-column>
-      <el-table-column label="原始文件名" prop="originalFilename" min-width="170" show-overflow-tooltip />
+      <el-table-column label="原始文件名" min-width="130">
+        <template slot-scope="scope">
+          <div class="cell-with-copy">
+            <span class="cell-ellipsis" :title="scope.row.originalFilename || '-'">
+              {{ scope.row.originalFilename || '-' }}
+            </span>
+            <el-button
+              v-if="scope.row.originalFilename"
+              class="cell-copy"
+              type="text"
+              size="mini"
+              icon="el-icon-document-copy"
+              title="复制"
+              @click.stop="copyText(scope.row.originalFilename)"
+            />
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="110" align="center">
         <template slot-scope="scope">
           <el-tag :type="imageStatusTagType(scope.row.status)" size="mini">{{ imageStatusLabel(scope.row.status) }}</el-tag>
@@ -115,9 +145,9 @@
           {{ serviceNameLabel(scope.row.serviceName) }}
         </template>
       </el-table-column>
-      <el-table-column label="图片类型" width="110" align="center">
+      <el-table-column label="图片类型" width="160" align="center">
         <template slot-scope="scope">
-          {{ imageContentTypeLabel(scope.row.actualContentType || scope.row.declaredContentType) }}
+          <span class="nowrap">{{ imageContentTypeLabel(scope.row.actualContentType || scope.row.declaredContentType) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="大小" width="100" align="center">
@@ -125,21 +155,44 @@
           {{ formatFileSize(scope.row.actualSize != null ? scope.row.actualSize : scope.row.declaredSize) }}
         </template>
       </el-table-column>
-      <el-table-column label="对象键" prop="objectKey" min-width="260" show-overflow-tooltip />
+      <el-table-column label="公开访问 URL" min-width="180">
+        <template slot-scope="scope">
+          <div v-if="scope.row.status === 'UPLOADED' && scope.row.accessUrl" class="cell-with-copy">
+            <span class="cell-ellipsis" :title="scope.row.accessUrl">{{ scope.row.accessUrl }}</span>
+            <el-button
+              class="cell-copy"
+              type="text"
+              size="mini"
+              icon="el-icon-document-copy"
+              title="复制"
+              @click.stop="copyText(scope.row.accessUrl)"
+            />
+          </div>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="对象键" min-width="180">
+        <template slot-scope="scope">
+          <div class="cell-with-copy">
+            <span class="cell-ellipsis" :title="scope.row.objectKey || '-'">{{ scope.row.objectKey || '-' }}</span>
+            <el-button
+              v-if="scope.row.objectKey"
+              class="cell-copy"
+              type="text"
+              size="mini"
+              icon="el-icon-document-copy"
+              title="复制"
+              @click.stop="copyText(scope.row.objectKey)"
+            />
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="上传时间" width="160" align="center">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.uploadTime) || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="公开访问 URL" min-width="220" show-overflow-tooltip>
-        <template slot-scope="scope">
-          <template v-if="scope.row.status === 'UPLOADED' && scope.row.accessUrl">
-            <span>{{ scope.row.accessUrl }}</span>
-          </template>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="330" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="260" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-hasPermi="['oss:image:query']"
@@ -156,14 +209,6 @@
             :disabled="scope.row.status !== 'UPLOADED'"
             @click="handlePreview(scope.row)"
           >预览</el-button>
-          <el-button
-            v-hasPermi="['oss:image:query']"
-            size="mini"
-            type="text"
-            icon="el-icon-document-copy"
-            :disabled="scope.row.status !== 'UPLOADED' || !scope.row.accessUrl"
-            @click="copyText(scope.row.accessUrl)"
-          >复制 URL</el-button>
           <el-button
             v-if="isDefaultAsset(scope.row)"
             v-hasPermi="['oss:image:edit']"
@@ -908,5 +953,31 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   margin-top: 4px;
+}
+
+/* 单元格内文本省略 + 复制图标 */
+.cell-with-copy {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.cell-with-copy .cell-ellipsis {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cell-with-copy .cell-copy {
+  flex: none;
+  margin-left: 2px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 </style>
