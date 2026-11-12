@@ -489,7 +489,7 @@ export default {
       }).catch(() => {});
     },
     handleExport() {
-      this.download('edd-dictionary/api/mpt/dictionary/v1/export', {
+      this.download('edd-dict/api/mpt/dictionary/v1/export', {
         ...this.queryParams
       }, `dictionary_${new Date().getTime()}.xlsx`);
     },

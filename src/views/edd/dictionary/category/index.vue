@@ -302,7 +302,7 @@ export default {
       this.$router.push('/edd/dictionary/column/index/' + row.id);
     },
     handleExport() {
-      this.download('edd-dictionary/api/mpt/dictionaryCategory/v1/export', {
+      this.download('edd-dict/api/mpt/dictionaryCategory/v1/export', {
         ...this.queryParams
       }, `category_${new Date().getTime()}.xlsx`);
     },
