@@ -121,18 +121,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['user:account:account:remove']"
-        >删除
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="el-icon-download"
@@ -180,7 +168,7 @@
           <span>{{ formatTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="100">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
         <template slot-scope="scope" v-if="scope.row.userId">
           <el-button
             size="mini"
@@ -192,11 +180,13 @@
           </el-button>
           <el-button
             size="mini"
-            type="text"
-            icon="el-icon-delete"
+            type="danger"
+            plain
+            icon="el-icon-delete-solid"
+            style="margin-left: 8px;"
             @click="handleDelete(scope.row)"
             v-hasPermi="['user:account:account:remove']"
-          >删除
+          >物理删除
           </el-button>
         </template>
       </el-table-column>
@@ -271,8 +261,6 @@ export default {
       ids: [],
       // 非单个禁用
       single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -487,7 +475,6 @@ export default {
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.userId)
       this.single = selection.length != 1
-      this.multiple = !selection.length
     },
     /** 新增按钮操作 */
     handleAdd() {
@@ -552,11 +539,11 @@ export default {
         }
       });
     },
-    /** 删除按钮操作 */
+    /** 物理删除按钮操作 */
     handleDelete(row) {
-      const userIds = row.userId ? [row.userId] : this.ids;
-      this.$modal.confirm('是否确认删除选中的数据项？').then(function () {
-        return delAccount(userIds);
+      const userId = row.userId;
+      this.$modal.confirm('物理删除将清除该账号及其全部关联数据且不可恢复，是否确认删除账号【' + userId + '】？').then(function () {
+        return delAccount([userId]);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");

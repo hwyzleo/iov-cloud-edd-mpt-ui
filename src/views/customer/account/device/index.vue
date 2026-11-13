@@ -10,10 +10,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="用户ID" prop="userId">
+      <el-form-item label="账号ID" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户ID"
+          placeholder="请输入账号ID"
           clearable
           style="width: 200px"
           @keyup.enter.native="handleQuery"
@@ -105,8 +105,18 @@
     </el-row>
 
     <el-table v-loading="loading" :data="deviceList">
-      <el-table-column label="设备ID" prop="deviceId"  width="140" show-overflow-tooltip/>
-      <el-table-column label="用户ID" prop="userId"  width="140" show-overflow-tooltip/>
+      <el-table-column label="设备ID" prop="deviceId" width="170" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.deviceId)" title="复制"></el-button>
+          <span>{{ scope.row.deviceId }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="账号ID" prop="userId" width="170" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.userId)" title="复制"></el-button>
+          <span>{{ scope.row.userId }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="客户端ID" prop="clientId"  width="120" show-overflow-tooltip/>
       <el-table-column label="设备名称" prop="deviceName"/>
       <el-table-column label="设备系统" prop="deviceOs" width="80" align="center"/>
@@ -166,7 +176,7 @@ export default {
       dateRange: [],
       queryParams: {
         pageNum: 1,
-        pageSize: 20,
+        pageSize: 10,
         deviceId: undefined,
         userId: undefined,
         clientId: undefined,
@@ -208,6 +218,25 @@ export default {
     handleQuery() {
       this.queryParams.pageNum = 1;
       this.getList();
+    },
+    // 复制文本
+    copyText(text) {
+      if (!text) return
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$modal.msgSuccess('复制成功')
+        }).catch(() => {
+          this.$modal.msgError('复制失败')
+        })
+      } else {
+        const input = document.createElement('input')
+        input.value = text
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+        this.$modal.msgSuccess('复制成功')
+      }
     },
     resetQuery() {
       this.dateRange = [];

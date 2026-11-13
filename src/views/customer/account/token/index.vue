@@ -10,10 +10,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="用户 ID" prop="userId">
+      <el-form-item label="账号 ID" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户 ID"
+          placeholder="请输入账号 ID"
           clearable
           style="width: 200px"
           @keyup.enter.native="handleQuery"
@@ -72,9 +72,24 @@
     </el-row>
 
     <el-table v-loading="loading" :data="tokenList">
-      <el-table-column label="刷新令牌 ID" prop="refreshTokenId" width="120" show-overflow-tooltip/>
-      <el-table-column label="用户 ID" prop="userId" width="120" show-overflow-tooltip/>
-      <el-table-column label="会话 ID" prop="sessionId" width="120" show-overflow-tooltip/>
+      <el-table-column label="刷新令牌 ID" prop="refreshTokenId" width="160" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.refreshTokenId)" title="复制"></el-button>
+          <span>{{ scope.row.refreshTokenId }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="账号 ID" prop="userId" width="160" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.userId)" title="复制"></el-button>
+          <span>{{ scope.row.userId }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="会话 ID" prop="sessionId" width="160" show-overflow-tooltip>
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-document" style="padding: 0; margin-right: 5px;" @click="copyText(scope.row.sessionId)" title="复制"></el-button>
+          <span>{{ scope.row.sessionId }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="客户端 ID" prop="clientId" width="120" show-overflow-tooltip/>
       <el-table-column label="令牌指纹" prop="tokenFingerprint" />
       <el-table-column label="令牌状态" prop="tokenStatus" width="80" align="center">
@@ -120,7 +135,7 @@ export default {
       dateRange: [],
       queryParams: {
         pageNum: 1,
-        pageSize: 20,
+        pageSize: 10,
         refreshTokenId: undefined,
         userId: undefined,
         sessionId: undefined,
@@ -165,6 +180,25 @@ export default {
         4: 'info'
       };
       return typeMap[tokenStatus] || 'info';
+    },
+    // 复制文本
+    copyText(text) {
+      if (!text) return
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.$modal.msgSuccess('复制成功')
+        }).catch(() => {
+          this.$modal.msgError('复制失败')
+        })
+      } else {
+        const input = document.createElement('input')
+        input.value = text
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+        this.$modal.msgSuccess('复制成功')
+      }
     },
     handleQuery() {
       this.queryParams.pageNum = 1;
