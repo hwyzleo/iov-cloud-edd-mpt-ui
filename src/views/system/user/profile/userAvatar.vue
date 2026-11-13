@@ -46,7 +46,7 @@
           <el-button icon="el-icon-refresh-right" size="small" @click="rotateRight()"></el-button>
         </el-col>
         <el-col :lg="{span: 2, offset: 6}" :sm="2" :xs="2">
-          <el-button type="primary" size="small" @click="uploadImg()">提 交</el-button>
+          <el-button type="primary" size="small" :loading="uploading" :disabled="uploading" @click="uploadImg()">提 交</el-button>
         </el-col>
       </el-row>
     </el-dialog>
@@ -56,8 +56,16 @@
 <script>
 import store from "@/store";
 import { VueCropper } from "vue-cropper";
-import { uploadAvatar } from "@/api/system/user";
+import { createAvatarUploadTicket, completeAvatarUpload } from "@/api/system/user";
 import { debounce } from '@/utils'
+import {
+  AVATAR_FILENAME,
+  AVATAR_CONTENT_TYPE,
+  UPLOAD_STAGE,
+  putAvatarToCos,
+  stageFailureMessage,
+  validateAvatarFile
+} from './avatarUpload'
 
 export default {
   components: { VueCropper },
@@ -76,10 +84,12 @@ export default {
         autoCropHeight: 200,        // 默认生成截图框高度
         fixedBox: true,             // 固定截图框大小 不允许改变
         outputType:"png",           // 默认生成截图为PNG格式
-        filename: 'avatar'          // 文件名称
+        filename: AVATAR_FILENAME    // 上传文件名与 PNG 输出保持一致
       },
       previews: {},
-      resizeHandler: null
+      resizeHandler: null,
+      // 上传中标志：禁止重复提交，保存动作等待上传完成（US-004）
+      uploading: false
     };
   },
   methods: {
@@ -117,30 +127,58 @@ export default {
       num = num || 1;
       this.$refs.cropper.changeScale(num);
     },
-    // 上传预处理
+    // 上传预处理：image/* 且不超过 10 MiB
     beforeUpload(file) {
-      if (file.type.indexOf("image/") == -1) {
-        this.$modal.msgError("文件格式错误，请上传图片类型,如：JPG，PNG后缀的文件。");
-      } else {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-          this.options.img = reader.result;
-          this.options.filename = file.name;
-        };
+      const check = validateAvatarFile(file);
+      if (!check.ok) {
+        this.$modal.msgError(check.message);
+        return;
       }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        this.options.img = reader.result;
+        this.options.filename = AVATAR_FILENAME;
+      };
     },
-    // 上传图片
+    // 上传头像：申请凭证 → 浏览器直传 COS → 完成确认（EDD-MPT-DSN-CR-001 §4.3）
     uploadImg() {
-      this.$refs.cropper.getCropBlob(data => {
-        let formData = new FormData();
-        formData.append("avatarfile", data, this.options.filename);
-        uploadAvatar(formData).then(response => {
+      if (this.uploading) return;
+      this.$refs.cropper.getCropBlob(blob => {
+        if (!blob || !blob.size) {
+          this.$modal.msgError('裁剪结果为空，请重新选择图片');
+          return;
+        }
+        this.uploading = true;
+        let stage = UPLOAD_STAGE.TICKET;
+        createAvatarUploadTicket({
+          originalFilename: AVATAR_FILENAME,
+          contentType: AVATAR_CONTENT_TYPE,
+          size: blob.size
+        }).then(response => {
+          const ticket = response.data || {};
+          // 直传不经过平台 axios 拦截器，失败必须在下方显式提示
+          stage = UPLOAD_STAGE.COS;
+          return putAvatarToCos(ticket.uploadUrl, blob, ticket.contentType || AVATAR_CONTENT_TYPE)
+            .then(() => {
+              stage = UPLOAD_STAGE.COMPLETE;
+              return completeAvatarUpload(ticket.objectId, { uploadToken: ticket.uploadToken });
+            });
+        }).then(response => {
+          const data = response.data || {};
+          this.uploading = false;
           this.open = false;
-          this.options.img = response.imgUrl;
-          store.commit('SET_AVATAR', this.options.img);
-          this.$modal.msgSuccess("修改成功");
           this.visible = false;
+          this.options.img = data.imgUrl;
+          store.commit('SET_AVATAR', data.imgUrl);
+          this.$modal.msgSuccess("修改成功");
+        }).catch(error => {
+          // 任一阶段失败：保留原头像、保持弹窗打开，允许直接重试
+          this.uploading = false;
+          const failure = stageFailureMessage(stage, error);
+          if (!failure.alreadyNotified) {
+            this.$modal.msgError(failure.message);
+          }
         });
       });
     },

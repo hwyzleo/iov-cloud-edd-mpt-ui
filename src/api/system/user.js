@@ -100,12 +100,20 @@ export function updateUserPwd(oldPassword, newPassword) {
   })
 }
 
-// 用户头像上传
-export function uploadAvatar(data) {
+// 申请头像上传凭证（EDD-MPT-DSN-CR-001 §5.4）
+export function createAvatarUploadTicket(data) {
   return request({
-    url: '/system/user/profile/avatar',
+    url: '/system/user/profile/avatar/tickets',
     method: 'post',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    data: data
+  })
+}
+
+// 完成头像上传确认（EDD-MPT-DSN-CR-001 §5.4）
+export function completeAvatarUpload(objectId, data) {
+  return request({
+    url: '/system/user/profile/avatar/tickets/' + objectId + '/complete',
+    method: 'post',
     data: data
   })
 }
