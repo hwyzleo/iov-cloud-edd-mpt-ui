@@ -61,10 +61,10 @@
     </el-row>
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
-      <el-table-column label="车辆" prop="vin" width="180"/>
-      <el-table-column label="任务名称" prop="taskName"/>
-      <el-table-column label="活动名称" prop="activityName"/>
+      <el-table-column type="selection" width="55" align="center" fixed="left"/>
+      <el-table-column label="车辆" prop="vin" width="180" fixed="left" show-overflow-tooltip/>
+      <el-table-column label="任务名称" prop="taskName" min-width="220" fixed="left" show-overflow-tooltip/>
+      <el-table-column label="活动名称" prop="activityName" min-width="220" show-overflow-tooltip/>
       <el-table-column label="任务状态" prop="vehicleTaskStatus" width="120" align="center">
         <template slot-scope="scope">
           <span>{{ vehicleTaskStatusLabel(scope.row.vehicleTaskStatus) }}</span>
@@ -97,7 +97,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="340" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="240" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -126,18 +126,16 @@
               <el-dropdown-item command="executions" icon="el-icon-video-play">安装尝试</el-dropdown-item>
               <el-dropdown-item command="retryLogs" icon="el-icon-refresh">重试轨迹</el-dropdown-item>
               <el-dropdown-item command="upgradeLogs" icon="el-icon-document">升级日志</el-dropdown-item>
+              <el-dropdown-item
+                command="reset"
+                icon="el-icon-refresh-left"
+                divided
+                :disabled="scope.row.isCurrent === false || scope.row.vehicleTaskStatus === 'SUCCEEDED'"
+                :title="resetDisabledReason(scope.row)"
+                v-hasPermi="['ota:fota:taskVehicle:reset']"
+              >重置任务</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-refresh-left"
-            :disabled="scope.row.isCurrent === false || scope.row.vehicleTaskStatus === 'SUCCEEDED'"
-            :title="resetDisabledReason(scope.row)"
-            @click="handleReset(scope.row)"
-            v-hasPermi="['ota:fota:taskVehicle:reset']"
-          >重置任务
-          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -732,7 +730,8 @@ export default {
       const actions = {
         executions: () => this.handleExecutions(row),
         retryLogs: () => this.handleRetryLogs(row),
-        upgradeLogs: () => this.handleUpgradeLogs(row)
+        upgradeLogs: () => this.handleUpgradeLogs(row),
+        reset: () => this.handleReset(row)
       }
       const action = actions[command]
       if (action) action()
