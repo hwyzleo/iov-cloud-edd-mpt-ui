@@ -81,3 +81,15 @@ export function listTaskVehicleUpgradeLogs(taskVehicleId, query) {
     params: query
   })
 }
+
+// ==================== 车辆任务重置（CR-025） ====================
+
+// 重置车辆任务：旧车辆任务置为已取代，同时新建初始化状态车辆任务
+// data: { reason, force, rowVersion }
+export function resetTaskVehicle(taskVehicleId, data) {
+  return request({
+    url: '/iov-ota/api/mpt/taskVehicle/v1/' + taskVehicleId + '/action/reset',
+    method: 'post',
+    data: data
+  })
+}

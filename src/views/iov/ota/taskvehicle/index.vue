@@ -36,6 +36,9 @@
           end-placeholder="结束日期"
         ></el-date-picker>
       </el-form-item>
+      <el-form-item label="仅看当前">
+        <el-switch v-model="queryParams.isCurrent" @change="handleQuery"/>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -70,6 +73,23 @@
       <el-table-column label="结果代码" prop="resultCode" width="140" align="center" show-overflow-tooltip>
         <template slot-scope="scope">
           <span>{{ scope.row.resultCode || '--' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="当前任务" align="center" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isCurrent === false ? 'info' : 'success'" size="mini">
+            {{ scope.row.isCurrent === false ? '已取代' : '当前' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="重置次数" align="center" prop="resetCount" width="90">
+        <template slot-scope="scope">
+          <span>{{ scope.row.resetCount || 0 }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="取代者" align="center" prop="supersededBy" width="100">
+        <template slot-scope="scope">
+          <span>{{ scope.row.supersededBy || '--' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -108,6 +128,16 @@
               <el-dropdown-item command="upgradeLogs" icon="el-icon-document">升级日志</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-left"
+            :disabled="scope.row.isCurrent === false || scope.row.vehicleTaskStatus === 'SUCCEEDED'"
+            :title="resetDisabledReason(scope.row)"
+            @click="handleReset(scope.row)"
+            v-hasPermi="['ota:fota:taskVehicle:reset']"
+          >重置任务
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -119,6 +149,44 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 车辆任务重置确认（CR-025） -->
+    <el-dialog title="重置车辆任务" :visible.sync="resetOpen" width="560px" append-to-body>
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="重置将把当前车辆任务标记为「已取代」，并为该车新建一条初始化状态的车辆任务，历史授权、安装与日志记录全部保留。"
+      />
+      <el-form :model="resetForm" label-width="90px" size="small" style="margin-top: 12px">
+        <el-form-item label="车辆任务">{{ resetForm.vehicleTaskStatus }}（ID: {{ resetForm.id }}）</el-form-item>
+        <el-form-item label="重置原因" required>
+          <el-input
+            v-model="resetForm.reason"
+            type="textarea"
+            :rows="3"
+            maxlength="512"
+            show-word-limit
+            placeholder="请填写重置原因（必填，用于审计）"
+          />
+        </el-form-item>
+        <el-form-item v-if="resetForm.isExecuting" label="风险确认">
+          <el-checkbox v-model="resetForm.confirmed">
+            我已知悉以下风险，确认强制重置
+          </el-checkbox>
+          <ul class="reset-risk-list">
+            <li>车端可能仍在刷写，ECU 实际状态未知；</li>
+            <li>本次安装将按「已取消 / 结果未知」收口，不计入成功或失败统计；</li>
+            <li>重置后该车需重新执行下载与安装流程，并按任务要求重新授权；</li>
+            <li>旧车辆任务将被标记为「已取代」，历史过程仍可在详情中查看。</li>
+          </ul>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="resetOpen = false">取 消</el-button>
+        <el-button type="primary" :loading="resetLoading" @click="submitReset">确 定</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 升级过程抽屉 -->
     <el-drawer title="升级过程" :visible.sync="open" direction="rtl" size="800px"
@@ -158,6 +226,32 @@
           </el-row>
         </el-form>
         <div v-else class="drawer-row">暂无车辆任务信息</div>
+
+        <!-- 重置记录（CR-025） -->
+        <div class="drawer-title">重置记录</div>
+        <el-table v-if="processData && processData.resetLogs && processData.resetLogs.length" :data="processData.resetLogs">
+          <el-table-column label="原车辆任务" prop="oldVehicleTaskId" min-width="110"/>
+          <el-table-column label="新车辆任务" prop="newVehicleTaskId" min-width="110"/>
+          <el-table-column label="原状态" prop="oldStatus" min-width="110"/>
+          <el-table-column label="强制收口执行" min-width="110">
+            <template slot-scope="scope">
+              <span>{{ scope.row.oldExecutionId || '--' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="是否强制" width="90" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.force ? 'warning' : 'info'" size="mini">{{ scope.row.force ? '强制' : '常规' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="原因" prop="reason" min-width="180" show-overflow-tooltip/>
+          <el-table-column label="操作人" prop="operator" width="110"/>
+          <el-table-column label="操作时间" min-width="160">
+            <template slot-scope="scope">
+              <span>{{ parseTime(scope.row.createdAt) }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div v-else class="drawer-row">暂无重置记录</div>
 
         <!-- 授权汇总 -->
         <div class="drawer-title">授权汇总</div>
@@ -360,7 +454,8 @@ import {
   listTaskVehicleExecutions,
   listTaskVehicleExecutionEvents,
   listTaskVehicleRetryLogs,
-  listTaskVehicleUpgradeLogs
+  listTaskVehicleUpgradeLogs,
+  resetTaskVehicle
 } from "@/api/iov/ota/taskvehicle";
 import { VEHICLE_TASK_STATUS_OPTIONS, vehicleTaskStatusLabel } from "@/views/iov/ota/vehicle/constants";
 
@@ -425,10 +520,22 @@ export default {
       open: false,
       // 日期范围
       dateRange: [],
-      // 查询参数
+      // 查询参数（isCurrent=true 时仅返回当前车辆任务，CR-025）
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        isCurrent: true
+      },
+      // 车辆任务重置（CR-025）
+      resetOpen: false,
+      resetLoading: false,
+      resetForm: {
+        id: undefined,
+        vehicleTaskStatus: '',
+        reason: '',
+        confirmed: false,
+        isExecuting: false,
+        rowVersion: undefined
       },
       // 任务状态筛选项（与 VehicleTaskStatus 枚举、列表展示字典同源）
       vehicleTaskStatusOptions: VEHICLE_TASK_STATUS_OPTIONS,
@@ -483,7 +590,58 @@ export default {
     resetQuery() {
       this.dateRange = [];
       this.resetForm("queryForm");
+      this.queryParams.isCurrent = true;
       this.handleQuery();
+    },
+    /** 重置入口禁用原因（CR-025） */
+    resetDisabledReason(row) {
+      if (row.isCurrent === false) {
+        return "已被取代的历史车辆任务不可重置";
+      }
+      if (row.vehicleTaskStatus === "SUCCEEDED") {
+        return "已成功的车辆任务不可重置";
+      }
+      return "";
+    },
+    /** 打开重置确认 */
+    handleReset(row) {
+      this.resetForm = {
+        id: row.id,
+        vehicleTaskStatus: this.vehicleTaskStatusLabel(row.vehicleTaskStatus),
+        reason: "",
+        confirmed: false,
+        isExecuting: row.vehicleTaskStatus === "EXECUTING" || row.vehicleTaskStatus === "ROLLBACK_PENDING",
+        rowVersion: undefined
+      };
+      this.resetOpen = true;
+    },
+    /** 提交重置：执行中需勾选风险确认（后端要求 force=true） */
+    submitReset() {
+      if (!this.resetForm.reason || !this.resetForm.reason.trim()) {
+        this.$modal.msgWarning("请填写重置原因");
+        return;
+      }
+      if (this.resetForm.isExecuting && !this.resetForm.confirmed) {
+        this.$modal.msgWarning("请先勾选风险确认");
+        return;
+      }
+      this.resetLoading = true;
+      resetTaskVehicle(this.resetForm.id, {
+        reason: this.resetForm.reason.trim(),
+        force: this.resetForm.isExecuting && this.resetForm.confirmed
+      }).then(res => {
+        const data = res.data || {};
+        this.$modal.msgSuccess(
+          "重置成功：新车辆任务[" + (data.newVehicleTaskId || "-") + "]" +
+          (data.forcedExecutionCanceled ? "，已强制收口执行[" + (data.oldExecutionId || "-") + "]" : "")
+        );
+        this.resetOpen = false;
+        this.getList();
+      }).catch(err => {
+        this.$modal.msgError((err && err.message) ? err.message : "重置失败");
+      }).finally(() => {
+        this.resetLoading = false;
+      });
     },
     /** 多选框选中数据 */
     handleSelectionChange(selection) {
@@ -708,5 +866,12 @@ export default {
 
 .drawer-row {
   margin-bottom: 15px;
+}
+
+.reset-risk-list {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+  color: #e6a23c;
+  line-height: 1.8;
 }
 </style>
