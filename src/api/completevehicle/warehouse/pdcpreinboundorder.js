@@ -18,6 +18,33 @@ export function getPreInboundOrder(preInboundOrderId) {
   })
 }
 
+// 到货确认（PENDING_ARRIVAL → ARRIVED）
+export function arrivalPreInboundOrder(orderNum, data) {
+  return request({
+    url: '/otd-wms/mpt/preInboundOrder/' + orderNum + '/arrival',
+    method: 'post',
+    data: data
+  })
+}
+
+// 入库确认（ARRIVED → COMPLETED，生成库存）
+export function inboundPreInboundOrder(orderNum, data) {
+  return request({
+    url: '/otd-wms/mpt/preInboundOrder/' + orderNum + '/inbound',
+    method: 'post',
+    data: data
+  })
+}
+
+// 取消预入库单（完成前允许）
+export function cancelPreInboundOrder(orderNum, data) {
+  return request({
+    url: '/otd-wms/mpt/preInboundOrder/' + orderNum + '/cancellation',
+    method: 'post',
+    data: data
+  })
+}
+
 // 新增预入库单
 export function addPreInboundOrder(data) {
   data.warehouseLevel = "PDC";
