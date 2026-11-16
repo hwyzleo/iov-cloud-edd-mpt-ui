@@ -164,73 +164,100 @@
     />
 
     <!-- 添加或修改仓库配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="760px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="仓库代码" prop="code">
-          <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入仓库代码"/>
-        </el-form-item>
-        <el-form-item label="仓库名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入仓库名称"/>
-        </el-form-item>
-        <el-form-item label="仓库管理员" prop="manager">
-          <el-input v-model="form.manager" placeholder="请输入仓库管理员"/>
-        </el-form-item>
-        <el-form-item label="仓库体系层级" prop="warehouseLevel">
-          <el-select
-            v-model="form.warehouseLevel"
-            placeholder="仓库体系层级"
-            clearable
-          >
-            <el-option
-              v-for="dict in dict.type.iov_warehouse_level"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所在省" prop="provinceCode">
-          <el-input v-model="form.provinceCode" placeholder="请输入所在省"/>
-        </el-form-item>
-        <el-form-item label="所在市" prop="cityCode">
-          <el-input v-model="form.cityCode" placeholder="请输入所在市"/>
-        </el-form-item>
-        <el-form-item label="所在区" prop="countyCode">
-          <el-input v-model="form.countyCode" placeholder="请输入所在区"/>
-        </el-form-item>
-        <el-form-item label="仓库地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入仓库地址"/>
-        </el-form-item>
-        <el-form-item label="邮编" prop="zipcode">
-          <el-input v-model="form.zipcode" placeholder="请输入邮编"/>
-        </el-form-item>
-        <el-form-item label="传真" prop="fax">
-          <el-input v-model="form.fax" placeholder="请输入传真"/>
-        </el-form-item>
-        <el-form-item label="电话" prop="tel">
-          <el-input v-model="form.tel" placeholder="请输入电话"/>
-        </el-form-item>
-        <el-form-item label="手机" prop="mobile">
-          <el-input v-model="form.mobile" placeholder="请输入手机"/>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="form.enable">
-            <el-radio
-              :label="true"
-            >启用
-            </el-radio>
-            <el-radio
-              :label="false"
-            >停用
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="仓库代码" prop="code">
+              <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入仓库代码"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="仓库名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入仓库名称"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="仓库体系层级" prop="warehouseLevel">
+              <el-select
+                v-model="form.warehouseLevel"
+                placeholder="仓库体系层级"
+                clearable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="dict in dict.type.iov_warehouse_level"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="仓库管理员" prop="manager">
+              <el-input v-model="form.manager" placeholder="请输入仓库管理员"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所在省" prop="provinceCode">
+              <el-input v-model="form.provinceCode" placeholder="请输入所在省"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所在市" prop="cityCode">
+              <el-input v-model="form.cityCode" placeholder="请输入所在市"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所在区" prop="countyCode">
+              <el-input v-model="form.countyCode" placeholder="请输入所在区"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="邮编" prop="zipcode">
+              <el-input v-model="form.zipcode" placeholder="请输入邮编"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电话" prop="tel">
+              <el-input v-model="form.tel" placeholder="请输入电话"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机" prop="mobile">
+              <el-input v-model="form.mobile" placeholder="请输入手机"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="传真" prop="fax">
+              <el-input v-model="form.fax" placeholder="请输入传真"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort">
+              <el-input-number v-model="form.sort" controls-position="right" :min="0" style="width: 100%"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态">
+              <el-radio-group v-model="form.enable">
+                <el-radio :label="true">启用</el-radio>
+                <el-radio :label="false">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="仓库地址" prop="address">
+              <el-input v-model="form.address" placeholder="请输入仓库地址"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="备注">
+              <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入内容"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -515,8 +542,8 @@ export default {
     getList() {
       this.loading = true;
       listWarehouse(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.warehouseList = response.rows;
-          this.total = response.total;
+          this.warehouseList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
