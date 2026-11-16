@@ -268,7 +268,7 @@
     <!-- 储区管理列表对话框 -->
     <el-dialog :title="title" :visible.sync="openStorageAreaList" width="800px" append-to-body>
       <el-table v-loading="loading" :data="storageAreaList">
-        <el-table-column label="储区代码" prop="code" width="100"/>
+        <el-table-column label="储区代码" prop="code" width="150"/>
         <el-table-column label="储区名称" prop="name"/>
         <el-table-column label="储区管理员" prop="manager" width="100"/>
         <el-table-column label="是否启用" align="center" width="100">
@@ -357,7 +357,7 @@
     <!-- 储位管理列表对话框 -->
     <el-dialog :title="title2" :visible.sync="openStorageLocationList" width="800px" append-to-body>
       <el-table v-loading="loading" :data="storageLocationList">
-        <el-table-column label="储位代码" prop="code" width="100"/>
+        <el-table-column label="储位代码" prop="code" width="180"/>
         <el-table-column label="储位名称" prop="name"/>
         <el-table-column label="储位管理员" prop="manager" width="100"/>
         <el-table-column label="是否启用" align="center" width="100">
