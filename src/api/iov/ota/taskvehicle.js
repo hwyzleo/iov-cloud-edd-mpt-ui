@@ -73,6 +73,25 @@ export function listTaskVehicleRetryLogs(taskVehicleId, query) {
   })
 }
 
+// 查询车辆任务包阶段结果历史（CR-026，数据库分页）
+export function listTaskVehiclePackageStageResults(taskVehicleId, query) {
+  return request({
+    url: '/iov-ota/api/mpt/taskVehicle/v1/' + taskVehicleId + '/packageStageResults',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询包下载尝试的进度历史（CR-026，数据库分页）
+export function listTaskVehicleDownloadEvents(taskVehicleId, packageId, attemptNo, query) {
+  return request({
+    url: '/iov-ota/api/mpt/taskVehicle/v1/' + taskVehicleId + '/packages/' + encodeURIComponent(packageId)
+      + '/downloadAttempts/' + attemptNo + '/downloadEvents',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询车辆任务升级日志登记
 export function listTaskVehicleUpgradeLogs(taskVehicleId, query) {
   return request({

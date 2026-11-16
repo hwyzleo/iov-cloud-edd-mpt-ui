@@ -124,6 +124,7 @@
             <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多<i class="el-icon-arrow-down el-icon--right"></i></el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="executions" icon="el-icon-video-play">安装尝试</el-dropdown-item>
+              <el-dropdown-item command="stageResults" icon="el-icon-s-data">包阶段历史</el-dropdown-item>
               <el-dropdown-item command="retryLogs" icon="el-icon-refresh">重试轨迹</el-dropdown-item>
               <el-dropdown-item command="upgradeLogs" icon="el-icon-document">升级日志</el-dropdown-item>
               <el-dropdown-item
@@ -294,11 +295,84 @@
           <el-table-column label="状态" prop="status" width="110" align="center"/>
           <el-table-column label="已接受序号" prop="acceptedSequenceNo" width="110" align="center"/>
           <el-table-column label="最终序号" prop="finalSequenceNo" width="100" align="center"/>
-          <el-table-column label="缺失区间" prop="missingSequenceRanges" min-width="140" show-overflow-tooltip/>
+          <el-table-column label="缺失区间" prop="missingSequenceRanges" min-width="120" show-overflow-tooltip/>
+          <el-table-column label="开始时间" width="170" align="center">
+            <template slot-scope="scope">
+              <span v-if="scope.row.startTime" :title="'云端受理：' + (parseTime(scope.row.startReceivedTime) || '未知')">
+                {{ parseTime(scope.row.startTime) }}
+              </span>
+              <el-tag v-else type="info" size="mini">未知</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="结束时间" width="170" align="center">
+            <template slot-scope="scope">
+              <span v-if="scope.row.endTime" :title="'云端受理：' + (parseTime(scope.row.endReceivedTime) || '未知')">
+                {{ parseTime(scope.row.endTime) }}
+              </span>
+              <el-tag v-else type="info" size="mini">未知</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="耗时" width="110" align="center">
+            <template slot-scope="scope">{{ formatDuration(scope.row.durationMs) }}</template>
+          </el-table-column>
           <el-table-column label="活跃" prop="active" width="80" align="center">
             <template slot-scope="scope">{{ scope.row.active ? '是' : '否' }}</template>
           </el-table-column>
         </el-table>
+
+        <!-- 包下载进度（CR-026：观测事实，不表示安装就绪） -->
+        <div class="drawer-title">包下载进度</div>
+        <el-table v-if="processData && processData.packageStages && processData.packageStages.length"
+                  :data="processData.packageStages">
+          <el-table-column label="包ID" prop="packageId" min-width="150" show-overflow-tooltip/>
+          <el-table-column label="版本" prop="packageRevision" min-width="110" show-overflow-tooltip/>
+          <el-table-column label="尝试" width="70" align="center">
+            <template slot-scope="scope">{{ scope.row.downloadProgress ? scope.row.downloadProgress.downloadAttemptNo : '-' }}</template>
+          </el-table-column>
+          <el-table-column label="下载状态" width="130" align="center">
+            <template slot-scope="scope">
+              <el-tag v-if="scope.row.downloadProgress" :type="downloadStateType(scope.row.downloadProgress.downloadState)" size="mini">
+                {{ downloadStateLabel(scope.row.downloadProgress.downloadState) }}
+              </el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="字节进度" min-width="170">
+            <template slot-scope="scope">
+              <template v-if="scope.row.downloadProgress">
+                <div>{{ formatBytes(scope.row.downloadProgress.downloadedBytes) }} / {{ formatBytes(scope.row.downloadProgress.totalBytes) }}</div>
+                <el-progress :percentage="Number(scope.row.downloadProgress.progressPercent || 0)"
+                             :stroke-width="6" :show-text="true"/>
+              </template>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="续传起点" width="110" align="center">
+            <template slot-scope="scope">{{ scope.row.downloadProgress ? formatBytes(scope.row.downloadProgress.resumeOffset) : '-' }}</template>
+          </el-table-column>
+          <el-table-column label="车端发生" width="165" align="center">
+            <template slot-scope="scope">{{ scope.row.downloadProgress ? (parseTime(scope.row.downloadProgress.occurredAt) || '未知') : '-' }}</template>
+          </el-table-column>
+          <el-table-column label="云端受理" width="165" align="center">
+            <template slot-scope="scope">{{ scope.row.downloadProgress ? (parseTime(scope.row.downloadProgress.receivedAt) || '-') : '-' }}</template>
+          </el-table-column>
+          <el-table-column label="失败原因" min-width="140" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <span v-if="scope.row.downloadProgress">
+                {{ scope.row.downloadProgress.errorCode || scope.row.downloadProgress.failureReason || '-' }}
+              </span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="90" align="center">
+            <template slot-scope="scope">
+              <el-button v-if="scope.row.downloadProgress" size="mini" type="text" icon="el-icon-time"
+                         @click="handleDownloadHistory(scope.row)">历史</el-button>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div v-else class="drawer-row">暂无下载进度</div>
       </div>
     </el-drawer>
 
@@ -376,7 +450,26 @@
             <el-table-column label="状态" prop="status" width="100" align="center"/>
             <el-table-column label="已接受序号" prop="acceptedSequenceNo" width="110" align="center"/>
             <el-table-column label="最终序号" prop="finalSequenceNo" width="100" align="center"/>
-            <el-table-column label="缺失区间" prop="missingSequenceRanges" min-width="140" show-overflow-tooltip/>
+            <el-table-column label="缺失区间" prop="missingSequenceRanges" min-width="120" show-overflow-tooltip/>
+            <el-table-column label="开始时间" width="170" align="center">
+              <template slot-scope="scope">
+                <span v-if="scope.row.startTime" :title="'云端受理：' + (parseTime(scope.row.startReceivedTime) || '未知')">
+                  {{ parseTime(scope.row.startTime) }}
+                </span>
+                <el-tag v-else type="info" size="mini">未知</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="结束时间" width="170" align="center">
+              <template slot-scope="scope">
+                <span v-if="scope.row.endTime" :title="'云端受理：' + (parseTime(scope.row.endReceivedTime) || '未知')">
+                  {{ parseTime(scope.row.endTime) }}
+                </span>
+                <el-tag v-else type="info" size="mini">未知</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="耗时" width="110" align="center">
+              <template slot-scope="scope">{{ formatDuration(scope.row.durationMs) }}</template>
+            </el-table-column>
             <el-table-column label="活跃" prop="active" width="80" align="center">
               <template slot-scope="scope">{{ scope.row.active ? '是' : '否' }}</template>
             </el-table-column>
@@ -388,30 +481,131 @@
           </el-table>
           <pagination v-show="executionsTotal>0" :total="executionsTotal" :page.sync="executionsQueryParams.pageNum" :limit.sync="executionsQueryParams.pageSize" @pagination="loadExecutions"/>
         </el-tab-pane>
+
+        <el-tab-pane label="包阶段历史" name="stageResults">
+          <el-form :inline="true" size="mini" class="tab-filter">
+            <el-form-item label="包ID">
+              <el-input v-model="stageResultsQueryParams.packageId" clearable placeholder="精确匹配" style="width: 190px"/>
+            </el-form-item>
+            <el-form-item label="阶段">
+              <el-select v-model="stageResultsQueryParams.stage" clearable placeholder="全部" style="width: 130px">
+                <el-option label="DOWNLOAD" value="DOWNLOAD"/>
+                <el-option label="VERIFY" value="VERIFY"/>
+                <el-option label="DECRYPT" value="DECRYPT"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" icon="el-icon-search" @click="stageResultsQueryParams.pageNum = 1; loadPackageStageResults()">查询</el-button>
+            </el-form-item>
+          </el-form>
+          <el-table v-loading="stageResultsLoading" :data="stageResultsList">
+            <el-table-column label="包ID" prop="packageId" min-width="150" show-overflow-tooltip/>
+            <el-table-column label="阶段" prop="stage" width="95" align="center"/>
+            <el-table-column label="结果" width="90" align="center">
+              <template slot-scope="scope">
+                <el-tag :type="scope.row.resultStatus === 'SUCCESS' ? 'success' : 'danger'" size="mini">
+                  {{ scope.row.resultStatus }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="版本" prop="packageRevision" min-width="110" show-overflow-tooltip/>
+            <el-table-column label="ETag" prop="etag" min-width="110" show-overflow-tooltip/>
+            <el-table-column label="签名校验" prop="signatureResult" width="100" align="center"/>
+            <el-table-column label="解密结果" prop="decryptResult" width="100" align="center"/>
+            <el-table-column label="尝试" width="70" align="center">
+              <template slot-scope="scope">{{ scope.row.downloadAttemptNo == null ? '-' : scope.row.downloadAttemptNo }}</template>
+            </el-table-column>
+            <el-table-column label="失败原因" prop="failReason" min-width="140" show-overflow-tooltip/>
+            <el-table-column label="车端发生" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.occurredAt) || '未知' }}</template>
+            </el-table-column>
+            <el-table-column label="云端受理" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.receivedAt) || '未知' }}</template>
+            </el-table-column>
+          </el-table>
+          <pagination v-show="stageResultsTotal>0" :total="stageResultsTotal" :page.sync="stageResultsQueryParams.pageNum" :limit.sync="stageResultsQueryParams.pageSize" @pagination="loadPackageStageResults"/>
+        </el-tab-pane>
         <el-tab-pane label="重试轨迹" name="retryLogs">
+          <el-form :inline="true" size="mini" class="tab-filter">
+            <el-form-item label="阶段">
+              <el-select v-model="retryLogsQueryParams.stage" clearable placeholder="全部" style="width: 130px">
+                <el-option label="DOWNLOAD" value="DOWNLOAD"/>
+                <el-option label="INSTALL" value="INSTALL"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="动作">
+              <el-select v-model="retryLogsQueryParams.action" clearable placeholder="全部" style="width: 170px">
+                <el-option v-for="item in retryActionOptions" :key="item.value" :label="item.label" :value="item.value"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="尝试次数">
+              <el-input v-model.number="retryLogsQueryParams.attemptNo" clearable style="width: 100px"/>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" icon="el-icon-search" @click="retryLogsQueryParams.pageNum = 1; loadRetryLogs()">查询</el-button>
+            </el-form-item>
+          </el-form>
           <el-table v-loading="retryLogsLoading" :data="retryLogsList">
-            <el-table-column label="阶段" prop="stage" width="120" align="center"/>
-            <el-table-column label="尝试次数" prop="attemptNo" width="90" align="center"/>
-            <el-table-column label="偏移" prop="offset" width="90" align="center"/>
-            <el-table-column label="结果" prop="result" width="90" align="center"/>
+            <el-table-column label="阶段" prop="stage" width="95" align="center"/>
+            <el-table-column label="动作" width="130" align="center">
+              <template slot-scope="scope">{{ retryActionLabel(scope.row.action) }}</template>
+            </el-table-column>
+            <el-table-column label="尝试次数" prop="attemptNo" width="85" align="center"/>
+            <el-table-column label="偏移" width="100" align="center">
+              <template slot-scope="scope">{{ formatBytes(scope.row.offset) }}</template>
+            </el-table-column>
+            <el-table-column label="结果" prop="result" width="80" align="center"/>
+            <el-table-column label="错误码" prop="errorCode" width="130" align="center"/>
             <el-table-column label="原因" prop="reason" min-width="150" show-overflow-tooltip/>
-            <el-table-column label="重试时间" prop="retriedAt" width="170" align="center">
-              <template slot-scope="scope">{{ parseTime(scope.row.retriedAt) }}</template>
+            <el-table-column label="车端发生" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.occurredAt) || '未知' }}</template>
+            </el-table-column>
+            <el-table-column label="云端受理" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.receivedAt) || '未知' }}</template>
             </el-table-column>
           </el-table>
           <pagination v-show="retryLogsTotal>0" :total="retryLogsTotal" :page.sync="retryLogsQueryParams.pageNum" :limit.sync="retryLogsQueryParams.pageSize" @pagination="loadRetryLogs"/>
         </el-tab-pane>
         <el-tab-pane label="升级日志" name="upgradeLogs">
+          <el-alert type="info" :closable="false" show-icon
+                    title="仅展示脱敏元数据；日志正文保存在对象存储，列表不返回预签名地址或永久 URL。"/>
+          <el-form :inline="true" size="mini" class="tab-filter">
+            <el-form-item label="状态">
+              <el-select v-model="upgradeLogsQueryParams.uploadState" clearable placeholder="全部" style="width: 150px">
+                <el-option v-for="item in logUploadStateOptions" :key="item" :label="item" :value="item"/>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" icon="el-icon-search" @click="upgradeLogsQueryParams.pageNum = 1; loadUpgradeLog()">查询</el-button>
+            </el-form-item>
+          </el-form>
           <el-table v-loading="upgradeLogsLoading" :data="upgradeLogsList">
-            <el-table-column label="日志URL" prop="logUrl" min-width="240" show-overflow-tooltip>
+            <el-table-column label="申请ID" prop="logRequestId" min-width="170" show-overflow-tooltip/>
+            <el-table-column label="执行ID" width="90" align="center">
+              <template slot-scope="scope">{{ scope.row.executionId == null ? '-' : scope.row.executionId }}</template>
+            </el-table-column>
+            <el-table-column label="对象键" prop="objectKey" min-width="230" show-overflow-tooltip/>
+            <el-table-column label="大小" width="100" align="center">
+              <template slot-scope="scope">{{ formatBytes(scope.row.objectSizeBytes) }}</template>
+            </el-table-column>
+            <el-table-column label="摘要" min-width="150" show-overflow-tooltip>
               <template slot-scope="scope">
-                <el-link v-if="scope.row.logUrl" :href="scope.row.logUrl" type="primary" target="_blank">{{ scope.row.logUrl }}</el-link>
-                <span v-else>-</span>
+                <span :title="scope.row.logDigest">{{ shortDigest(scope.row.logDigest) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="上传状态" prop="uploadState" width="110" align="center"/>
-            <el-table-column label="上传时间" prop="uploadTime" width="170" align="center">
-              <template slot-scope="scope">{{ parseTime(scope.row.uploadTime) }}</template>
+            <el-table-column label="状态" width="110" align="center">
+              <template slot-scope="scope">
+                <el-tag :type="logUploadStateType(scope.row.uploadState)" size="mini">
+                  {{ logUploadStateLabel(scope.row.uploadState) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="失败原因" prop="failureReason" min-width="130" show-overflow-tooltip/>
+            <el-table-column label="授权时间" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.authorizedAt) || '未知' }}</template>
+            </el-table-column>
+            <el-table-column label="核验时间" width="165" align="center">
+              <template slot-scope="scope">{{ parseTime(scope.row.uploadedAt) || '未知' }}</template>
             </el-table-column>
           </el-table>
           <pagination v-show="upgradeLogsTotal>0" :total="upgradeLogsTotal" :page.sync="upgradeLogsQueryParams.pageNum" :limit.sync="upgradeLogsQueryParams.pageSize" @pagination="loadUpgradeLog"/>
@@ -422,15 +616,92 @@
       </div>
     </el-dialog>
 
+    <!-- 下载进度历史对话框（CR-026） -->
+    <el-dialog title="下载进度历史" :visible.sync="downloadHistoryOpen" width="1000px" append-to-body>
+      <el-form :inline="true" size="mini">
+        <el-form-item label="包ID">{{ downloadHistoryScope.packageId }}</el-form-item>
+        <el-form-item label="下载尝试">{{ downloadHistoryScope.attemptNo }}</el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="downloadEventsQueryParams.state" clearable placeholder="全部" style="width: 150px">
+            <el-option v-for="item in downloadStateOptions" :key="item" :label="downloadStateLabel(item)" :value="item"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search"
+                     @click="downloadEventsQueryParams.pageNum = 1; loadDownloadEvents()">查询</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table v-loading="downloadEventsLoading" :data="downloadEventsList">
+        <el-table-column label="进度ID" prop="progressId" min-width="170" show-overflow-tooltip/>
+        <el-table-column label="序号" prop="progressSeq" width="80" align="center"/>
+        <el-table-column label="状态" width="130" align="center">
+          <template slot-scope="scope">
+            <el-tag :type="downloadStateType(scope.row.downloadState)" size="mini">
+              {{ downloadStateLabel(scope.row.downloadState) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="字节" min-width="150">
+          <template slot-scope="scope">
+            {{ formatBytes(scope.row.downloadedBytes) }} / {{ formatBytes(scope.row.totalBytes) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="百分比" width="90" align="center">
+          <template slot-scope="scope">{{ Number(scope.row.progressPercent || 0).toFixed(2) }}%</template>
+        </el-table-column>
+        <el-table-column label="续传起点" width="110" align="center">
+          <template slot-scope="scope">{{ formatBytes(scope.row.resumeOffset) }}</template>
+        </el-table-column>
+        <el-table-column label="处置" prop="disposition" width="140" align="center"/>
+        <el-table-column label="错误码" prop="errorCode" width="120" align="center"/>
+        <el-table-column label="车端发生" width="165" align="center">
+          <template slot-scope="scope">{{ parseTime(scope.row.occurredAt) || '未知' }}</template>
+        </el-table-column>
+        <el-table-column label="云端受理" width="165" align="center">
+          <template slot-scope="scope">{{ parseTime(scope.row.receivedAt) }}</template>
+        </el-table-column>
+      </el-table>
+      <pagination v-show="downloadEventsTotal>0" :total="downloadEventsTotal"
+                  :page.sync="downloadEventsQueryParams.pageNum"
+                  :limit.sync="downloadEventsQueryParams.pageSize"
+                  @pagination="loadDownloadEvents"/>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="downloadHistoryOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 执行事件对话框 -->
     <el-dialog title="执行事件" :visible.sync="eventsOpen" width="920px" append-to-body>
+      <el-form :inline="true" size="mini">
+        <el-form-item label="阶段">
+          <el-select v-model="eventsQueryParams.stage" clearable placeholder="全部" style="width: 140px">
+            <el-option label="INSTALL" value="INSTALL"/>
+            <el-option label="REBOOT" value="REBOOT"/>
+            <el-option label="POST_CHECK" value="POST_CHECK"/>
+            <el-option label="ROLLBACK" value="ROLLBACK"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" @click="eventsQueryParams.pageNum = 1; loadExecutionEvents()">查询</el-button>
+        </el-form-item>
+      </el-form>
       <el-table v-loading="eventsLoading" :data="eventsList">
-        <el-table-column label="事件ID" prop="eventId" min-width="150" show-overflow-tooltip/>
-        <el-table-column label="序号" prop="sequenceNo" width="80" align="center"/>
-        <el-table-column label="事件类型" prop="eventType" width="120" align="center"/>
-        <el-table-column label="事件摘要" prop="eventDigest" min-width="180" show-overflow-tooltip/>
+        <el-table-column label="序号" prop="sequenceNo" width="70" align="center"/>
+        <el-table-column label="阶段" prop="stage" width="110" align="center"/>
+        <el-table-column label="事件ID" prop="eventId" min-width="140" show-overflow-tooltip/>
+        <el-table-column label="进度" width="80" align="center">
+          <template slot-scope="scope">{{ scope.row.progressPercent == null ? '-' : scope.row.progressPercent + '%' }}</template>
+        </el-table-column>
+        <el-table-column label="ECU" prop="ecuId" min-width="110" show-overflow-tooltip/>
+        <el-table-column label="Target" prop="softwareTargetCode" min-width="120" show-overflow-tooltip/>
+        <el-table-column label="Slot" prop="slot" width="80" align="center"/>
+        <el-table-column label="错误码" prop="errorCode" width="130" align="center"/>
+        <el-table-column label="失败原因" prop="failureReason" min-width="150" show-overflow-tooltip/>
         <el-table-column label="处置" prop="disposition" width="100" align="center"/>
-        <el-table-column label="接收时间" prop="receivedTime" width="170" align="center">
+        <el-table-column label="车端发生" width="165" align="center">
+          <template slot-scope="scope">{{ parseTime(scope.row.occurredAt) || '未知' }}</template>
+        </el-table-column>
+        <el-table-column label="云端受理" width="165" align="center">
           <template slot-scope="scope">{{ parseTime(scope.row.receivedTime) }}</template>
         </el-table-column>
       </el-table>
@@ -453,9 +724,24 @@ import {
   listTaskVehicleExecutionEvents,
   listTaskVehicleRetryLogs,
   listTaskVehicleUpgradeLogs,
+  listTaskVehiclePackageStageResults,
+  listTaskVehicleDownloadEvents,
   resetTaskVehicle
 } from "@/api/iov/ota/taskvehicle";
 import { VEHICLE_TASK_STATUS_OPTIONS, vehicleTaskStatusLabel } from "@/views/iov/ota/vehicle/constants";
+import {
+  RETRY_ACTION_OPTIONS,
+  LOG_UPLOAD_STATE_OPTIONS,
+  DOWNLOAD_STATE_OPTIONS,
+  downloadStateLabel,
+  downloadStateType,
+  retryActionLabel,
+  logUploadStateLabel,
+  logUploadStateType,
+  formatDuration,
+  formatBytes,
+  shortDigest
+} from "@/views/iov/ota/taskvehicle/processLabels";
 
 export default {
   name: "TaskVehicle",
@@ -478,6 +764,7 @@ export default {
       list: [],
       processData: {},
       processExecutions: [],
+      processTaskVehicleId: undefined,
       // 授权记录
       consentOpen: false,
       consentLoading: false,
@@ -499,18 +786,30 @@ export default {
       executionsLoading: false,
       retryLogsList: [],
       retryLogsTotal: 0,
-      retryLogsQueryParams: { pageNum: 1, pageSize: 10 },
+      retryLogsQueryParams: { pageNum: 1, pageSize: 10, stage: undefined, action: undefined, attemptNo: undefined },
       retryLogsLoading: false,
       upgradeLogsList: [],
       upgradeLogsTotal: 0,
-      upgradeLogsQueryParams: { pageNum: 1, pageSize: 10 },
+      upgradeLogsQueryParams: { pageNum: 1, pageSize: 10, uploadState: undefined },
       upgradeLogsLoading: false,
+      // 包阶段历史（CR-026）
+      stageResultsList: [],
+      stageResultsTotal: 0,
+      stageResultsQueryParams: { pageNum: 1, pageSize: 10, packageId: undefined, stage: undefined },
+      stageResultsLoading: false,
+      // 下载进度历史（CR-026）
+      downloadHistoryOpen: false,
+      downloadHistoryScope: { packageId: undefined, attemptNo: undefined },
+      downloadEventsList: [],
+      downloadEventsTotal: 0,
+      downloadEventsQueryParams: { pageNum: 1, pageSize: 10, state: undefined },
+      downloadEventsLoading: false,
       // 执行事件
       eventsOpen: false,
       eventsLoading: false,
       eventsList: [],
       eventsTotal: 0,
-      eventsQueryParams: { pageNum: 1, pageSize: 10 },
+      eventsQueryParams: { pageNum: 1, pageSize: 10, stage: undefined },
       currentExecutionId: undefined,
       // 弹出层标题
       title: "",
@@ -537,6 +836,10 @@ export default {
       },
       // 任务状态筛选项（与 VehicleTaskStatus 枚举、列表展示字典同源）
       vehicleTaskStatusOptions: VEHICLE_TASK_STATUS_OPTIONS,
+      // CR-026 枚举选项（与后端冻结取值同源）
+      retryActionOptions: RETRY_ACTION_OPTIONS,
+      logUploadStateOptions: LOG_UPLOAD_STATE_OPTIONS,
+      downloadStateOptions: DOWNLOAD_STATE_OPTIONS,
       // 表单参数
       form: {},
       // 表单校验
@@ -556,6 +859,15 @@ export default {
     }
   },
   methods: {
+    // CR-026 过程展示字典与格式化（共享模块，单测覆盖）
+    downloadStateLabel,
+    downloadStateType,
+    retryActionLabel,
+    logUploadStateLabel,
+    logUploadStateType,
+    formatDuration,
+    formatBytes,
+    shortDigest,
     /** CR-012 VehicleTask 状态枚举名转中文文案（旧 tb_task_vehicle.state 数值码已删除） */
     vehicleTaskStatusLabel,
     /** 查询升级任务列表 */
@@ -655,6 +967,7 @@ export default {
     },
     handleProcess(row) {
       const id = row.id || this.ids
+      this.processTaskVehicleId = id
       listTaskVehicleProcess(id).then(response => {
         this.processData = response.data || {};
         this.processExecutions = (this.processData.executions) || [];
@@ -729,6 +1042,7 @@ export default {
     handleExecCommand(command, row) {
       const actions = {
         executions: () => this.handleExecutions(row),
+        stageResults: () => this.handlePackageStageResults(row),
         retryLogs: () => this.handleRetryLogs(row),
         upgradeLogs: () => this.handleUpgradeLogs(row),
         reset: () => this.handleReset(row)
@@ -739,6 +1053,7 @@ export default {
     /** tab 切换 */
     handleExecTab(tab) {
       if (tab.name === 'executions') this.loadExecutions()
+      else if (tab.name === 'stageResults') this.loadPackageStageResults()
       else if (tab.name === 'retryLogs') this.loadRetryLogs()
       else if (tab.name === 'upgradeLogs') this.loadUpgradeLog()
     },
@@ -760,6 +1075,48 @@ export default {
       }).catch(() => {
         this.executionsLoading = false
       })
+    },
+    /** 包阶段历史（CR-026） */
+    handlePackageStageResults(row) {
+      this.execTaskVehicleId = row.id || this.ids
+      this.execTab = 'stageResults'
+      this.execOpen = true
+      this.stageResultsQueryParams.pageNum = 1
+      this.loadPackageStageResults()
+    },
+    loadPackageStageResults() {
+      if (!this.execTaskVehicleId) return
+      this.stageResultsLoading = true
+      listTaskVehiclePackageStageResults(this.execTaskVehicleId, this.stageResultsQueryParams).then(response => {
+        this.stageResultsList = response.data.items || []
+        this.stageResultsTotal = response.data.total || 0
+        this.stageResultsLoading = false
+      }).catch(() => {
+        this.stageResultsLoading = false
+      })
+    },
+    /** 下载进度历史（CR-026） */
+    handleDownloadHistory(row) {
+      const progress = row.downloadProgress || {}
+      this.downloadHistoryScope = { packageId: row.packageId, attemptNo: progress.downloadAttemptNo }
+      this.downloadEventsQueryParams = { pageNum: 1, pageSize: 10, state: undefined }
+      this.downloadEventsList = []
+      this.downloadEventsTotal = 0
+      this.downloadHistoryOpen = true
+      this.loadDownloadEvents()
+    },
+    loadDownloadEvents() {
+      const { packageId, attemptNo } = this.downloadHistoryScope
+      if (!this.processTaskVehicleId || !packageId || !attemptNo) return
+      this.downloadEventsLoading = true
+      listTaskVehicleDownloadEvents(this.processTaskVehicleId, packageId, attemptNo, this.downloadEventsQueryParams)
+        .then(response => {
+          this.downloadEventsList = response.data.items || []
+          this.downloadEventsTotal = response.data.total || 0
+          this.downloadEventsLoading = false
+        }).catch(() => {
+          this.downloadEventsLoading = false
+        })
     },
     /** 重试轨迹 */
     handleRetryLogs(row) {
