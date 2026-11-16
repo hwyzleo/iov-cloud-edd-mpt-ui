@@ -302,8 +302,8 @@ export default {
     getList() {
       this.loading = true;
       listInboundOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.inboundOrderList = response.rows;
-          this.total = response.total;
+          this.inboundOrderList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

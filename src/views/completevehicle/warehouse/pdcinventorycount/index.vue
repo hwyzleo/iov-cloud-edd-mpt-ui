@@ -294,8 +294,8 @@ export default {
     getList() {
       this.loading = true;
       listInventoryCount(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.inventoryCountList = response.rows;
-          this.total = response.total;
+          this.inventoryCountList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

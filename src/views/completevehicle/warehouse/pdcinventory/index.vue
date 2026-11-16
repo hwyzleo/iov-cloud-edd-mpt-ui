@@ -313,8 +313,8 @@ export default {
     getList() {
       this.loading = true;
       listInventory(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.inventoryList = response.rows;
-          this.total = response.total;
+          this.inventoryList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );

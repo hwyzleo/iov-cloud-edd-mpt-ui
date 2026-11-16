@@ -107,6 +107,7 @@
       <el-table-column label="车架号" prop="vin" width="180"/>
       <el-table-column label="生产配置代码" prop="buildConfigCode" width="200"/>
       <el-table-column label="仓库名称" prop="warehouseName"/>
+      <el-table-column label="状态" prop="state" align="center" width="150"/>
       <el-table-column label="预计到达时间" align="center" prop="estimatedArrivalTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.estimatedArrivalTime, "{y}-{m}-{d} {h}:{i}") }}</span>
@@ -380,8 +381,8 @@ export default {
     getList() {
       this.loading = true;
       listPreInboundOrder(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.preInboundOrderList = response.rows;
-          this.total = response.total;
+          this.preInboundOrderList = response.data.items;
+          this.total = response.data.total;
           this.loading = false;
         }
       );
