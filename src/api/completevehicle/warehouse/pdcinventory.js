@@ -18,29 +18,4 @@ export function getInventory(inventoryId) {
   })
 }
 
-// 新增库存
-export function addInventory(data) {
-  data.warehouseLevel = "PDC";
-  return request({
-    url: '/otd-wms/mpt/inventory',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改库存
-export function updateInventory(data) {
-  return request({
-    url: '/otd-wms/mpt/inventory',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除库存
-export function delInventory(inventoryIds) {
-  return request({
-    url: '/otd-wms/mpt/inventory/' + inventoryIds,
-    method: 'delete'
-  })
-}
+// 说明：库存由入库／移库／出库业务动作维护，服务端不提供通用新增／修改／删除。

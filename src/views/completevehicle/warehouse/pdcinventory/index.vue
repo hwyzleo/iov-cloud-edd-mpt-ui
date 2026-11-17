@@ -10,9 +10,9 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="仓库名称" prop="warehouseName">
+      <el-form-item label="仓库" prop="warehouseCode">
         <el-select
-          v-model="queryParams.warehouseName"
+          v-model="queryParams.warehouseCode"
           placeholder="请选择仓库"
           clearable
           style="width: 200px"
@@ -22,6 +22,21 @@
             :key="warehouse.code"
             :label="warehouse.name"
             :value="warehouse.code"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="储存状态" prop="state">
+        <el-select
+          v-model="queryParams.state"
+          placeholder="请选择状态"
+          clearable
+          style="width: 120px"
+        >
+          <el-option
+            v-for="item in inventoryStateOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -45,41 +60,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['completeVehicle:warehouse:inventory:add']"
-        >新增
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['completeVehicle:warehouse:inventory:edit']"
-        >修改
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['completeVehicle:warehouse:inventory:remove']"
-        >删除
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="el-icon-download"
@@ -92,46 +72,48 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="inventoryList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
+    <el-table v-loading="loading" :data="inventoryList">
       <el-table-column label="车架号" prop="vin" width="180"/>
-      <el-table-column label="生产配置代码" prop="buildConfigCode" width="200"/>
-      <el-table-column label="仓库名称" prop="warehouseName"/>
-      <el-table-column label="储区代码" prop="storageAreaCode" width="100"/>
-      <el-table-column label="储位代码" prop="storageLocationCode" width="100"/>
-      <el-table-column label="入库时间" align="center" prop="inboundTime" width="180">
+      <el-table-column label="生产配置代码" prop="buildConfigCode" min-width="180" show-overflow-tooltip/>
+      <el-table-column label="仓库名称" prop="warehouseName" min-width="160" show-overflow-tooltip/>
+      <el-table-column label="储区代码" prop="storageAreaCode" width="110"/>
+      <el-table-column label="储位代码" prop="storageLocationCode" width="120"/>
+      <el-table-column label="储存状态" align="center" width="110">
+        <template slot-scope="scope">
+          <el-tooltip :content="scope.row.stateName || String(scope.row.state)" placement="top">
+            <span>{{ inventoryStateLabel(scope.row.state, scope.row.stateName) }}</span>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+      <el-table-column label="预留出库单号" prop="reservedOrderNum" min-width="200" show-overflow-tooltip/>
+      <el-table-column label="入库时间" align="center" prop="inboundTime" width="160">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.inboundTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="出库时间" align="center" prop="outboundTime" width="180">
+      <el-table-column label="出库时间" align="center" prop="outboundTime" width="160">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.outboundTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="储存状态" prop="state" width="100"/>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="140" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
+            v-if="scope.row.state === 1"
             size="mini"
             type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['completeVehicle:warehouse:inventory:edit']"
-          >修改
+            icon="el-icon-sort"
+            @click="handleTransfer(scope.row)"
+            v-hasPermi="['completeVehicle:warehouse:inventoryTransfer:add']"
+          >移库
           </el-button>
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['completeVehicle:warehouse:inventory:remove']"
-          >删除
+            icon="el-icon-view"
+            @click="handleView(scope.row)"
+            v-hasPermi="['completeVehicle:warehouse:inventory:query']"
+          >详情
           </el-button>
         </template>
       </el-table-column>
@@ -145,93 +127,117 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改库存配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+    <!-- 库存详情对话框：库存由业务动作维护，仅查看 -->
+    <el-dialog title="库存详情" :visible.sync="open" width="700px" append-to-body>
+      <el-form :model="form" label-width="120px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="车架号" prop="vin">
-              <el-input v-model="form.vin" placeholder="请输入车架号"/>
+            <el-form-item label="车架号">
+              <el-input v-model="form.vin" :readonly="true"/>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="车型配置代码" prop="modelConfigCode">
-              <el-input v-model="form.modelConfigCode" placeholder="请输入车型配置代码"/>
+            <el-form-item label="生产配置代码">
+              <el-input v-model="form.buildConfigCode" :readonly="true"/>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="前置库" prop="warehouseCode">
-          <el-select
-            v-model="form.warehouseCode"
-            placeholder="前置库"
-            clearable
-          >
-            <el-option
-              v-for="warehouse in this.pdcWarehouseList"
-              :key="warehouse.code"
-              :label="warehouse.name"
-              :value="warehouse.code"
-            />
-          </el-select>
+        <el-form-item label="仓库名称">
+          <el-input v-model="form.warehouseName" :readonly="true"/>
         </el-form-item>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="储区代码" prop="storageAreaCode">
-              <el-input v-model="form.storageAreaCode" placeholder="请输入储区代码"/>
+            <el-form-item label="储区代码">
+              <el-input v-model="form.storageAreaCode" :readonly="true"/>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="储位代码" prop="storageLocationCode">
-              <el-input v-model="form.storageLocationCode" placeholder="请输入储位代码"/>
+            <el-form-item label="储位代码">
+              <el-input v-model="form.storageLocationCode" :readonly="true"/>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="入库时间" prop="inboundTime">
-              <el-date-picker
-                v-model="form.inboundTime"
-                type="datetime"
-                placeholder="请选择入库时间"
-                value-format="timestamp"
-              >
-              </el-date-picker>
+            <el-form-item label="储存状态">
+              <span>{{ inventoryStateLabel(form.state, form.stateName) }}</span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="入库者" prop="inboundBy" v-if="form.id !== undefined">
-              <el-input v-model="form.inboundBy" placeholder="请输入入库者"/>
+            <el-form-item label="预留出库单号">
+              <span>{{ form.reservedOrderNum || '-' }}</span>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="出库时间" prop="outboundTime">
-              <el-date-picker
-                v-model="form.outboundTime"
-                type="datetime"
-                placeholder="请选择出库时间"
-                value-format="timestamp"
-              >
-              </el-date-picker>
+            <el-form-item label="入库时间">
+              <span>{{ parseTime(form.inboundTime) || '-' }}</span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="出库者" prop="outboundBy" v-if="form.id !== undefined">
-              <el-input v-model="form.outboundBy" placeholder="请输入出库者"/>
+            <el-form-item label="出库时间">
+              <span>{{ parseTime(form.outboundTime) || '-' }}</span>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="库存状态" prop="state">
-          <el-input v-model="form.state" :readonly="true" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
+        <el-form-item label="创建时间">
+          <span>{{ parseTime(form.createTime) || '-' }}</span>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="open = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 同库移库对话框：原储区/储位以服务端当前库存为准，只需选择目标位置 -->
+    <el-dialog title="同库移库" :visible.sync="transferOpen" width="520px" append-to-body>
+      <el-form ref="transferForm" :model="transferForm" :rules="transferRules" label-width="110px">
+        <el-form-item label="车架号">
+          <el-input v-model="transferForm.vin" :readonly="true"/>
+        </el-form-item>
+        <el-form-item label="仓库名称">
+          <el-input v-model="transferForm.warehouseName" :readonly="true"/>
+        </el-form-item>
+        <el-form-item label="当前储区/储位">
+          <el-input :value="currentLocation" :readonly="true"/>
+        </el-form-item>
+        <el-form-item label="目标储区" prop="newStorageAreaCode">
+          <el-select
+            v-model="transferForm.newStorageAreaCode"
+            placeholder="请选择目标储区"
+            style="width: 100%"
+            @change="handleTransferAreaChange"
+          >
+            <el-option
+              v-for="area in storageAreaList"
+              :key="area.code"
+              :label="area.name + '（' + area.code + '）'"
+              :value="area.code"
+              :disabled="!area.enable"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="目标储位" prop="newStorageLocationCode">
+          <el-select
+            v-model="transferForm.newStorageLocationCode"
+            placeholder="请选择目标储位"
+            style="width: 100%"
+            v-loading="locationLoading"
+          >
+            <el-option
+              v-for="location in storageLocationList"
+              :key="location.code"
+              :label="location.name + '（' + location.code + '）'"
+              :value="location.code"
+              :disabled="!location.enable"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" :loading="submitLoading" @click="submitTransfer">确 定</el-button>
+        <el-button @click="transferOpen = false">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -240,12 +246,19 @@
 <script>
 import {
   listInventory,
-  getInventory,
-  updateInventory,
-  addInventory,
-  delInventory
+  getInventory
 } from "@/api/completevehicle/warehouse/pdcinventory";
-import {listWarehouseByLevel,} from "@/api/completevehicle/warehouse/info";
+import {transferInventory} from "@/api/completevehicle/warehouse/pdcinventorytransfer";
+import {
+  listWarehouse,
+  listWarehouseByLevel,
+  listWarehouseStorageArea,
+  listWarehouseStorageAreaStorageLocation
+} from "@/api/completevehicle/warehouse/info";
+import {
+  INVENTORY_STATE_OPTIONS,
+  inventoryStateLabel
+} from "@/views/completevehicle/warehouse/wmsLabels";
 
 export default {
   name: "PdcInventory",
@@ -254,12 +267,6 @@ export default {
     return {
       // 遮罩层
       loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -268,9 +275,9 @@ export default {
       pdcWarehouseList: [],
       // 库存表格数据
       inventoryList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
+      // 库存状态下拉选项（数值与后端 InventoryState 保持一致）
+      inventoryStateOptions: INVENTORY_STATE_OPTIONS,
+      // 是否显示详情弹窗
       open: false,
       // 日期范围
       dateRange: [],
@@ -279,28 +286,45 @@ export default {
         pageNum: 1,
         pageSize: 10
       },
-      // 表单参数
+      // 详情表单参数
       form: {},
-      // 表单校验
-      rules: {
-        vin: [
-          {required: true, message: "车架号不能为空", trigger: "blur"}
+      // 移库弹窗
+      transferOpen: false,
+      transferForm: {},
+      transferRules: {
+        newStorageAreaCode: [
+          {required: true, message: "目标储区不能为空", trigger: "change"}
         ],
-        modelConfigCode: [
-          {required: true, message: "车型配置代码不能为空", trigger: "blur"}
-        ],
-        warehouseCode: [
-          {required: true, message: "前置库不能为空", trigger: "blur"}
-        ],
-        inboundTime: [
-          {required: true, message: "入库时间不能为空", trigger: "blur"}
+        newStorageLocationCode: [
+          {required: true, message: "目标储位不能为空", trigger: "change"}
         ]
       },
+      // 当前操作行
+      currentRow: {},
+      // 目标储区/储位候选列表
+      storageAreaList: [],
+      storageLocationList: [],
+      // 当前库存所在仓库ID（用于查询储区/储位）
+      warehouseId: undefined,
+      // 储位加载中
+      locationLoading: false,
+      // 提交加载中
+      submitLoading: false,
     };
   },
   created() {
     this.getPdcWarehouseList();
     this.getList();
+  },
+  computed: {
+    /** 当前所在储区/储位展示文本 */
+    currentLocation() {
+      const row = this.currentRow || {};
+      if (!row.storageAreaCode && !row.storageLocationCode) {
+        return '-';
+      }
+      return (row.storageAreaCode || '-') + ' / ' + (row.storageLocationCode || '-');
+    }
   },
   methods: {
     /** 查询前置库列表 */
@@ -319,19 +343,92 @@ export default {
         }
       );
     },
-    /** 取消按钮 */
-    cancel() {
-      this.open = false;
-      this.reset();
+    /** 库存状态中文标签 */
+    inventoryStateLabel,
+    /** 详情按钮操作 */
+    handleView(row) {
+      this.form = {};
+      getInventory(row.id).then(response => {
+        this.form = response.data;
+        this.open = true;
+      });
     },
-    /** 表单重置 */
-    reset() {
-      this.form = {
-        vin: undefined,
-        modelConfigCode: undefined,
-        warehouseCode: undefined
+    /** 移库按钮操作：加载仓库储区候选 */
+    handleTransfer(row) {
+      this.currentRow = row;
+      this.transferForm = {
+        vin: row.vin,
+        warehouseCode: row.warehouseCode,
+        warehouseName: row.warehouseName,
+        newStorageAreaCode: undefined,
+        newStorageLocationCode: undefined
       };
-      this.resetForm("form");
+      this.storageAreaList = [];
+      this.storageLocationList = [];
+      this.transferOpen = true;
+      this.$nextTick(() => {
+        this.$refs["transferForm"] && this.$refs["transferForm"].clearValidate();
+      });
+      listWarehouse({pageNum: 1, pageSize: 1, code: row.warehouseCode}).then(response => {
+        const warehouse = response.data.items && response.data.items[0];
+        if (!warehouse) {
+          this.$modal.msgError("未找到仓库：" + row.warehouseCode);
+          return;
+        }
+        this.warehouseId = warehouse.id;
+        return listWarehouseStorageArea(warehouse.id).then(areas => {
+          this.storageAreaList = areas;
+        });
+      });
+    },
+    /** 目标储区变更后加载储位 */
+    handleTransferAreaChange(areaCode) {
+      this.transferForm.newStorageLocationCode = undefined;
+      this.storageLocationList = [];
+      const area = this.storageAreaList.find(item => item.code === areaCode);
+      if (!area) {
+        return;
+      }
+      this.locationLoading = true;
+      listWarehouseStorageAreaStorageLocation(this.warehouseId, area.id).then(locations => {
+        this.storageLocationList = locations;
+        this.locationLoading = false;
+      }).catch(() => {
+        this.locationLoading = false;
+      });
+    },
+    /** 提交移库 */
+    submitTransfer() {
+      this.$refs["transferForm"].validate(valid => {
+        if (!valid) {
+          return;
+        }
+        this.submitLoading = true;
+        transferInventory({
+          requestId: this.genRequestId(),
+          vin: this.currentRow.vin,
+          warehouseCode: this.currentRow.warehouseCode,
+          newStorageAreaCode: this.transferForm.newStorageAreaCode,
+          newStorageLocationCode: this.transferForm.newStorageLocationCode,
+          expectedVersion: this.currentRow.rowVersion
+        }).then(() => {
+          this.$modal.msgSuccess("移库成功");
+          this.transferOpen = false;
+          this.submitLoading = false;
+          this.getList();
+        }).catch(() => {
+          this.submitLoading = false;
+        });
+      });
+    },
+    /** 生成幂等请求标识（32位UUID，保证不超过 request_id 的64长度） */
+    genRequestId() {
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      return uuid.replace(/-/g, '');
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -343,61 +440,6 @@ export default {
       this.dateRange = [];
       this.resetForm("queryForm");
       this.handleQuery();
-    },
-    /** 多选框选中数据 */
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
-      this.single = selection.length != 1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加库存";
-      this.form = {
-      };
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      const inventoryId = row.id || this.ids
-      getInventory(inventoryId).then(response => {
-        this.form = response.data;
-        this.open = true;
-      });
-      this.title = "修改库存";
-    },
-    /** 提交按钮 */
-    submitForm: function () {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id !== undefined) {
-            updateInventory(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addInventory(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
-        }
-      });
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const inventoryIds = row.id || this.ids;
-      this.$modal.confirm('是否确认删除库存ID为"' + inventoryIds + '"的数据项？').then(function () {
-        return delInventory(inventoryIds);
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {
-      });
     },
     /** 导出按钮操作 */
     handleExport() {

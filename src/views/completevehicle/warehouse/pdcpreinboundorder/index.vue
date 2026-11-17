@@ -34,6 +34,21 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="状态" prop="state">
+        <el-select
+          v-model="queryParams.state"
+          placeholder="请选择状态"
+          clearable
+          style="width: 120px"
+        >
+          <el-option
+            v-for="item in preInboundStateOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间">
         <el-date-picker
           v-model="dateRange"
@@ -66,29 +81,34 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="preInboundOrderList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center"/>
+    <el-table v-loading="loading" :data="preInboundOrderList">
       <el-table-column label="预入库单号" prop="orderNum" width="220"/>
       <el-table-column label="车架号" prop="vin" width="180"/>
-      <el-table-column label="生产配置代码" prop="buildConfigCode" width="200"/>
-      <el-table-column label="仓库名称" prop="warehouseName"/>
-      <el-table-column label="状态" prop="state" align="center" width="150"/>
-      <el-table-column label="预计到达时间" align="center" prop="estimatedArrivalTime" width="180">
+      <el-table-column label="生产配置代码" prop="buildConfigCode" min-width="180" show-overflow-tooltip/>
+      <el-table-column label="仓库名称" prop="warehouseName" min-width="160" show-overflow-tooltip/>
+      <el-table-column label="状态" align="center" width="110">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.estimatedArrivalTime, "{y}-{m}-{d} {h}:{i}") }}</span>
+          <el-tooltip :content="scope.row.state" placement="top">
+            <span>{{ preInboundStateLabel(scope.row.state) }}</span>
+          </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="预计入库时间" align="center" prop="estimatedInboundTime" width="180">
+      <el-table-column label="到达时间" align="center" prop="arrivalTime" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.estimatedInboundTime, "{y}-{m}-{d} {h}:{i}") }}</span>
+          <span>{{ parseTime(scope.row.arrivalTime, "{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="入库时间" align="center" prop="inboundTime" width="160">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.inboundTime, "{y}-{m}-{d} {h}:{i}") }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="260" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="220" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             v-if="scope.row.state === 'PENDING_ARRIVAL'"
@@ -209,6 +229,10 @@ import {
   listWarehouseStorageArea,
   listWarehouseStorageAreaStorageLocation
 } from "@/api/completevehicle/warehouse/info";
+import {
+  PRE_INBOUND_STATE_OPTIONS,
+  preInboundStateLabel
+} from "@/views/completevehicle/warehouse/wmsLabels";
 
 export default {
   name: "PdcPreInboundOrder",
@@ -217,12 +241,6 @@ export default {
     return {
       // 遮罩层
       loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -231,6 +249,8 @@ export default {
       pdcWarehouseList: [],
       // 预入库单表格数据
       preInboundOrderList: [],
+      // 预入库单状态下拉选项（后端权威状态枚举 → 中文标签）
+      preInboundStateOptions: PRE_INBOUND_STATE_OPTIONS,
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -286,6 +306,8 @@ export default {
         }
       );
     },
+    /** 预入库单状态中文标签 */
+    preInboundStateLabel,
     /** 到货确认 */
     handleArrival(row) {
       this.$modal.confirm('确认车架号 ' + row.vin + ' 的车辆已到达「' + row.warehouseName + '」？').then(() => {
@@ -402,12 +424,6 @@ export default {
       this.dateRange = [];
       this.resetForm("queryForm");
       this.handleQuery();
-    },
-    /** 多选框选中数据 */
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
-      this.single = selection.length != 1
-      this.multiple = !selection.length
     },
     /** 导出按钮操作 */
     handleExport() {

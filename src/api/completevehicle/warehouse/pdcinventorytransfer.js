@@ -18,9 +18,9 @@ export function getInventoryTransfer(inventoryTransferId) {
   })
 }
 
-// 新增移库信息
-export function addInventoryTransfer(data) {
-  data.warehouseLevel = "PDC";
+// 同库移库执行（原位置由服务端按当前库存权威判定）
+// data: { requestId, vin, warehouseCode, newStorageAreaCode, newStorageLocationCode, expectedVersion }
+export function transferInventory(data) {
   return request({
     url: '/otd-wms/mpt/inventoryTransfer',
     method: 'post',
@@ -28,19 +28,4 @@ export function addInventoryTransfer(data) {
   })
 }
 
-// 修改移库信息
-export function updateInventoryTransfer(data) {
-  return request({
-    url: '/otd-wms/mpt/inventoryTransfer',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除移库信息
-export function delInventoryTransfer(inventoryTransferIds) {
-  return request({
-    url: '/otd-wms/mpt/inventoryTransfer/' + inventoryTransferIds,
-    method: 'delete'
-  })
-}
+// 说明：移库记录是已完成的不可变事实，服务端不提供通用修改／删除。

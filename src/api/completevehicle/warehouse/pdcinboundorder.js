@@ -18,29 +18,5 @@ export function getInboundOrder(inboundOrderId) {
   })
 }
 
-// 新增入库单
-export function addInboundOrder(data) {
-  data.warehouseLevel = "PDC";
-  return request({
-    url: '/otd-wms/mpt/inboundOrder',
-    method: 'post',
-    data: data
-  })
-}
-
-// 修改入库单
-export function updateInboundOrder(data) {
-  return request({
-    url: '/otd-wms/mpt/inboundOrder',
-    method: 'put',
-    data: data
-  })
-}
-
-// 删除入库单
-export function delInboundOrder(inboundOrderIds) {
-  return request({
-    url: '/otd-wms/mpt/inboundOrder/' + inboundOrderIds,
-    method: 'delete'
-  })
-}
+// 说明：入库单是已完成的不可变事实，服务端不提供通用新增／修改／删除，
+// 状态流转通过预入库单的到货确认、入库确认、取消动作完成。
