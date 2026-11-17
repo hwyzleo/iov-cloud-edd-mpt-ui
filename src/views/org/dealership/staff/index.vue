@@ -231,15 +231,19 @@ export default {
     this.getOrgTree();
   },
   methods: {
-    /** 查询门店员工列表 */
+    /** 查询门店员工列表（响应为 ApiResponse<PageResult>：data.items / data.total） */
     getList() {
       this.loading = true;
       listDealershipStaff(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.dealershipStaffList = response.rows;
-          this.total = response.total;
+          this.dealershipStaffList = (response.data && response.data.items) || [];
+          this.total = (response.data && response.data.total) || 0;
           this.loading = false;
         }
-      );
+      ).catch(() => {
+        this.dealershipStaffList = [];
+        this.total = 0;
+        this.loading = false;
+      });
     },
     /** 查询组织下拉树结构 */
     getOrgTree() {
