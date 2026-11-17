@@ -10,10 +10,10 @@ export function listDealershipStaff(query) {
   })
 }
 
-// 查询员工
-export function searchUserList(key) {
+// 查询候选员工（来源为 EDD-ORG 员工主数据）
+export function searchEmployeeList(key) {
   return request({
-    url: '/edd-org/api/mpt/dealershipStaff/v1/searchUser',
+    url: '/edd-org/api/mpt/dealershipStaff/v1/searchEmployee',
     method: 'get',
     params: {'key': key}
   })

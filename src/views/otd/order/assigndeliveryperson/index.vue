@@ -93,9 +93,9 @@
     <el-dialog :title="title" :visible.sync="open" width="1000px" append-to-body>
       <div class="dialog-body" style="max-height: 50vh; overflow-y: auto;">
         <el-table v-loading="loadingDeliveryCenterStaff" :data="deliveryCenterStaffList">
-          <el-table-column label="员工账号" prop="userName" />
-          <el-table-column label="员工昵称" prop="nickName" />
-          <el-table-column label="手机号码" prop="phonenumber" />
+          <el-table-column label="工号" prop="employeeCode" />
+          <el-table-column label="员工姓名" prop="employeeName" />
+          <el-table-column label="手机号码" prop="phone" />
           <el-table-column label="未交付订单数" align="center" prop="notDeliveryOrderCount" />
           <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
             <template slot-scope="scope">
@@ -268,8 +268,8 @@ export default {
     /** 绑定交付人员操作 */
     handleBinding(row) {
       const orderNo = this.form.orderNo;
-      this.$modal.confirm('是否确认绑定交付人员"' + row.nickName + '"到订单"' + orderNo + '"？').then(function () {
-        return bindingDeliveryPerson(row.userId, row.nickName, orderNo);
+      this.$modal.confirm('是否确认绑定交付人员"' + row.employeeName + '"到订单"' + orderNo + '"？').then(function () {
+        return bindingDeliveryPerson(row.employeeId, row.employeeName, orderNo);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("绑定成功");

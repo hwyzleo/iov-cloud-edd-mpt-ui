@@ -21,14 +21,14 @@ export function listDeliveryCenterStaff(query) {
   })
 }
 
-// 分配交付人员
-export function bindingDeliveryPerson(userId, nickName, orderNo) {
+// 分配交付人员（交付人员标识为 EDD-ORG 员工ID，OTD-VSO-DSN-CR-009）
+export function bindingDeliveryPerson(employeeId, employeeName, orderNo) {
   return request({
     url: BASE + '/action/assignDeliveryPerson',
     method: 'post',
     data: {
-      deliveryPersonId: userId,
-      deliveryPersonName: nickName,
+      deliveryPersonId: employeeId,
+      deliveryPersonName: employeeName,
       orderNo: orderNo
     }
   })
