@@ -383,9 +383,14 @@ export default {
         this.submitLoading = false;
       });
     },
-    /** 生成幂等请求标识 */
+    /** 生成幂等请求标识（32位UUID，保证 action:requestId 不超过 inbox event_id 的64长度） */
     genRequestId(action, row) {
-      return 'MPT-' + action + '-' + row.orderNum + '-' + Date.now();
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      return uuid.replace(/-/g, '');
     },
     /** 搜索按钮操作 */
     handleQuery() {
