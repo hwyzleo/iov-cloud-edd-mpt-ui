@@ -3,7 +3,8 @@ import request from '@/utils/request'
 // OTD-VSO 管理后台订单域（MPT）基地址（原 /api/mpt/order/v1 已废弃）
 const BASE = '/otd-vso/api/mpt/vso/v1'
 
-// 查询没有交付人员的订单列表（响应已批量带出当前有效交付预约 appointmentNo/appointmentTime/appointmentStatus）
+// 查询交付人员分配列表（响应已批量带出当前有效交付预约 appointmentNo/appointmentTime/appointmentStatus）
+// hasDeliveryPerson=false 未分配（缺省） / true 已分配（CR-011 改派入口）
 export function listOrderWithoutDeliveryPerson(query) {
   return request({
     url: BASE + '/listWithoutDeliveryPerson',

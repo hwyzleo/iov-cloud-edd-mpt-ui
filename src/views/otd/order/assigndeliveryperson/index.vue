@@ -10,6 +10,13 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <!-- 分配状态：未分配（默认）/ 已分配（CR-011 改派入口） -->
+      <el-form-item label="分配状态" prop="hasDeliveryPerson">
+        <el-select v-model="queryParams.hasDeliveryPerson" style="width: 120px">
+          <el-option label="未分配" :value="false" />
+          <el-option label="已分配" :value="true" />
+        </el-select>
+      </el-form-item>
       <!-- 后端按 created_at_business（下单时间）过滤 -->
       <el-form-item label="下单时间">
         <el-date-picker
@@ -49,6 +56,11 @@
       </el-table-column>
       <el-table-column label="上牌城市" prop="licenseCity" width="150"/>
       <el-table-column label="交付门店" prop="deliveryStoreName" width="220"/>
+      <el-table-column label="交付人员" align="center" width="150">
+        <template slot-scope="scope">
+          <span>{{ scope.row.deliveryPersonName || scope.row.deliveryPersonId || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="预约时间" align="center" width="170">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.appointmentTime) || '-' }}</span>
@@ -75,7 +87,7 @@
             icon="el-icon-edit"
             @click="handleAssign(scope.row)"
             v-hasPermi="['completeVehicle:order:assignDeliveryPerson:assign']"
-          >分配交付人员
+          >{{ queryParams.hasDeliveryPerson ? '改派交付人员' : '分配交付人员' }}
           </el-button>
         </template>
       </el-table-column>
@@ -168,7 +180,9 @@ export default {
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        // false 未分配（默认，与后端缺省行为一致）/ true 已分配（改派）
+        hasDeliveryPerson: false
       },
       // 查询参数（可分配交付人员）
       queryDealershipStaffParams: {
@@ -189,7 +203,7 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询没有交付人员车辆销售订单列表 */
+    /** 查询交付人员分配列表（未分配/已分配由 hasDeliveryPerson 控制） */
     getList() {
       this.loading = true;
       listOrderWithoutDeliveryPerson(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
@@ -229,6 +243,8 @@ export default {
     resetQuery() {
       this.dateRange = [];
       this.resetForm("queryForm");
+      // 重置回默认的未分配视图（保持后端缺省行为）
+      this.queryParams.hasDeliveryPerson = false;
       this.handleQuery();
     },
     /** 多选框选中数据 */
