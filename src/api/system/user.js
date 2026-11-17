@@ -142,3 +142,20 @@ export function deptTreeSelect() {
     method: 'get'
   })
 }
+
+// 可绑定账号的在职员工选项（EDD-MPT-DSN-CR-002）
+export function listEmployeeOptions(key) {
+  return request({
+    url: '/system/user/employee/options',
+    method: 'get',
+    params: { key: key }
+  })
+}
+
+// 解绑账号与员工的关联
+export function unbindEmployee(userId) {
+  return request({
+    url: '/system/user/' + userId + '/employee/unbind',
+    method: 'put'
+  })
+}

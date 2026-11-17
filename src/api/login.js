@@ -13,6 +13,19 @@ export function login(username, password, code, uuid) {
   })
 }
 
+// EIAM 单点登录：授权码换令牌
+export function ssoToken(code, clientId, redirectUri) {
+  return request({
+    url: '/auth/oauth2/token',
+    headers: {
+      isToken: false,
+      repeatSubmit: false
+    },
+    method: 'post',
+    params: { code: code, client_id: clientId, redirect_uri: redirectUri, grant_type: 'authorization_code' }
+  })
+}
+
 // 注册方法
 export function register(data) {
   return request({

@@ -53,6 +53,16 @@
           <router-link class="link-type" :to="'/register'">立即注册</router-link>
         </div>
       </el-form-item>
+      <el-form-item style="width:100%;margin-top:-10px;">
+        <el-button
+          size="medium"
+          style="width:100%;"
+          icon="el-icon-key"
+          @click.native.prevent="handleSsoLogin"
+        >
+          EIAM 单点登录
+        </el-button>
+      </el-form-item>
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
@@ -108,6 +118,17 @@ export default {
     this.getCookie();
   },
   methods: {
+    /** EIAM 单点登录：跳转授权端点，未登录时由 EIAM 展示登录页 */
+    handleSsoLogin() {
+      const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      sessionStorage.setItem('eiam_sso_state', state);
+      const base = process.env.VUE_APP_BASE_API || '';
+      const redirectUri = window.location.origin + '/sso/callback';
+      const url = base + '/auth/oauth2/authorize?client_id=mpt'
+        + '&redirect_uri=' + encodeURIComponent(redirectUri)
+        + '&state=' + encodeURIComponent(state);
+      window.location.href = url;
+    },
     getCode() {
       getCodeImg().then(res => {
         this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled;

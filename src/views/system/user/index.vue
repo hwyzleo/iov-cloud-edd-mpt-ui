@@ -63,6 +63,13 @@
               <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
               <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible" :show-overflow-tooltip="true" />
               <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns[4].visible" width="120" />
+              <el-table-column label="绑定员工" align="center" key="employeeId" v-if="columns[7].visible" width="110">
+                <template slot-scope="scope">
+                  <el-tag :type="scope.row.employeeId ? 'success' : 'info'" size="mini">
+                    {{ scope.row.employeeId ? '已绑定' : '未绑定' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column label="状态" align="center" key="status" v-if="columns[5].visible">
                 <template slot-scope="scope">
                   <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
@@ -106,6 +113,26 @@
           <el-col :span="12">
             <el-form-item label="归属部门" prop="deptId">
               <treeselect v-model="form.deptId" :options="deptOptions" :show-count="true" placeholder="请选择归属部门" />
+            </el-form-item>
+            <el-form-item label="绑定员工" prop="employeeId">
+              <el-select
+                v-model="form.employeeId"
+                filterable
+                remote
+                clearable
+                reserve-keyword
+                :remote-method="searchEmployeeOptions"
+                :loading="employeeLoading"
+                placeholder="输入工号/姓名/手机号检索（可留空）"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in employeeOptions"
+                  :key="item.employeeId"
+                  :label="item.employeeCode + ' / ' + item.employeeName + ' / ' + (item.phone || '')"
+                  :value="item.employeeId"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -201,7 +228,7 @@
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect } from "@/api/system/user";
+import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, deptTreeSelect, listEmployeeOptions, unbindEmployee } from "@/api/system/user";
 import { getToken } from "@/utils/auth";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
@@ -216,6 +243,11 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      // 可绑定员工选项（EDD-MPT-DSN-CR-002）
+      employeeOptions: [],
+      employeeLoading: false,
+      // 修改前的绑定员工ID（用于识别解绑）
+      originalEmployeeId: undefined,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -384,6 +416,7 @@ export default {
         sex: undefined,
         status: "0",
         remark: undefined,
+        employeeId: undefined,
         postIds: [],
         roleIds: []
       };
@@ -442,6 +475,8 @@ export default {
         this.roleOptions = response.roles;
         this.$set(this.form, "postIds", response.postIds);
         this.$set(this.form, "roleIds", response.roleIds);
+        this.originalEmployeeId = response.data.employeeId;
+        this.loadEmployeeOption(response.data.employeeId);
         this.open = true;
         this.title = "修改用户";
         this.form.password = "";
@@ -471,16 +506,44 @@ export default {
       const userId = row.userId;
       this.$router.push("/system/user-auth/role/" + userId);
     },
+    /** 检索可绑定员工（排除已绑定账号的员工） */
+    searchEmployeeOptions(key) {
+      this.employeeLoading = true;
+      listEmployeeOptions(key).then(response => {
+        this.employeeOptions = response.data || [];
+        this.employeeLoading = false;
+      }).catch(() => {
+        this.employeeOptions = [];
+        this.employeeLoading = false;
+      });
+    },
+    /** 回显已绑定员工（选项接口已排除已绑定，需单独补一条占位） */
+    loadEmployeeOption(employeeId) {
+      if (!employeeId) {
+        this.employeeOptions = [];
+        return;
+      }
+      this.employeeOptions = [{ employeeId: employeeId, employeeCode: '员工ID ' + employeeId, employeeName: '（已绑定）', phone: '' }];
+    },
     /** 提交按钮 */
     submitForm: function() {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.userId != undefined) {
-            updateUser(this.form).then(response => {
+            const needUnbind = this.originalEmployeeId && !this.form.employeeId;
+            const submit = () => updateUser(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
+            if (needUnbind) {
+              unbindEmployee(this.form.userId).then(() => {
+                this.form.employeeId = undefined;
+                submit();
+              });
+            } else {
+              submit();
+            }
           } else {
             addUser(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
