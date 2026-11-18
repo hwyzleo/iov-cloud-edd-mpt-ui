@@ -250,8 +250,8 @@ export default {
     getList() {
       this.loading = true;
       listTransportRoute(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.transportRouteList = response.rows;
-          this.total = response.total;
+          this.transportRouteList = response.data.items || [];
+          this.total = response.data.total;
           this.loading = false;
         }
       );

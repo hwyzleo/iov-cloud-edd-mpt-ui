@@ -296,8 +296,8 @@ export default {
     getList() {
       this.loading = true;
       listLogisticsNode(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.logisticsNodeList = response.rows;
-          this.total = response.total;
+          this.logisticsNodeList = response.data.items || [];
+          this.total = response.data.total;
           this.loading = false;
         }
       );

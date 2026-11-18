@@ -242,8 +242,8 @@ export default {
     getList() {
       this.loading = true;
       listCarrier(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.carrierList = response.rows;
-          this.total = response.total;
+          this.carrierList = response.data.items || [];
+          this.total = response.data.total;
           this.loading = false;
         }
       );

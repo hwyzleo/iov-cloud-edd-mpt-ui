@@ -240,8 +240,8 @@ export default {
     getList() {
       this.loading = true;
       listDriver(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.driverList = response.rows;
-          this.total = response.total;
+          this.driverList = response.data.items || [];
+          this.total = response.data.total;
           this.loading = false;
         }
       );

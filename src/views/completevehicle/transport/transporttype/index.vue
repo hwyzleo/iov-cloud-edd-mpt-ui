@@ -231,8 +231,8 @@ export default {
     getList() {
       this.loading = true;
       listTransportType(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-          this.transportTypeList = response.rows;
-          this.total = response.total;
+          this.transportTypeList = response.data.items || [];
+          this.total = response.data.total;
           this.loading = false;
         }
       );
