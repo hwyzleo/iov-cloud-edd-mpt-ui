@@ -80,6 +80,21 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/security',
+    component: Layout,
+    redirect: 'identity',
+    name: 'Security',
+    meta: { title: '安全', icon: 'lock' },
+    children: [
+      {
+        path: 'identity',
+        component: () => import('@/views/security/identity/index'),
+        name: 'EiamIdentity',
+        meta: { title: '身份目录', icon: 'peoples' }
+      }
+    ]
+  },
+  {
     path: '/user',
     component: Layout,
     hidden: true,
