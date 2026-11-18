@@ -181,8 +181,7 @@
             <el-form-item label="仓库体系层级" prop="warehouseLevel">
               <el-select
                 v-model="form.warehouseLevel"
-                placeholder="仓库体系层级"
-                clearable
+                placeholder="请选择仓库体系层级"
                 style="width: 100%"
               >
                 <el-option
@@ -512,8 +511,8 @@ export default {
         name: [
           {required: true, message: "仓库名称不能为空", trigger: "blur"}
         ],
-        warehouseType: [
-          {required: true, message: "仓库类型不能为空", trigger: "blur"}
+        warehouseLevel: [
+          {required: true, message: "仓库体系层级不能为空", trigger: "change"}
         ]
       },
       rulesStorageArea: {

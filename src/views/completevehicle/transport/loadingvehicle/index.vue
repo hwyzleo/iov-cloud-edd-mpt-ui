@@ -89,7 +89,7 @@
     <el-table v-loading="loading" :data="loadingVehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="承运商代码" prop="carrierCode" width="150"/>
-      <el-table-column label="车牌" prop="licensePlate"/>
+      <el-table-column label="车牌" prop="licensePlate" width="170" :show-overflow-tooltip="true"/>
       <el-table-column label="车型" prop="vehicleType" width="150"/>
       <el-table-column label="最大装载数" prop="maxLoadingCapacity" width="150"/>
       <el-table-column label="行驶证号" prop="vehicleRegistrationNumber" width="170"/>
@@ -139,40 +139,74 @@
     />
 
     <!-- 添加或修改装载车对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="140px">
-        <el-form-item label="承运商代码" prop="carrierCode">
-          <el-input v-model="form.carrierCode" :readonly="form.id !== undefined" placeholder="请输入承运商代码"/>
-        </el-form-item>
-        <el-form-item label="车牌" prop="licensePlate">
-          <el-input v-model="form.licensePlate" placeholder="请输入车牌"/>
-        </el-form-item>
-        <el-form-item label="车型" prop="vehicleType">
-          <el-input v-model="form.vehicleType" placeholder="请输入车型"/>
-        </el-form-item>
-        <el-form-item label="最大装载数" prop="maxLoadingCapacity">
-          <el-input v-model="form.maxLoadingCapacity" placeholder="请输入最大装载数"/>
-        </el-form-item>
-        <el-form-item label="行驶证号" prop="vehicleRegistrationNumber">
-          <el-input v-model="form.vehicleRegistrationNumber" placeholder="请输入行驶证号"/>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="form.enable">
-            <el-radio
-              :label="true"
-            >启用
-            </el-radio>
-            <el-radio
-              :label="false"
-            >停用
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
+    <el-dialog :title="title" :visible.sync="open" width="780px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="承运商" prop="carrierCode">
+              <el-select
+                v-model="form.carrierCode"
+                placeholder="请选择承运商"
+                filterable
+                :disabled="form.id !== undefined"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="carrier in carrierOptions"
+                  :key="carrier.code"
+                  :label="carrier.name + '（' + carrier.code + '）'"
+                  :value="carrier.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="车牌" prop="licensePlate">
+              <el-input v-model="form.licensePlate" placeholder="请输入车牌"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="车型" prop="vehicleType">
+              <el-select v-model="form.vehicleType" placeholder="请选择车型" style="width: 100%">
+                <el-option label="C6（6 位车）" value="C6"/>
+                <el-option label="C7（7 位车）" value="C7"/>
+                <el-option label="C8（8 位车）" value="C8"/>
+                <el-option label="RV（救援车）" value="RV"/>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="最大装载数" prop="maxLoadingCapacity">
+              <el-input-number v-model="form.maxLoadingCapacity" controls-position="right" :min="1" style="width: 100%"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="行驶证号" prop="vehicleRegistrationNumber">
+              <el-input v-model="form.vehicleRegistrationNumber" placeholder="请输入行驶证号"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态">
+              <el-radio-group v-model="form.enable">
+                <el-radio :label="true">启用</el-radio>
+                <el-radio :label="false">停用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort">
+              <el-input-number v-model="form.sort" controls-position="right" :min="0" style="width: 100%"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入内容"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -185,6 +219,7 @@
 
 <script>
 import {addLoadingVehicle, delLoadingVehicle, getLoadingVehicle, listLoadingVehicle, updateLoadingVehicle} from "@/api/completevehicle/transport/loadingVehicle";
+import {listAllCarrier} from "@/api/completevehicle/transport/carrier";
 
 export default {
   name: "LoadingVehicle",
@@ -205,6 +240,8 @@ export default {
       total: 0,
       // 装载车表格数据
       loadingVehicleList: [],
+      // 承运商下拉选项
+      carrierOptions: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -236,9 +273,16 @@ export default {
     };
   },
   created() {
+    this.getCarrierOptions();
     this.getList();
   },
   methods: {
+    /** 查询承运商下拉选项 */
+    getCarrierOptions() {
+      listAllCarrier().then(response => {
+        this.carrierOptions = response || [];
+      });
+    },
     /** 查询装载车列表 */
     getList() {
       this.loading = true;

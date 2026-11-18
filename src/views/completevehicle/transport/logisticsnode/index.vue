@@ -158,33 +158,48 @@
     />
 
     <!-- 添加或修改物流据点对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="130px">
-        <el-form-item label="物流据点代码" prop="code">
-          <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入物流据点代码"/>
-        </el-form-item>
-        <el-form-item label="物流据点名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入物流据点名称"/>
-        </el-form-item>
-        <el-form-item label="物流据点类型" prop="typeCode">
-          <el-select
-            v-model="form.typeCode"
-            placeholder="物流据点类型"
-            clearable
-            style="width: 120px"
-          >
-            <el-option
-              v-for="logisticsNodeType in logisticsNodeTypeList"
-              :key="logisticsNodeType.code"
-              :label="logisticsNodeType.name"
-              :value="logisticsNodeType.code"
-            />
-          </el-select>
-        </el-form-item>
+    <el-dialog :title="title" :visible.sync="open" width="780px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="物流据点代码" prop="code">
+              <el-input v-model="form.code" :readonly="form.id !== undefined" placeholder="请输入物流据点代码"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="物流据点名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入物流据点名称"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="物流据点类型" prop="typeCode">
+              <el-select
+                v-model="form.typeCode"
+                placeholder="请选择物流据点类型"
+                clearable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="logisticsNodeType in logisticsNodeTypeList"
+                  :key="logisticsNodeType.code"
+                  :label="logisticsNodeType.name + '（' + logisticsNodeType.code + '）'"
+                  :value="logisticsNodeType.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort">
+              <el-input-number v-model="form.sort" controls-position="right" :min="0" style="width: 100%"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="物流据点地址" prop="address">
           <el-input v-model="form.address" placeholder="请输入物流据点地址"/>
         </el-form-item>
-        <el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="联系人" prop="contactPerson">
               <el-input v-model="form.contactPerson" placeholder="请输入联系人"/>
@@ -208,11 +223,8 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" controls-position="right" :min="0"/>
-        </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容"></el-input>
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入内容"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
