@@ -42,3 +42,11 @@ export function delDriver(driverIds) {
     method: 'delete'
   })
 }
+
+// 查询所有驾驶员列表
+export function listAllDriver() {
+  return request({
+    url: '/otd-tms/mpt/driver/listAll',
+    method: 'get'
+  })
+}

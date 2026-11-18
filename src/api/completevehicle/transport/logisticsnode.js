@@ -42,3 +42,11 @@ export function delLogisticsNode(logisticsNodeIds) {
     method: 'delete'
   })
 }
+
+// 查询所有物流据点列表
+export function listAllLogisticsNode() {
+  return request({
+    url: '/otd-tms/mpt/logisticsNode/listAll',
+    method: 'get'
+  })
+}

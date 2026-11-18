@@ -42,3 +42,11 @@ export function delTransportRoute(transportRouteIds) {
     method: 'delete'
   })
 }
+
+// 查询所有运输线路列表
+export function listAllTransportRoute() {
+  return request({
+    url: '/otd-tms/mpt/transportRoute/listAll',
+    method: 'get'
+  })
+}

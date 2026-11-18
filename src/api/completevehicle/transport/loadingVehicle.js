@@ -42,3 +42,11 @@ export function delLoadingVehicle(loadingVehicleIds) {
     method: 'delete'
   })
 }
+
+// 查询所有装载车列表
+export function listAllLoadingVehicle() {
+  return request({
+    url: '/otd-tms/mpt/loadingVehicle/listAll',
+    method: 'get'
+  })
+}
