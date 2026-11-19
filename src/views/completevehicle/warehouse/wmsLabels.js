@@ -35,6 +35,56 @@ export function preInboundStateLabel(state) {
   return PRE_INBOUND_STATE_LABELS[state] || state
 }
 
+/** 出库单状态 → 中文标签（与后端 OutboundOrderState 一致） */
+export const OUTBOUND_ORDER_STATE_LABELS = {
+  RESERVED: '已预留',
+  PARTIALLY_LOADED: '部分装车',
+  LOADED: '已装车',
+  PARTIALLY_OUTBOUND: '部分出库',
+  COMPLETED: '已完成',
+  CANCELLED: '已取消'
+}
+
+/** 出库单状态下拉选项（保持后端枚举顺序） */
+export const OUTBOUND_ORDER_STATE_OPTIONS = Object.keys(OUTBOUND_ORDER_STATE_LABELS).map(value => ({
+  value,
+  label: OUTBOUND_ORDER_STATE_LABELS[value]
+}))
+
+/**
+ * 出库单状态中文标签
+ *
+ * @param {string} state 权威状态枚举值
+ * @returns {string} 中文标签；未知值原样返回，空值返回占位符
+ */
+export function outboundOrderStateLabel(state) {
+  if (state === null || state === undefined || state === '') {
+    return '-'
+  }
+  return OUTBOUND_ORDER_STATE_LABELS[state] || state
+}
+
+/** 出库单明细状态 → 中文标签（与后端 OutboundDetailState 一致） */
+export const OUTBOUND_DETAIL_STATE_LABELS = {
+  RESERVED: '已预留',
+  LOADED: '已装车',
+  OUTBOUND: '已出库',
+  RELEASED: '已释放'
+}
+
+/**
+ * 出库单明细状态中文标签
+ *
+ * @param {string} state 权威明细状态枚举值
+ * @returns {string} 中文标签；未知值原样返回，空值返回占位符
+ */
+export function outboundDetailStateLabel(state) {
+  if (state === null || state === undefined || state === '') {
+    return '-'
+  }
+  return OUTBOUND_DETAIL_STATE_LABELS[state] || state
+}
+
 /** 库存状态（数值）→ 中文标签 */
 export const INVENTORY_STATE_LABELS = {
   1: '在库',
