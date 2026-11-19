@@ -32,8 +32,8 @@ test('预入库单状态：枚举值与中文标签一一对应', () => {
   assert.deepStrictEqual(PRE_INBOUND_STATE_OPTIONS.map(item => item.value),
     ['PENDING_ARRIVAL', 'ARRIVED', 'COMPLETED', 'CANCELLED'])
   assert.strictEqual(PRE_INBOUND_STATE_LABELS.COMPLETED, '已入库')
-  assert.strictEqual(preInboundStateLabel('PENDING_ARRIVAL'), '待到达')
-  assert.strictEqual(preInboundStateLabel('ARRIVED'), '已到达')
+  assert.strictEqual(preInboundStateLabel('PENDING_ARRIVAL'), '预报待入库')
+  assert.strictEqual(preInboundStateLabel('ARRIVED'), '已到货')
   assert.strictEqual(preInboundStateLabel('COMPLETED'), '已入库')
   assert.strictEqual(preInboundStateLabel('CANCELLED'), '已取消')
 })

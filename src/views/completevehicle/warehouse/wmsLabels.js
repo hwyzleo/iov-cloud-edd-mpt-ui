@@ -10,8 +10,8 @@
 
 /** 预入库单状态 → 中文标签 */
 export const PRE_INBOUND_STATE_LABELS = {
-  PENDING_ARRIVAL: '待到达',
-  ARRIVED: '已到达',
+  PENDING_ARRIVAL: '预报待入库',
+  ARRIVED: '已到货',
   COMPLETED: '已入库',
   CANCELLED: '已取消'
 }
@@ -87,9 +87,9 @@ export function outboundDetailStateLabel(state) {
 
 /** 待入库任务状态 → 中文标签（与后端 InboundTaskState 一致） */
 export const INBOUND_TASK_STATE_LABELS = {
-  PENDING: '待到达',
-  ARRIVED: '已到达',
-  COMPLETED: '已入库',
+  PENDING: '待到货',
+  ARRIVED: '已到货待上架',
+  COMPLETED: '已上架',
   CANCELLED: '已取消'
 }
 

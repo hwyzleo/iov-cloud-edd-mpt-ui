@@ -28,10 +28,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="交付库" prop="warehouseCode">
+      <el-form-item label="目标仓库" prop="warehouseCode">
         <el-select
           v-model="queryParams.warehouseCode"
-          placeholder="请选择交付库"
+          placeholder="请选择仓库"
           clearable
           filterable
           style="width: 200px"
@@ -85,7 +85,7 @@
       <el-table-column label="来源系统" prop="sourceSystem" width="120" show-overflow-tooltip/>
       <el-table-column label="来源单号" prop="sourceOrderNum" width="200" show-overflow-tooltip/>
       <el-table-column label="车架号" prop="vin" width="180" show-overflow-tooltip/>
-      <el-table-column label="交付库代码" prop="warehouseCode" width="140" show-overflow-tooltip/>
+      <el-table-column label="目标仓库" prop="warehouseCode" width="140" show-overflow-tooltip/>
       <el-table-column label="状态" align="center" width="110">
         <template slot-scope="scope">
           <el-tooltip :content="scope.row.state || '-'" placement="top">
@@ -151,7 +151,7 @@
     />
 
     <!-- 入库确认弹窗：选择储区/储位 -->
-    <el-dialog title="交付库入库确认" :visible.sync="inboundOpen" width="520px" append-to-body>
+    <el-dialog title="到货入库确认" :visible.sync="inboundOpen" width="520px" append-to-body>
       <el-form ref="inboundForm" :model="inboundForm" :rules="inboundRules" label-width="100px">
         <el-form-item label="任务号">
           <el-input v-model="inboundForm.orderNum" :readonly="true"/>
@@ -159,7 +159,7 @@
         <el-form-item label="车架号">
           <el-input v-model="inboundForm.vin" :readonly="true"/>
         </el-form-item>
-        <el-form-item label="交付库">
+        <el-form-item label="目标仓库">
           <el-input v-model="inboundForm.warehouseCode" :readonly="true"/>
         </el-form-item>
         <el-form-item label="储区" prop="storageAreaCode">
@@ -246,7 +246,7 @@ import {
 } from "@/views/completevehicle/warehouse/wmsLabels";
 
 export default {
-  name: "InboundTask",
+  name: "InboundNotice",
   dicts: [],
   data() {
     return {
@@ -314,7 +314,7 @@ export default {
     },
     /** 到货确认 */
     handleArrival(row) {
-      this.$modal.confirm('确认车辆 ' + row.vin + ' 已到达交付库「' + row.warehouseCode + '」？').then(() => {
+      this.$modal.confirm('确认车辆 ' + row.vin + ' 已到达仓库「' + row.warehouseCode + '」？').then(() => {
         return arrivalInboundTask(row.orderNum, {
           requestId: this.genRequestId(),
           expectedVersion: row.rowVersion
@@ -344,7 +344,7 @@ export default {
       listWarehouse({pageNum: 1, pageSize: 1, code: row.warehouseCode}).then(response => {
         const warehouse = response.data && response.data.items && response.data.items[0];
         if (!warehouse) {
-          this.$modal.msgError("未找到交付库：" + row.warehouseCode);
+          this.$modal.msgError("未找到仓库：" + row.warehouseCode);
           return;
         }
         this.warehouseId = warehouse.id;

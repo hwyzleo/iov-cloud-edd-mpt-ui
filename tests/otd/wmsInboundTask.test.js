@@ -45,9 +45,9 @@ test('待入库接口：不提供通用新增/修改/删除', () => {
 test('待入库任务状态：枚举值与中文标签一一对应（与后端 InboundTaskState 一致）', () => {
   assert.deepStrictEqual(INBOUND_TASK_STATE_OPTIONS.map(item => item.value),
     ['PENDING', 'ARRIVED', 'COMPLETED', 'CANCELLED'])
-  assert.strictEqual(INBOUND_TASK_STATE_LABELS.PENDING, '待到达')
-  assert.strictEqual(inboundTaskStateLabel('ARRIVED'), '已到达')
-  assert.strictEqual(inboundTaskStateLabel('COMPLETED'), '已入库')
+  assert.strictEqual(INBOUND_TASK_STATE_LABELS.PENDING, '待到货')
+  assert.strictEqual(inboundTaskStateLabel('ARRIVED'), '已到货待上架')
+  assert.strictEqual(inboundTaskStateLabel('COMPLETED'), '已上架')
   assert.strictEqual(inboundTaskStateLabel('CANCELLED'), '已取消')
   assert.strictEqual(inboundTaskStateLabel('UNKNOWN'), 'UNKNOWN')
   assert.strictEqual(inboundTaskStateLabel(null), '-')
