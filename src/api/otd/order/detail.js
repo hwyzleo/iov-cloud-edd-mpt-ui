@@ -60,3 +60,12 @@ export function getOrderDelivery(orderId) {
     method: 'get'
   })
 }
+
+// 管理后台确认交付（620 → 650）：操作人与交付时间由后端安全上下文/服务端生成，前端仅传可选备注
+export function completeOrderDelivery(orderId, deliveryRemark) {
+  return request({
+    url: BASE + orderId + '/delivery/complete',
+    method: 'post',
+    data: deliveryRemark ? { deliveryRemark: deliveryRemark } : {}
+  })
+}

@@ -255,6 +255,16 @@
 
         <!-- 交付信息 -->
         <el-tab-pane label="交付信息" name="delivery">
+          <div v-if="canCompleteDelivery" class="delivery-actions">
+            <el-button
+              type="primary"
+              size="small"
+              icon="el-icon-check"
+              v-hasPermi="['completeVehicle:order:delivery:complete']"
+              @click="openCompleteDelivery"
+            >确认交付</el-button>
+            <span class="hint-inline">仅尾款已支付（620）订单可确认交付，实际交付时间取服务端时间</span>
+          </div>
           <div v-loading="loadingTab.delivery" class="tab-body">
             <el-empty v-if="!delivery" description="尚未创建交付预约"/>
             <template v-else>
@@ -292,6 +302,41 @@
       </el-tabs>
 
       <el-dialog
+        title="确认交付"
+        :visible.sync="deliveryDialog.visible"
+        width="480px"
+        append-to-body
+      >
+        <el-alert
+          title="确认后订单将推进为已交付（650），不可撤销，请核对车辆与资料已现场移交。"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+        <el-form label-width="80px" style="margin-top: 16px">
+          <el-form-item label="交付备注">
+            <el-input
+              v-model="deliveryDialog.remark"
+              type="textarea"
+              :rows="3"
+              maxlength="255"
+              show-word-limit
+              placeholder="可选，默认“管理后台确认交付”"
+            />
+          </el-form-item>
+        </el-form>
+        <div slot="footer">
+          <el-button size="small" @click="deliveryDialog.visible = false">取 消</el-button>
+          <el-button
+            size="small"
+            type="primary"
+            :loading="deliveryDialog.submitting"
+            @click="submitCompleteDelivery"
+          >确 认</el-button>
+        </div>
+      </el-dialog>
+
+      <el-dialog
         :title="agreementDialog.title"
         :visible.sync="agreementDialog.visible"
         width="720px"
@@ -314,7 +359,8 @@ import {
   listOrderSupplements,
   listOrderRefunds,
   listOrderAgreements,
-  getOrderDelivery
+  getOrderDelivery,
+  completeOrderDelivery
 } from '@/api/otd/order/detail'
 
 // 以下枚举镜像后端定义（PaymentStatus / PaymentStage / RefundStatus / RefundScene /
@@ -409,6 +455,11 @@ export default {
       refunds: [],
       agreements: [],
       delivery: null,
+      deliveryDialog: {
+        visible: false,
+        remark: '',
+        submitting: false
+      },
       agreementDialog: {
         visible: false,
         title: '',
@@ -434,6 +485,10 @@ export default {
     },
     optionBreakdown() {
       return this.detail.optionBreakdown || this.vehicle.optionBreakdown || []
+    },
+    /** 仅尾款已支付（620）订单展示确认交付入口；650 及其他状态不展示 */
+    canCompleteDelivery() {
+      return Number(this.detail.orderState) === 620
     }
   },
   watch: {
@@ -459,6 +514,9 @@ export default {
       this.refunds = []
       this.agreements = []
       this.delivery = null
+      this.deliveryDialog.visible = false
+      this.deliveryDialog.remark = ''
+      this.deliveryDialog.submitting = false
       this.loadedTab = {}
       this.loadingTab = {}
       this.agreementDialog.visible = false
@@ -529,6 +587,51 @@ export default {
         title: (row.title || row.agreementCode) + '（V' + row.versionNo + '）',
         content: intro + (row.detail || '')
       }
+    },
+    /** 打开确认交付二次确认弹窗 */
+    openCompleteDelivery() {
+      if (!this.canCompleteDelivery) {
+        return
+      }
+      this.deliveryDialog = {
+        visible: true,
+        remark: '',
+        submitting: false
+      }
+    },
+    /** 提交确认交付：成功后刷新详情、交付信息与时间线 */
+    submitCompleteDelivery() {
+      if (this.deliveryDialog.submitting) {
+        return
+      }
+      this.deliveryDialog.submitting = true
+      completeOrderDelivery(this.orderId, (this.deliveryDialog.remark || '').trim())
+        .then(() => {
+          this.$modal.msgSuccess('确认交付成功')
+          this.deliveryDialog.visible = false
+          this.refreshAfterDelivery()
+        })
+        .catch(() => {})
+        .then(() => {
+          this.deliveryDialog.submitting = false
+        })
+    },
+    /** 交付成功后重新加载详情；时间线/交付信息缓存失效 */
+    refreshAfterDelivery() {
+      this.$set(this.loadedTab, 'delivery', false)
+      this.$set(this.loadedTab, 'timeline', false)
+      this.timeline = []
+      this.detailLoading = true
+      getOrderDetail(this.orderId)
+        .then(response => {
+          this.detail = response.data || {}
+        })
+        .catch(() => {})
+        .then(() => {
+          this.detailLoading = false
+          this.activeTab = 'delivery'
+          this.loadTab('delivery')
+        })
     },
     /** 订单状态：优先走字典，缺失时回退到原始值 */
     stateText(state) {
@@ -621,6 +724,13 @@ export default {
 
 .tab-body {
   min-height: 120px;
+}
+
+.delivery-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .section-title {
