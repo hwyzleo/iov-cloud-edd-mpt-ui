@@ -312,7 +312,16 @@
         <el-form-item label="运单号">
           <el-input v-model="actionForm.orderNum" readonly/>
         </el-form-item>
-        <el-form-item label="完成情况">
+        <el-form-item v-if="actionType === 'handover'" label="交车 VIN">
+          <el-checkbox-group v-model="actionForm.vins">
+            <el-checkbox v-for="vin in actionVins" :key="vin" :label="vin" style="display: block"/>
+          </el-checkbox-group>
+          <div style="color: #909399; font-size: 12px; line-height: 18px;">
+            已选 {{ actionForm.vins.length }} / {{ actionVins.length }}；未勾选的 VIN 视为未交车（支持分批交车）。
+            仅状态为「已出库」的 VIN 会生成 WMS 交付库到货请求。
+          </div>
+        </el-form-item>
+        <el-form-item v-else label="完成情况">
           <el-radio-group v-model="actionForm.allCompleted">
             <el-radio :label="true">全部完成</el-radio>
             <el-radio :label="false">部分完成</el-radio>
@@ -421,7 +430,8 @@ export default {
       openAction: false,
       actionTitle: "",
       actionType: "",
-      actionForm: {orderNum: undefined, allCompleted: true},
+      actionForm: {orderNum: undefined, allCompleted: true, vins: []},
+      actionVins: [],
       openDetail: false,
       detailTitle: "",
       detail: {},
@@ -573,7 +583,12 @@ export default {
     handleHandover(row) {
       this.actionType = "handover";
       this.actionTitle = "运单交车";
-      this.actionForm = {orderNum: row.orderNum, allCompleted: true};
+      this.actionVins = row.vins || [];
+      this.actionForm = {
+        orderNum: row.orderNum,
+        allCompleted: true,
+        vins: this.actionVins.slice()
+      };
       this.openAction = true;
     },
     /** 接车 */
@@ -585,7 +600,16 @@ export default {
     },
     submitAction() {
       const request = this.actionType === "handover" ? handoverTransportOrder : receiptTransportOrder;
-      request({orderNum: this.actionForm.orderNum, allCompleted: this.actionForm.allCompleted}).then(() => {
+      const payload = {orderNum: this.actionForm.orderNum, allCompleted: this.actionForm.allCompleted};
+      if (this.actionType === "handover") {
+        if (!this.actionForm.vins || this.actionForm.vins.length === 0) {
+          this.$modal.msgWarning("请至少选择一个交车 VIN");
+          return;
+        }
+        payload.vins = this.actionForm.vins;
+        payload.allCompleted = this.actionForm.vins.length === this.actionVins.length;
+      }
+      request(payload).then(() => {
         this.$modal.msgSuccess("操作成功");
         this.openAction = false;
         this.getList();

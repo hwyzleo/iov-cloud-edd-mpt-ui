@@ -35,8 +35,7 @@ export function preInboundStateLabel(state) {
   return PRE_INBOUND_STATE_LABELS[state] || state
 }
 
-/** 出库单状态 → 中文标签（与后端 OutboundOrderState 一致） */
-export const OUTBOUND_ORDER_STATE_LABELS = {
+/** 出库单状态 → 中文标签（与后端 OutboundOrderState 一致） */export const OUTBOUND_ORDER_STATE_LABELS = {
   RESERVED: '已预留',
   PARTIALLY_LOADED: '部分装车',
   LOADED: '已装车',
@@ -83,6 +82,34 @@ export function outboundDetailStateLabel(state) {
     return '-'
   }
   return OUTBOUND_DETAIL_STATE_LABELS[state] || state
+}
+
+
+/** 待入库任务状态 → 中文标签（与后端 InboundTaskState 一致） */
+export const INBOUND_TASK_STATE_LABELS = {
+  PENDING: '待到达',
+  ARRIVED: '已到达',
+  COMPLETED: '已入库',
+  CANCELLED: '已取消'
+}
+
+/** 待入库任务状态下拉选项（保持后端枚举顺序） */
+export const INBOUND_TASK_STATE_OPTIONS = Object.keys(INBOUND_TASK_STATE_LABELS).map(value => ({
+  value,
+  label: INBOUND_TASK_STATE_LABELS[value]
+}))
+
+/**
+ * 待入库任务状态中文标签
+ *
+ * @param {string} state 权威状态枚举值
+ * @returns {string} 中文标签；未知值原样返回，空值返回占位符
+ */
+export function inboundTaskStateLabel(state) {
+  if (state === null || state === undefined || state === '') {
+    return '-'
+  }
+  return INBOUND_TASK_STATE_LABELS[state] || state
 }
 
 /** 库存状态（数值）→ 中文标签 */

@@ -251,7 +251,6 @@ import {
 import {transferInventory} from "@/api/completevehicle/warehouse/pdcinventorytransfer";
 import {
   listWarehouse,
-  listWarehouseByLevel,
   listWarehouseStorageArea,
   listWarehouseStorageAreaStorageLocation
 } from "@/api/completevehicle/warehouse/info";
@@ -327,10 +326,10 @@ export default {
     }
   },
   methods: {
-    /** 查询前置库列表 */
+    /** 查询仓库候选（不按库类型硬编码，交付库/区域库车辆同样可查） */
     getPdcWarehouseList() {
-      listWarehouseByLevel('PDC').then(response => {
-        this.pdcWarehouseList = response;
+      listWarehouse({pageNum: 1, pageSize: 500}).then(response => {
+        this.pdcWarehouseList = (response.data && response.data.items) || [];
       });
     },
     /** 查询库存列表 */
