@@ -18,10 +18,10 @@
           style="width: 140px"
         >
           <el-option
-            v-for="dict in dict.type.iov_vehicle_sale_order_state"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
+            v-for="item in orderStateOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -199,6 +199,7 @@ import {
 } from '@/api/otd/order/changemodel'
 import { getOrderDetail } from '@/api/otd/order/detail'
 import { getVariantPolicy, getAvailableOptionPolicies } from '@/api/otd/salespolicy'
+import { orderStateLabel, orderStateOptions } from '@/utils/otd/orderState'
 import OrderDetailDrawer from '../info/detail'
 
 export default {
@@ -249,6 +250,11 @@ export default {
     }
   },
   computed: {
+    /** 状态筛选：字典优先，补齐字典缺失的 600/620/630/650 等状态 */
+    orderStateOptions() {
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || []
+      return orderStateOptions(dictList)
+    },
     // 目标配置总价 = 目标 Variant 价 + 已选选装价
     newTotal() {
       if (!this.modify.variantCode) {
@@ -311,16 +317,8 @@ export default {
     },
     /** 获取车辆销售订单状态标签 */
     getVehicleSaleOrderStateLabel(vehicleSaleOrderState) {
-      if (vehicleSaleOrderState === null || vehicleSaleOrderState === undefined) {
-        return '-'
-      }
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_sale_order_state) {
-        return vehicleSaleOrderState
-      }
-      const item = this.dict.type.iov_vehicle_sale_order_state.find(
-        dict => dict.value == vehicleSaleOrderState
-      )
-      return item ? item.label : vehicleSaleOrderState
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || []
+      return orderStateLabel(vehicleSaleOrderState, dictList)
     },
     /** 后端允许改配的状态：210 意向金已付 / 300 定金待付 / 310 定金已付 */
     canModify(row) {

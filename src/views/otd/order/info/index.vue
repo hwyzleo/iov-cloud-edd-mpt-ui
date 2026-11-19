@@ -18,10 +18,10 @@
           style="width: 140px"
         >
           <el-option
-            v-for="dict in dict.type.iov_vehicle_sale_order_state"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
+            v-for="item in orderStateOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </el-form-item>
@@ -48,7 +48,7 @@
     </el-row>
 
     <el-table v-loading="loading" :data="orderList">
-      <el-table-column label="订单号" prop="orderNo" fixed="left" width="170"/>
+      <el-table-column label="订单号" prop="orderNo" fixed="left" width="150"/>
       <el-table-column label="订单类型" align="center" width="110">
         <template slot-scope="scope">
           <span>{{ dash(scope.row.orderTypeName || scope.row.orderType) }}</span>
@@ -104,7 +104,7 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" align="center" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="240" align="center" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -114,12 +114,20 @@
             v-hasPermi="['completeVehicle:order:info:query']"
           >详细
           </el-button>
+          <el-button
+            v-if="isFinalPaymentPaid(scope.row)"
+            size="mini"
+            type="text"
+            icon="el-icon-check"
+            v-hasPermi="['completeVehicle:order:delivery:complete']"
+            @click="handleCompleteDelivery(scope.row)"
+          >确认交付</el-button>
           <el-dropdown trigger="click" @command="command => handleMoreCommand(command, scope.row)">
             <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="auditPass" v-hasPermi="['completeVehicle:order:info:audit']">审核通过</el-dropdown-item>
-              <el-dropdown-item command="auditReject" v-hasPermi="['completeVehicle:order:info:audit']">审核驳回</el-dropdown-item>
-              <el-dropdown-item command="lock" v-hasPermi="['completeVehicle:order:info:lock']">锁单</el-dropdown-item>
+              <el-dropdown-item v-if="canAudit(scope.row)" command="auditPass" v-hasPermi="['completeVehicle:order:info:audit']">审核通过</el-dropdown-item>
+              <el-dropdown-item v-if="canAudit(scope.row)" command="auditReject" v-hasPermi="['completeVehicle:order:info:audit']">审核驳回</el-dropdown-item>
+              <el-dropdown-item v-if="canLock(scope.row)" command="lock" v-hasPermi="['completeVehicle:order:info:lock']">锁单</el-dropdown-item>
               <el-dropdown-item command="close" v-hasPermi="['completeVehicle:order:info:close']">关闭订单</el-dropdown-item>
               <el-dropdown-item command="delete" divided v-hasPermi="['completeVehicle:order:info:physicalDelete']">物理删除</el-dropdown-item>
             </el-dropdown-menu>
@@ -159,6 +167,35 @@
         <el-button size="small" type="primary" :loading="rejectDialog.loading" @click="submitReject">确 定</el-button>
       </div>
     </el-dialog>
+
+    <!-- 确认交付（仅 620 尾款已付款展示） -->
+    <el-dialog title="确认交付" :visible.sync="deliveryDialog.visible" width="480px" append-to-body>
+      <el-alert
+        title="确认后订单将推进为已交付（650），不可撤销，请核对车辆与资料已现场移交。"
+        type="warning"
+        :closable="false"
+        show-icon
+      />
+      <el-form label-width="80px" style="margin-top: 16px" size="small">
+        <el-form-item label="订单号">
+          <span>{{ deliveryDialog.orderNo }}</span>
+        </el-form-item>
+        <el-form-item label="交付备注">
+          <el-input
+            v-model="deliveryDialog.remark"
+            type="textarea"
+            :rows="3"
+            maxlength="255"
+            show-word-limit
+            placeholder="可选，默认“管理后台确认交付”"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button size="small" @click="deliveryDialog.visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="deliveryDialog.loading" @click="submitCompleteDelivery">确 认</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -172,6 +209,8 @@ import {
   closeOrder
 } from '@/api/otd/order/info'
 import OrderDetailDrawer from './detail'
+import { completeOrderDelivery } from '@/api/otd/order/detail'
+import { orderStateLabel, orderStateOptions } from '@/utils/otd/orderState'
 
 export default {
   name: 'VehicleSaleOrder',
@@ -206,6 +245,14 @@ export default {
         rejectCategory: [{ required: true, message: '请选择驳回分类', trigger: 'change' }],
         rejectReason: [{ required: true, message: '请输入驳回原因', trigger: 'blur' }]
       },
+      // 确认交付（仅 620 展示）
+      deliveryDialog: {
+        visible: false,
+        loading: false,
+        orderId: '',
+        orderNo: '',
+        remark: ''
+      },
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -213,6 +260,13 @@ export default {
         orderNo: undefined,
         orderState: undefined
       }
+    }
+  },
+  computed: {
+    /** 状态筛选：字典优先，补齐字典缺失的 600/620/630/650 等状态 */
+    orderStateOptions() {
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || []
+      return orderStateOptions(dictList)
     }
   },
   created() {
@@ -234,16 +288,51 @@ export default {
     },
     /** 获取车辆销售订单状态标签 */
     getVehicleSaleOrderStateLabel(vehicleSaleOrderState) {
-      if (vehicleSaleOrderState === null || vehicleSaleOrderState === undefined) {
-        return '-'
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || []
+      return orderStateLabel(vehicleSaleOrderState, dictList)
+    },
+    /** 仅 350 待审核允许审核通过/驳回 */
+    canAudit(row) {
+      return Number(row.orderState) === 350
+    },
+    /** 310 定金已付 / 360 审核通过允许锁单 */
+    canLock(row) {
+      return [310, 360].indexOf(Number(row.orderState)) >= 0
+    },
+    /** 仅 620 尾款已付款允许确认交付 */
+    isFinalPaymentPaid(row) {
+      return Number(row.orderState) === 620
+    },
+    /** 打开确认交付弹窗 */
+    handleCompleteDelivery(row) {
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法确认交付')
+        return
       }
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_sale_order_state) {
-        return vehicleSaleOrderState
+      this.deliveryDialog = {
+        visible: true,
+        loading: false,
+        orderId: row.orderId,
+        orderNo: row.orderNo,
+        remark: ''
       }
-      const item = this.dict.type.iov_vehicle_sale_order_state.find(
-        dict => dict.value == vehicleSaleOrderState
-      )
-      return item ? item.label : vehicleSaleOrderState
+    },
+    /** 提交确认交付 */
+    submitCompleteDelivery() {
+      if (this.deliveryDialog.loading) {
+        return
+      }
+      this.deliveryDialog.loading = true
+      completeOrderDelivery(this.deliveryDialog.orderId, (this.deliveryDialog.remark || '').trim())
+        .then(() => {
+          this.$modal.msgSuccess('确认交付成功')
+          this.deliveryDialog.visible = false
+          this.getList()
+        })
+        .catch(() => {})
+        .then(() => {
+          this.deliveryDialog.loading = false
+        })
     },
     /** 空值占位 */
     dash(value) {

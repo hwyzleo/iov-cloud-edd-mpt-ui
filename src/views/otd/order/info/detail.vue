@@ -16,7 +16,17 @@
             {{ stateText(detail.orderState) }}
           </el-tag>
         </div>
-        <el-button size="mini" icon="el-icon-close" @click="visibleLocal = false">关闭</el-button>
+        <div class="detail-header-actions">
+          <el-button
+            v-if="canCompleteDelivery"
+            size="mini"
+            type="primary"
+            icon="el-icon-check"
+            v-hasPermi="['completeVehicle:order:delivery:complete']"
+            @click="openCompleteDelivery"
+          >确认交付</el-button>
+          <el-button size="mini" icon="el-icon-close" @click="visibleLocal = false">关闭</el-button>
+        </div>
       </div>
 
       <el-tabs v-model="activeTab" @tab-click="handleTabClick">
@@ -362,6 +372,7 @@ import {
   getOrderDelivery,
   completeOrderDelivery
 } from '@/api/otd/order/detail'
+import { orderStateLabel } from '@/utils/otd/orderState'
 
 // 以下枚举镜像后端定义（PaymentStatus / PaymentStage / RefundStatus / RefundScene /
 // SupplementaryPaymentStatus / DeliveryAppointmentStatus），后端字典未落库前先本地映射
@@ -633,19 +644,10 @@ export default {
           this.loadTab('delivery')
         })
     },
-    /** 订单状态：优先走字典，缺失时回退到原始值 */
+    /** 订单状态：字典优先，字典缺失时回退本地完整枚举映射 */
     stateText(state) {
-      if (state === null || state === undefined || state === '') {
-        return '-'
-      }
-      const dictList = this.dict && this.dict.type ? this.dict.type.iov_vehicle_sale_order_state : null
-      if (dictList && dictList.length) {
-        const item = dictList.find(dict => dict.value == state)
-        if (item) {
-          return item.label
-        }
-      }
-      return String(state)
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || []
+      return orderStateLabel(state, dictList)
     },
     label(map, value) {
       if (value === null || value === undefined || value === '') {
@@ -709,6 +711,12 @@ export default {
   padding: 12px 0;
   border-bottom: 1px solid #ebeef5;
   margin-bottom: 12px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .detail-title .text {

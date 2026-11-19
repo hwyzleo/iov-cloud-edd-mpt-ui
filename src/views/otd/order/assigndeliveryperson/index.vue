@@ -143,6 +143,7 @@ import {
   listOrderWithoutDeliveryPerson,
   listDeliveryCenterStaff
 } from "@/api/otd/order/assigndeliveryperson";
+import { orderStateLabel } from "@/utils/otd/orderState";
 
 export default {
   name: "AssignDeliveryPerson",
@@ -215,13 +216,8 @@ export default {
     },
     /** 获取车辆销售订单状态标签 */
     getVehicleSaleOrderStateLabel(vehicleSaleOrderState) {
-      if (!this.dict || !this.dict.type || !this.dict.type.iov_vehicle_sale_order_state) {
-        return vehicleSaleOrderState;
-      }
-      const item = this.dict.type.iov_vehicle_sale_order_state.find(
-        dict => dict.value == vehicleSaleOrderState
-      )
-      return item ? item.label : vehicleSaleOrderState
+      const dictList = (this.dict && this.dict.type && this.dict.type.iov_vehicle_sale_order_state) || [];
+      return orderStateLabel(vehicleSaleOrderState, dictList);
     },
     /** 取消按钮 */
     cancel() {
