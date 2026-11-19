@@ -104,7 +104,7 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" align="center" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" width="300" align="center" fixed="right" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -122,6 +122,14 @@
             v-hasPermi="['completeVehicle:order:delivery:complete']"
             @click="handleCompleteDelivery(scope.row)"
           >确认交付</el-button>
+          <el-button
+            v-if="isDelivered(scope.row)"
+            size="mini"
+            type="text"
+            icon="el-icon-finished"
+            v-hasPermi="['completeVehicle:order:info:complete']"
+            @click="handleCompleteOrder(scope.row)"
+          >完成订单</el-button>
           <el-dropdown trigger="click" @command="command => handleMoreCommand(command, scope.row)">
             <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
             <el-dropdown-menu slot="dropdown">
@@ -196,6 +204,35 @@
         <el-button size="small" type="primary" :loading="deliveryDialog.loading" @click="submitCompleteDelivery">确 认</el-button>
       </div>
     </el-dialog>
+
+    <!-- 完成订单（仅 650 已交付展示，OTD-VSO-DSN-CR-016） -->
+    <el-dialog title="完成订单" :visible.sync="completeDialog.visible" width="480px" append-to-body>
+      <el-alert
+        title="确认后订单将推进为已完成（900），不可撤销，请确认交付资料与手续已核查完毕。"
+        type="warning"
+        :closable="false"
+        show-icon
+      />
+      <el-form label-width="80px" style="margin-top: 16px" size="small">
+        <el-form-item label="订单号">
+          <span>{{ completeDialog.orderNo }}</span>
+        </el-form-item>
+        <el-form-item label="办结备注">
+          <el-input
+            v-model="completeDialog.remark"
+            type="textarea"
+            :rows="3"
+            maxlength="255"
+            show-word-limit
+            placeholder="可选，默认“管理后台人工核查完成”"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button size="small" @click="completeDialog.visible = false">取 消</el-button>
+        <el-button size="small" type="primary" :loading="completeDialog.loading" @click="submitCompleteOrder">确 认</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -206,7 +243,8 @@ import {
   auditPass,
   auditReject,
   lockOrder,
-  closeOrder
+  closeOrder,
+  completeOrder
 } from '@/api/otd/order/info'
 import OrderDetailDrawer from './detail'
 import { completeOrderDelivery } from '@/api/otd/order/detail'
@@ -247,6 +285,14 @@ export default {
       },
       // 确认交付（仅 620 展示）
       deliveryDialog: {
+        visible: false,
+        loading: false,
+        orderId: '',
+        orderNo: '',
+        remark: ''
+      },
+      // 完成订单（仅 650 展示，OTD-VSO-DSN-CR-016）
+      completeDialog: {
         visible: false,
         loading: false,
         orderId: '',
@@ -303,6 +349,10 @@ export default {
     isFinalPaymentPaid(row) {
       return Number(row.orderState) === 620
     },
+    /** 仅 650 已交付允许完成订单（OTD-VSO-DSN-CR-016） */
+    isDelivered(row) {
+      return Number(row.orderState) === 650
+    },
     /** 打开确认交付弹窗 */
     handleCompleteDelivery(row) {
       if (!row.orderId) {
@@ -332,6 +382,40 @@ export default {
         .catch(() => {})
         .then(() => {
           this.deliveryDialog.loading = false
+        })
+    },
+    /** 打开完成订单二次确认弹窗（仅 650） */
+    handleCompleteOrder(row) {
+      if (!this.isDelivered(row)) {
+        return
+      }
+      if (!row.orderId) {
+        this.$modal.msgError('该订单缺少业务 ID（orderId），无法完成订单')
+        return
+      }
+      this.completeDialog = {
+        visible: true,
+        loading: false,
+        orderId: row.orderId,
+        orderNo: row.orderNo,
+        remark: ''
+      }
+    },
+    /** 提交完成订单（650 → 900） */
+    submitCompleteOrder() {
+      if (this.completeDialog.loading) {
+        return
+      }
+      this.completeDialog.loading = true
+      completeOrder(this.completeDialog.orderId, (this.completeDialog.remark || '').trim())
+        .then(() => {
+          this.$modal.msgSuccess('订单已完成')
+          this.completeDialog.visible = false
+          this.getList()
+        })
+        .catch(() => {})
+        .then(() => {
+          this.completeDialog.loading = false
         })
     },
     /** 空值占位 */

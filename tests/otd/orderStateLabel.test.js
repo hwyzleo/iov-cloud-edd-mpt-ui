@@ -54,7 +54,7 @@ test('状态筛选选项合并字典与本地兜底，去重且按状态值升�
 
 test('列表页订单号列收窄，操作列容纳确认交付', () => {
   assert.match(infoView, /label="订单号"[^>]*width="150"/)
-  assert.match(infoView, /label="操作"[^>]*width="240"/)
+  assert.match(infoView, /label="操作"[^>]*width="300"/)
 })
 
 test('列表页 620 展示确认交付按钮并复用 CR-015 权限点与接口', () => {

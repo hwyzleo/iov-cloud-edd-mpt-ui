@@ -76,3 +76,13 @@ export function closeOrder(orderId, reason) {
     }
   })
 }
+
+// 完成订单（650 → 900 人工核查办结，OTD-VSO-DSN-CR-016）
+// 操作人与办结时间由后端安全上下文/服务端生成，前端仅传可选办结备注
+export function completeOrder(orderId, completionRemark) {
+  return request({
+    url: BASE + '/' + orderId + '/complete',
+    method: 'post',
+    data: completionRemark ? { completionRemark: completionRemark } : {}
+  })
+}
