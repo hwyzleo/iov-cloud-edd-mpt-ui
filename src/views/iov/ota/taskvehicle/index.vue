@@ -761,7 +761,7 @@ import {
   retryActionLabel,
   executionStatusLabel,
   executionStatusType,
-  vehicleTaskStatusLabel,
+  vehicleStatusLabel,
   stageLabel,
   resultLabel,
   resultType,

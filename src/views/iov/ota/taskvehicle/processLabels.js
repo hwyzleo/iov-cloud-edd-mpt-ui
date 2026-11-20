@@ -188,7 +188,7 @@ export function executionStatusType(status) {
   return EXECUTION_STATUS_TYPES[status] || 'info'
 }
 
-export function vehicleTaskStatusLabel(status) {
+export function vehicleStatusLabel(status) {
   return VEHICLE_TASK_STATUS_LABELS[status] || status || '-'
 }
 
