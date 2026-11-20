@@ -1,8 +1,10 @@
 // 服务网关管理端共用枚举与展示辅助（EDD-SGW-DSN-CR-001）
 
+// 客户端类型与 framework-common ClientType 保持一致；
+// IOV-TSP-DSN-CR-017：车辆车机类型由历史 IDCM 调整为 IVI。
 export const CLIENT_TYPES = [
   { value: 'MOBILE', label: 'MOBILE' },
-  { value: 'IDCM', label: 'IDCM' },
+  { value: 'IVI', label: 'IVI' },
   { value: 'ADCM', label: 'ADCM' },
   { value: 'TBOX', label: 'TBOX' },
   { value: 'CCP', label: 'CCP' },
