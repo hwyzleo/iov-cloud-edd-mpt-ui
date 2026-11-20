@@ -121,3 +121,94 @@ export function shortDigest(digest) {
   if (!digest) return '-'
   return digest.length <= 16 ? digest : digest.substring(0, 16) + '…'
 }
+
+/** 执行状态文案（与 iov-ota-api ExecutionStatus 枚举一致） */
+const EXECUTION_STATUS_LABELS = {
+  PERMITTED: '已许可',
+  INSTALLING: '安装中',
+  PAUSED: '已暂停',
+  ROLLING_BACK: '回滚中',
+  SUCCEEDED: '已成功',
+  FAILED: '已失败',
+  ROLLED_BACK: '已回滚',
+  CANCELED: '已取消',
+  TIMED_OUT: '已超时'
+}
+
+const EXECUTION_STATUS_TYPES = {
+  PERMITTED: 'warning',
+  INSTALLING: '',
+  PAUSED: 'warning',
+  ROLLING_BACK: 'warning',
+  SUCCEEDED: 'success',
+  FAILED: 'danger',
+  ROLLED_BACK: 'info',
+  CANCELED: 'info',
+  TIMED_OUT: 'danger'
+}
+
+/** 车辆任务/历史行状态文案（含重置后的 SUPERSEDED） */
+const VEHICLE_TASK_STATUS_LABELS = {
+  CREATED: '已创建',
+  VISIBLE: '已可见',
+  CONSENT_PENDING: '待授权',
+  DOWNLOAD_PENDING: '待下载',
+  READY_TO_INSTALL: '就绪可安装',
+  EXECUTING: '执行中',
+  RETRY_PENDING: '待重试',
+  ROLLBACK_PENDING: '待回滚',
+  SUCCEEDED: '已成功',
+  ROLLED_BACK: '已回滚',
+  PAUSED: '已暂停',
+  CANCELED: '已取消',
+  SUPERSEDED: '已取代'
+}
+
+/** 阶段文案（包阶段与安装事件共用） */
+const STAGE_LABELS = {
+  DOWNLOAD: '下载',
+  VERIFY: '校验',
+  DECRYPT: '解密',
+  INSTALL: '安装',
+  INSTALL_STARTED: '开始安装',
+  REBOOT: '重启',
+  POST_CHECK: '安装后校验',
+  ROLLBACK: '回滚'
+}
+
+const RESULT_LABELS = { SUCCESS: '成功', FAILED: '失败', PENDING: '待定' }
+
+export const STAGE_OPTIONS = ['DOWNLOAD', 'VERIFY', 'DECRYPT']
+
+export function executionStatusLabel(status) {
+  return EXECUTION_STATUS_LABELS[status] || status || '-'
+}
+
+export function executionStatusType(status) {
+  return EXECUTION_STATUS_TYPES[status] || 'info'
+}
+
+export function vehicleTaskStatusLabel(status) {
+  return VEHICLE_TASK_STATUS_LABELS[status] || status || '-'
+}
+
+export function stageLabel(stage) {
+  return STAGE_LABELS[stage] || stage || '-'
+}
+
+export function resultLabel(result) {
+  return RESULT_LABELS[result] || result || '-'
+}
+
+export function resultType(result) {
+  if (result === 'SUCCESS') return 'success'
+  if (result === 'FAILED') return 'danger'
+  return 'info'
+}
+
+/** 时间：有效值走 parseTime，缺失统一显示占位（不显示"未知"） */
+export function timeOrDash(parseTimeFn, value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const text = parseTimeFn(value)
+  return text || '-'
+}
