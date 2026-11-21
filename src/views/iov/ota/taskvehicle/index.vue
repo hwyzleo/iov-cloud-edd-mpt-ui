@@ -231,7 +231,11 @@
         <el-table v-if="processData && processData.resetLogs && processData.resetLogs.length" :data="processData.resetLogs">
           <el-table-column label="原车辆任务" prop="oldVehicleTaskId" min-width="110"/>
           <el-table-column label="新车辆任务" prop="newVehicleTaskId" min-width="110"/>
-          <el-table-column label="原状态" prop="oldStatus" min-width="110"/>
+          <el-table-column label="原状态" min-width="110" align="center">
+            <template slot-scope="scope">
+              <el-tag type="info" size="mini">{{ vehicleStatusLabel(scope.row.oldStatus) }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="强制收口执行" min-width="110">
             <template slot-scope="scope">
               <span>{{ scope.row.oldExecutionId || '--' }}</span>
@@ -893,6 +897,14 @@ export default {
     downloadStateLabel,
     downloadStateType,
     retryActionLabel,
+    // 过程页枚举中文化与时间占位（同模块导出，必须注册为方法，否则模板渲染抛错导致列表空白）
+    executionStatusLabel,
+    executionStatusType,
+    vehicleStatusLabel,
+    stageLabel,
+    resultLabel,
+    resultType,
+    timeOrDash,
     logUploadStateLabel,
     logUploadStateType,
     formatDuration,
