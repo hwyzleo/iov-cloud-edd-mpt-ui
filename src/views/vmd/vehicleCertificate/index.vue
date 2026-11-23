@@ -249,7 +249,7 @@
     <!-- 人工补申请对话框 -->
     <el-dialog title="人工补申请证书" :visible.sync="openCompensate" width="640px" append-to-body>
       <el-alert
-        title="后台不生成设备密钥或CSR，CSR必须来自目标TBOX/安全芯片对应的受信工位回读结果；且CSR的Subject CN必须为设备HSM UID（由绑定关系解析，非设备SN），否则将因身份不一致被拒。"
+        :title="compensateHint"
         type="warning"
         :closable="false"
         show-icon
@@ -486,6 +486,13 @@ import {
   reissueCertificate
 } from '@/api/viam/certificate'
 import BlockingGovernance from '@/views/vmd/businessKeyProvisioning/blockingGovernance'
+import {
+  COMPENSATE_HINT,
+  DEVICE_CATEGORY_OPTIONS,
+  defaultCompensateForm,
+  profileForCategory,
+  profileOptionsFor
+} from './certificateProfiles'
 
 export default {
   name: 'VehicleCertificate',
@@ -510,14 +517,8 @@ export default {
         { value: 'MES', label: 'MES' },
         { value: 'MPT_COMPENSATION', label: '人工补偿' }
       ],
-      // 设备类别选项（当前仅 TBOX）
-      deviceCategoryOptions: [
-        { value: 'TBOX', label: 'TBOX' }
-      ],
-      // 证书Profile选项（后端白名单，当前仅 TBOX_TSP_CLIENT）
-      profileOptions: [
-        { value: 'TBOX_TSP_CLIENT', label: 'TBOX_TSP_CLIENT' }
-      ],
+      // 设备类别选项（TBOX/IVI；服务端按类别固定唯一 Profile）
+      deviceCategoryOptions: DEVICE_CATEGORY_OPTIONS,
       // 操作类型映射
       actionTypes: {
         COMPENSATE: '人工补申请',
@@ -602,6 +603,14 @@ export default {
     }
   },
   computed: {
+    /** 人工补申请提示（TBOX/IVI 通用：受信工位 CSR + 唯一 CN=目标 hsmUid） */
+    compensateHint() {
+      return COMPENSATE_HINT
+    },
+    /** 证书Profile选项：按设备类别联动唯一值（不提供多选/任意输入） */
+    profileOptions() {
+      return profileOptionsFor(this.compensateForm.deviceCategory)
+    },
     /** 叶子证书PEM */
     leafPem() {
       return this.derToPem(this.certResult.certificateDerBase64)
@@ -616,6 +625,15 @@ export default {
     fullChainPem() {
       if (!this.chainPem) return ''
       return [this.leafPem, this.chainPem].filter(Boolean).join('\n')
+    }
+  },
+  watch: {
+    /** 切换设备类别时重置为对应唯一 Profile（TBOX→TBOX_TSP_CLIENT，IVI→IVI_DEVICE_IDENTITY） */
+    'compensateForm.deviceCategory'(value) {
+      const profile = profileForCategory(value)
+      if (profile) {
+        this.compensateForm.certificateProfile = profile
+      }
     }
   },
   created() {
@@ -738,21 +756,9 @@ export default {
           break
       }
     },
-    /** 人工补申请按钮操作 */
+    /** 人工补申请按钮操作（默认仍为 TBOX/TBOX_TSP_CLIENT） */
     handleCompensate() {
-      this.compensateForm = {
-        vin: undefined,
-        deviceCategory: 'TBOX',
-        deviceSn: undefined,
-        certificateProfile: 'TBOX_TSP_CLIENT',
-        csrDerBase64: undefined,
-        requestId: undefined,
-        originalRequestId: undefined,
-        facilityNo: undefined,
-        lineCode: undefined,
-        ticketNo: undefined,
-        reason: undefined
-      }
+      this.compensateForm = defaultCompensateForm()
       this.openCompensate = true
       this.$nextTick(() => {
         this.resetForm('compensateForm')
