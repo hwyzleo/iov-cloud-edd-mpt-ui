@@ -72,9 +72,7 @@
           type="info"
           :closable="false"
           show-icon
-          :title="form.accessMode === 'INTERNAL'
-            ? '内部服务域策略不允许声明客户端类型、scope 或权限点（无令牌身份）'
-            : '匿名访问策略不允许声明 scope 或权限点要求'"
+          title="匿名访问策略不允许声明 scope 或权限点要求"
         />
       </template>
 
@@ -476,10 +474,8 @@ export default {
     isEdit() {
       return !!this.policyCode
     },
-    // 无令牌身份：匿名访问与内部服务域（INTERNAL）均不评估客户端类型/scope/权限点
     anonymous() {
-      return this.type === 'auth' &&
-        (this.form.accessMode === 'ANONYMOUS' || this.form.accessMode === 'INTERNAL')
+      return this.type === 'auth' && this.form.accessMode === 'ANONYMOUS'
     },
     dialogTitle() {
       const label = { auth: '认证授权策略', traffic: '流量治理策略', canary: '灰度策略' }[this.type]
@@ -609,9 +605,7 @@ export default {
           policyName: this.form.policyName,
           description: this.form.description,
           accessMode: this.form.accessMode,
-          // INTERNAL（内部服务域）无令牌身份，SGW 校验器拒绝客户端类型/scope/权限点声明
-          allowedClientTypes: this.form.accessMode === 'INTERNAL'
-            ? [] : safeArray(this.form.allowedClientTypes),
+          allowedClientTypes: safeArray(this.form.allowedClientTypes),
           requiredScopes: this.anonymous ? [] : safeArray(this.form.requiredScopes),
           requiredPermissions: this.anonymous ? [] : safeArray(this.form.requiredPermissions),
           enabled: this.form.enabled

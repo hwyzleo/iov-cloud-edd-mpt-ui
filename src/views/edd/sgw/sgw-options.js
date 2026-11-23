@@ -24,12 +24,9 @@ export const TARGET_TYPES = [
   { value: 'HTTPS', label: 'HTTPS 直连' }
 ]
 
-// EDD-SGW-DSN-CR-003 D-003-1：新增 INTERNAL（内部服务域）。
-// 未知取值由 labelOf 降级为原值展示，不得导致页面 500。
 export const ACCESS_MODES = [
   { value: 'AUTHENTICATED', label: '需要认证' },
-  { value: 'ANONYMOUS', label: '匿名访问' },
-  { value: 'INTERNAL', label: '内部服务域' }
+  { value: 'ANONYMOUS', label: '匿名访问' }
 ]
 
 export const RATE_DIMENSIONS = [
