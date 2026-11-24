@@ -34,6 +34,14 @@ export function diffConfigVersions(from, to) {
   })
 }
 
+// 待发布配置变更预览（当前发布版本与工作区草稿比较）
+export function draftDiffConfigVersions() {
+  return request({
+    url: '/system/sgw/config-versions/draft-diff',
+    method: 'get'
+  })
+}
+
 // 发布当前草稿修订
 export function publishConfig(data) {
   return request({

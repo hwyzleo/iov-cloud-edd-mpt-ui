@@ -42,6 +42,17 @@
           v-hasPermi="['edd:sgw:config:query']"
           type="warning"
           plain
+          icon="el-icon-document-checked"
+          size="mini"
+          :loading="pendingLoading"
+          @click="handleOpenPendingChanges"
+        >待发布变更</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['edd:sgw:config:query']"
+          type="warning"
+          plain
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
@@ -150,6 +161,40 @@
       <el-empty v-if="!diffItems.length" description="暂无差异或尚未对比" :image-size="60" />
     </el-dialog>
 
+    <el-dialog title="待发布变更" :visible.sync="pendingOpen" width="1000px" append-to-body>
+      <div class="draft-diff-toolbar">
+        <span>比较基准：当前发布版本；预览为只读操作，不生成版本或发布记录。</span>
+        <el-button type="primary" plain size="mini" icon="el-icon-refresh" :loading="pendingLoading" @click="loadDraftDiff(pending)">刷新</el-button>
+      </div>
+      <draft-diff-panel :diff="pendingDiff" :loading="pendingLoading" :error="pendingError" />
+    </el-dialog>
+
+    <el-dialog title="发布前预览" :visible.sync="previewOpen" width="1000px" append-to-body>
+      <el-alert
+        v-if="previewConflict"
+        :title="previewConflict"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
+      <div class="draft-diff-toolbar">
+        <span>确认无误后再发布；发布后各实例加载成功才会生效。</span>
+        <el-button type="primary" plain size="mini" icon="el-icon-refresh" :loading="previewLoading" @click="loadDraftDiff(preview)">刷新预览</el-button>
+      </div>
+      <draft-diff-panel :diff="previewDiff" :loading="previewLoading" :error="previewError" />
+      <div slot="footer" class="dialog-footer">
+        <el-button size="small" @click="previewOpen = false">取 消</el-button>
+        <el-button
+          type="primary"
+          size="small"
+          :loading="publishLoading"
+          :disabled="previewLoading"
+          @click="confirmPublish"
+        >确认发布</el-button>
+      </div>
+    </el-dialog>
+
     <publication-detail :visible.sync="publicationOpen" :publication-id="publicationId" />
   </div>
 </template>
@@ -157,6 +202,7 @@
 <script>
 import {
   diffConfigVersions,
+  draftDiffConfigVersions,
   getConfigVersion,
   getWorkspace,
   listConfigVersions,
@@ -166,11 +212,13 @@ import {
 import { exportConfig } from '@/api/edd/sgw/export'
 import VersionSnapshot from '@/views/edd/sgw/components/VersionSnapshot'
 import PublicationDetail from '@/views/edd/sgw/components/PublicationDetail'
+import DraftDiffPanel from '@/views/edd/sgw/components/DraftDiffPanel'
 import { CHANGE_TYPES, CONFIG_OPERATIONS, OBJECT_TYPES } from '@/views/edd/sgw/sgw-options'
+import { isDraftConflict } from '@/utils/sgw/draftDiff'
 
 export default {
   name: 'SgwConfigVersion',
-  components: { VersionSnapshot, PublicationDetail },
+  components: { VersionSnapshot, PublicationDetail, DraftDiffPanel },
   data() {
     return {
       loading: false,
@@ -193,7 +241,16 @@ export default {
       diffItems: [],
       publishLoading: false,
       publicationOpen: false,
-      publicationId: null
+      publicationId: null,
+      pendingOpen: false,
+      pendingLoading: false,
+      pendingDiff: null,
+      pendingError: '',
+      previewOpen: false,
+      previewLoading: false,
+      previewDiff: null,
+      previewError: '',
+      previewConflict: ''
     }
   },
   created() {
@@ -227,19 +284,57 @@ export default {
         this.$modal.msgWarning('工作区信息未加载')
         return
       }
-      this.$modal.confirm(
-        '是否确认发布当前草稿（修订号 ' + this.workspace.draftRevision + '）？发布后各实例加载成功才会生效。'
-      ).then(() => {
-        this.publishLoading = true
-        return publishConfig({ draftRevision: this.workspace.draftRevision })
-      }).then(response => {
+      this.previewOpen = true
+      this.previewConflict = ''
+      this.loadDraftDiff('preview')
+    },
+    confirmPublish() {
+      if (!this.workspace) {
+        this.$modal.msgWarning('工作区信息未加载')
+        return
+      }
+      const revision = this.previewDiff && this.previewDiff.draftRevision !== null && this.previewDiff.draftRevision !== undefined
+        ? this.previewDiff.draftRevision
+        : this.workspace.draftRevision
+      this.publishLoading = true
+      publishConfig({ draftRevision: revision }).then(response => {
         this.publishLoading = false
+        this.previewOpen = false
         this.$modal.msgSuccess('已提交发布，正在等待实例确认')
         this.publicationId = response.data.publicationId
         this.publicationOpen = true
         this.loadAll()
-      }).catch(() => {
+      }).catch(error => {
         this.publishLoading = false
+        // 预览后草稿被其他管理员修改：提示并刷新预览，不自动重试发布
+        if (isDraftConflict(error)) {
+          this.previewConflict = '草稿已被修改，预览已刷新，请核对后重新确认发布'
+          this.loadDraftDiff('preview')
+          this.getWorkspace()
+        }
+      })
+    },
+    handleOpenPendingChanges() {
+      this.pendingOpen = true
+      this.loadDraftDiff('pending')
+    },
+    loadDraftDiff(target) {
+      const loadingKey = target === 'preview' ? 'previewLoading' : 'pendingLoading'
+      const diffKey = target === 'preview' ? 'previewDiff' : 'pendingDiff'
+      const errorKey = target === 'preview' ? 'previewError' : 'pendingError'
+      this[loadingKey] = true
+      this[errorKey] = ''
+      if (target === 'preview') {
+        this.previewConflict = ''
+      }
+      return draftDiffConfigVersions().then(response => {
+        this[diffKey] = response.data || null
+        this[loadingKey] = false
+      }).catch(error => {
+        const data = error && error.response && error.response.data
+        this[diffKey] = null
+        this[errorKey] = (data && (data.message || data.msg)) || '待发布变更预览加载失败'
+        this[loadingKey] = false
       })
     },
     handleRollback(row) {
@@ -307,3 +402,14 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.draft-diff-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #606266;
+  font-size: 13px;
+}
+</style>
