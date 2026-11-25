@@ -54,6 +54,7 @@ test('解绑幂等键符合 TSP 契约，同一次表单重试可复用', () => 
 
 test('前端 API 使用既有 CR-021 端点，不新增后端路由', () => {
   assert.match(api, /url: '\/iov-tsp\/api\/mpt\/userVehicle\/v1\/relation'/)
+  assert.match(api, /url: '\/iov-tsp\/api\/mpt\/userVehicle\/v1\/relation\/history'/)
   assert.match(api, /relation\/' \+ relationId \+ '\/unbind'/)
   assert.match(api, /operations\/' \+ operationId \+ '\/retry-revocation'/)
 })
@@ -68,6 +69,17 @@ test('车辆信息页面提供绑定激活入口、状态区域和权限控制�
   assert.match(view, /userVehicle\.relation\.rowVersion/)
   assert.match(view, /rowVersion: relation\.rowVersion/)
   assert.match(view, /idempotencyKey: createUnbindIdempotencyKey\(\)/)
+})
+
+test('绑定激活窗口提供历史记录页签，并使用服务端数据库分页契约', () => {
+  assert.match(view, /<el-tab-pane label="历史记录" name="history"/)
+  assert.match(view, /@tab-click="handleUserVehicleTabChange"/)
+  assert.match(view, /listUserVehicleHistory\(query\)/)
+  assert.match(view, /:page\.sync="userVehicleHistoryQuery\.pageNo"/)
+  assert.match(view, /:limit\.sync="userVehicleHistoryQuery\.pageSize"/)
+  assert.match(view, /@pagination="getUserVehicleHistory"/)
+  assert.match(view, /const query = \{ \.\.\.this\.userVehicleHistoryQuery, vin \}/)
+  assert.doesNotMatch(view, /userVehicleHistory\.(subList|slice)/)
 })
 
 test('车辆生命周期显示 VEHICLE_ACTIVE，详情加载失败不伪造 UNBOUND', () => {

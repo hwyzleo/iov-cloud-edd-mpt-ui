@@ -9,6 +9,15 @@ export function getUserVehicleRelation(vin) {
   })
 }
 
+// 分页查询用户车辆绑定/解绑历史（pageNo/pageSize 由服务端数据库分页）
+export function listUserVehicleHistory(query) {
+  return request({
+    url: '/iov-tsp/api/mpt/userVehicle/v1/relation/history',
+    method: 'get',
+    params: query
+  })
+}
+
 // 人工解绑指定用户车辆关系（rowVersion 防过期页面，idempotencyKey 防重复提交）
 export function unbindUserVehicleRelation(relationId, data) {
   return request({

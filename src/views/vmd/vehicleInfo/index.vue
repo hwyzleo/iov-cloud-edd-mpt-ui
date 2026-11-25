@@ -171,8 +171,12 @@
     </el-dialog>
 
     <!-- 用户绑定/激活详情对话框 -->
-    <el-dialog :title="title" :visible.sync="openUserVehicle" width="860px" append-to-body @close="closeUserVehicle">
-      <div v-loading="loadingUserVehicle">
+    <el-dialog :title="title" :visible.sync="openUserVehicle" width="1100px" append-to-body @close="closeUserVehicle">
+      <el-tabs v-model="userVehicleActiveTab" @tab-click="handleUserVehicleTabChange">
+        <el-tab-pane label="当前状态" name="current" />
+        <el-tab-pane label="历史记录" name="history" />
+      </el-tabs>
+      <div v-show="userVehicleActiveTab === 'current'" v-loading="loadingUserVehicle">
         <el-alert
           v-if="userVehicle.detailStatus === 'PARTIAL'"
           title="部分数据暂不可用，首次激活状态请以 VMD 恢复后的查询结果为准"
@@ -249,9 +253,55 @@
           </el-descriptions>
         </template>
       </div>
+      <div v-if="userVehicleActiveTab === 'history'">
+        <el-row class="mb8">
+          <el-button icon="el-icon-refresh" size="mini" @click="getUserVehicleHistory">刷新</el-button>
+        </el-row>
+        <el-table v-loading="userVehicleHistoryLoading" :data="userVehicleHistory" border>
+          <el-table-column label="绑定时间" min-width="160">
+            <template slot-scope="scope">{{ formatUserVehicleTime(scope.row.boundAt) }}</template>
+          </el-table-column>
+          <el-table-column label="主使用人" prop="maskedAccountId" min-width="120" show-overflow-tooltip />
+          <el-table-column label="关系状态" width="100" align="center">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.state === 'ACTIVE' ? 'success' : 'info'" size="mini">
+                {{ scope.row.state === 'ACTIVE' ? '当前绑定' : '已解绑' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="解绑时间" min-width="160">
+            <template slot-scope="scope">{{ formatUserVehicleTime(scope.row.releasedAt) }}</template>
+          </el-table-column>
+          <el-table-column label="解绑原因" prop="releaseReason" min-width="150" show-overflow-tooltip>
+            <template slot-scope="scope">{{ scope.row.releaseReason || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="解绑操作人" prop="releasedBy" min-width="110">
+            <template slot-scope="scope">{{ scope.row.releasedBy || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="凭证撤销" width="100" align="center">
+            <template slot-scope="scope">
+              <el-tag
+                v-if="scope.row.credentialRevocationStatus"
+                :type="revocationStatusType(scope.row.credentialRevocationStatus)"
+                size="mini"
+              >
+                {{ revocationStatusText(scope.row.credentialRevocationStatus) }}
+              </el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <pagination
+          v-show="userVehicleHistoryTotal > 0"
+          :total="userVehicleHistoryTotal"
+          :page.sync="userVehicleHistoryQuery.pageNo"
+          :limit.sync="userVehicleHistoryQuery.pageSize"
+          @pagination="getUserVehicleHistory"
+        />
+      </div>
       <div slot="footer" class="dialog-footer">
         <el-button
-          v-if="userVehicle.relation && userVehicle.relation.state === 'ACTIVE' && userVehicle.relation.rowVersion"
+          v-if="userVehicleActiveTab === 'current' && userVehicle.relation && userVehicle.relation.state === 'ACTIVE' && userVehicle.relation.rowVersion"
           v-hasPermi="['tsp:user-vehicle:unbind']"
           type="danger"
           icon="el-icon-link"
@@ -259,7 +309,7 @@
         >解绑
         </el-button>
         <el-button
-          v-if="userVehicle.latestUnbind && ['PENDING', 'FAILED'].includes(userVehicle.latestUnbind.credentialRevocationStatus)"
+          v-if="userVehicleActiveTab === 'current' && userVehicle.latestUnbind && ['PENDING', 'FAILED'].includes(userVehicle.latestUnbind.credentialRevocationStatus)"
           v-hasPermi="['tsp:user-vehicle:unbind']"
           type="warning"
           :loading="revocationRetrying"
@@ -478,6 +528,7 @@ import {
 } from '@/api/vmd/vehiclePart'
 import {
   getUserVehicleRelation,
+  listUserVehicleHistory,
   unbindUserVehicleRelation,
   retryUserVehicleRevocation
 } from '@/api/iov/tsp/userVehicle'
@@ -532,6 +583,15 @@ export default {
       loadingUserVehicle: false,
       currentUserVehicleVin: '',
       userVehicle: {},
+      userVehicleActiveTab: 'current',
+      userVehicleHistory: [],
+      userVehicleHistoryTotal: 0,
+      userVehicleHistoryLoading: false,
+      userVehicleHistoryLoaded: false,
+      userVehicleHistoryQuery: {
+        pageNo: 1,
+        pageSize: 10
+      },
       openUnbind: false,
       unbindSubmitting: false,
       revocationRetrying: false,
@@ -679,6 +739,11 @@ export default {
     handleUserVehicle(row) {
       this.currentUserVehicleVin = row.vin
       this.userVehicle = { vin: row.vin }
+      this.userVehicleActiveTab = 'current'
+      this.userVehicleHistory = []
+      this.userVehicleHistoryTotal = 0
+      this.userVehicleHistoryLoaded = false
+      this.userVehicleHistoryQuery.pageNo = 1
       this.title = '车辆 ' + row.vin + ' 用户绑定/激活'
       this.openUserVehicle = true
       this.loadUserVehicleRelation()
@@ -699,6 +764,36 @@ export default {
       }).finally(() => {
         if (this.currentUserVehicleVin === vin) {
           this.loadingUserVehicle = false
+        }
+      })
+    },
+    /** 历史页签首次打开时加载；分页始终由 TSP 数据库完成 */
+    handleUserVehicleTabChange(tab) {
+      if (tab.name === 'history' && !this.userVehicleHistoryLoaded) {
+        this.getUserVehicleHistory()
+      }
+    },
+    getUserVehicleHistory() {
+      const vin = this.currentUserVehicleVin
+      if (!vin) return Promise.resolve()
+      this.userVehicleHistoryLoading = true
+      const query = { ...this.userVehicleHistoryQuery, vin }
+      return listUserVehicleHistory(query).then(response => {
+        if (this.currentUserVehicleVin === vin) {
+          const page = response.data || {}
+          this.userVehicleHistory = page.items || []
+          this.userVehicleHistoryTotal = page.total || 0
+          this.userVehicleHistoryLoaded = true
+        }
+      }).catch(() => {
+        if (this.currentUserVehicleVin === vin) {
+          this.userVehicleHistory = []
+          this.userVehicleHistoryTotal = 0
+          this.userVehicleHistoryLoaded = false
+        }
+      }).finally(() => {
+        if (this.currentUserVehicleVin === vin) {
+          this.userVehicleHistoryLoading = false
         }
       })
     },
@@ -733,6 +828,7 @@ export default {
         this.unbindSubmitting = true
         unbindUserVehicleRelation(relationId, request).then(response => {
           this.openUnbind = false
+          this.userVehicleHistoryLoaded = false
           this.notifyUnbindResult(response.data)
           this.loadUserVehicleRelation()
         }).catch(() => {
@@ -748,6 +844,7 @@ export default {
       if (!latestUnbind || !latestUnbind.operationId) return
       this.revocationRetrying = true
       retryUserVehicleRevocation(latestUnbind.operationId).then(response => {
+        this.userVehicleHistoryLoaded = false
         this.notifyUnbindResult(response.data)
         this.loadUserVehicleRelation()
       }).catch(() => {
@@ -780,6 +877,12 @@ export default {
       this.loadingUserVehicle = false
       this.currentUserVehicleVin = ''
       this.userVehicle = {}
+      this.userVehicleActiveTab = 'current'
+      this.userVehicleHistory = []
+      this.userVehicleHistoryTotal = 0
+      this.userVehicleHistoryLoading = false
+      this.userVehicleHistoryLoaded = false
+      this.userVehicleHistoryQuery.pageNo = 1
     },
     /** 查询车辆列表（生命周期） */
     getListLifecycle(vin) {
