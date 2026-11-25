@@ -87,8 +87,16 @@
           <span>{{ parseTime(scope.row.eolTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="280" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="380" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            v-hasPermi="['tsp:user-vehicle:query']"
+            size="mini"
+            type="text"
+            icon="el-icon-user"
+            @click="handleUserVehicle(scope.row)"
+          >绑定/激活
+          </el-button>
           <el-button
             v-hasPermi="['completeVehicle:vehicle:info:query']"
             size="mini"
@@ -159,6 +167,145 @@
       </div>
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancelLifecycleList">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 用户绑定/激活详情对话框 -->
+    <el-dialog :title="title" :visible.sync="openUserVehicle" width="860px" append-to-body @close="closeUserVehicle">
+      <div v-loading="loadingUserVehicle">
+        <el-alert
+          v-if="userVehicle.detailStatus === 'PARTIAL'"
+          title="部分数据暂不可用，首次激活状态请以 VMD 恢复后的查询结果为准"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 12px"
+        />
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="车架号" :span="2">{{ userVehicle.vin || currentUserVehicleVin }}</el-descriptions-item>
+          <el-descriptions-item label="用户绑定状态">
+            <el-tag :type="bindingStatusType(userVehicle.bindingStatus)" size="mini">
+              {{ bindingStatusText(userVehicle.bindingStatus) }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">当前用户绑定</el-divider>
+        <el-descriptions v-if="userVehicle.relation" :column="3" border size="small">
+          <el-descriptions-item label="主使用人">{{ userVehicle.relation.maskedAccountId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="关系角色">{{ userVehicle.relation.role || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="绑定时间">{{ formatUserVehicleTime(userVehicle.relation.boundAt) }}</el-descriptions-item>
+          <el-descriptions-item label="关系ID" :span="2">{{ userVehicle.relation.relationId }}</el-descriptions-item>
+          <el-descriptions-item label="关系版本">{{ userVehicle.relation.rowVersion }}</el-descriptions-item>
+        </el-descriptions>
+        <el-alert v-else title="当前车辆没有有效的用户绑定关系" type="info" :closable="false" />
+
+        <template v-if="userVehicle.latestReleasedRelation">
+          <el-divider content-position="left">最近已解绑关系</el-divider>
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item label="主使用人">{{ userVehicle.latestReleasedRelation.maskedAccountId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="绑定时间">{{ formatUserVehicleTime(userVehicle.latestReleasedRelation.boundAt) }}</el-descriptions-item>
+            <el-descriptions-item label="解绑时间">{{ formatUserVehicleTime(userVehicle.latestReleasedRelation.releasedAt) }}</el-descriptions-item>
+            <el-descriptions-item label="解绑原因" :span="3">{{ userVehicle.latestReleasedRelation.releaseReason || '-' }}</el-descriptions-item>
+          </el-descriptions>
+        </template>
+
+        <el-divider content-position="left">车机登录</el-divider>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="登录状态">
+            <el-tag :type="iviLoginType(userVehicle.iviLogin && userVehicle.iviLogin.state)" size="mini">
+              {{ iviLoginText(userVehicle.iviLogin && userVehicle.iviLogin.state) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="回执时间">
+            {{ userVehicle.iviLogin ? formatUserVehicleTime(userVehicle.iviLogin.reportedAt) : '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">整车首次激活</el-divider>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="激活状态">
+            <el-tag :type="firstActivationType(userVehicle.firstActivation && userVehicle.firstActivation.state)" size="mini">
+              {{ firstActivationText(userVehicle.firstActivation && userVehicle.firstActivation.state) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="首次激活时间">
+            {{ userVehicle.firstActivation ? formatUserVehicleTime(userVehicle.firstActivation.firstActivatedAt) : '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <template v-if="userVehicle.latestUnbind">
+          <el-divider content-position="left">最近解绑与凭证撤销</el-divider>
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item label="解绑操作ID" :span="2">{{ userVehicle.latestUnbind.operationId }}</el-descriptions-item>
+            <el-descriptions-item label="撤销状态">
+              <el-tag :type="revocationStatusType(userVehicle.latestUnbind.credentialRevocationStatus)" size="mini">
+                {{ revocationStatusText(userVehicle.latestUnbind.credentialRevocationStatus) }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="解绑时间">{{ formatUserVehicleTime(userVehicle.latestUnbind.releasedAt) }}</el-descriptions-item>
+            <el-descriptions-item label="撤销会话数">{{ userVehicle.latestUnbind.revokedSessionCount == null ? '-' : userVehicle.latestUnbind.revokedSessionCount }}</el-descriptions-item>
+            <el-descriptions-item label="解绑原因">{{ userVehicle.latestUnbind.releaseReason || '-' }}</el-descriptions-item>
+          </el-descriptions>
+        </template>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button
+          v-if="userVehicle.relation && userVehicle.relation.state === 'ACTIVE' && userVehicle.relation.rowVersion"
+          v-hasPermi="['tsp:user-vehicle:unbind']"
+          type="danger"
+          icon="el-icon-link"
+          @click="handleOpenUnbind"
+        >解绑
+        </el-button>
+        <el-button
+          v-if="userVehicle.latestUnbind && ['PENDING', 'FAILED'].includes(userVehicle.latestUnbind.credentialRevocationStatus)"
+          v-hasPermi="['tsp:user-vehicle:unbind']"
+          type="warning"
+          :loading="revocationRetrying"
+          @click="handleRevocationRetry"
+        >重试凭证撤销
+        </el-button>
+        <el-button @click="openUserVehicle = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 人工解绑二次确认对话框 -->
+    <el-dialog
+      title="确认解绑用户车辆关系"
+      :visible.sync="openUnbind"
+      width="500px"
+      append-to-body
+      :close-on-click-modal="false"
+      @closed="resetUnbindForm"
+    >
+      <el-alert
+        title="解绑仅解除用户与车辆的主使用人关系，不会解除车辆装配绑定，也不会删除首次激活历史。"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      />
+      <el-form ref="unbindForm" :model="unbindForm" :rules="unbindRules" label-width="100px">
+        <el-form-item label="车架号">
+          <el-input :value="currentUserVehicleVin" readonly />
+        </el-form-item>
+        <el-form-item label="主使用人">
+          <el-input :value="userVehicle.relation && userVehicle.relation.maskedAccountId" readonly />
+        </el-form-item>
+        <el-form-item label="解绑原因" prop="reason">
+          <el-input
+            v-model="unbindForm.reason"
+            type="textarea"
+            maxlength="64"
+            show-word-limit
+            placeholder="请输入解绑原因（1-64个字符）"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="openUnbind = false">取 消</el-button>
+        <el-button type="danger" :loading="unbindSubmitting" @click="submitUnbind">确认解绑</el-button>
       </div>
     </el-dialog>
 
@@ -329,6 +476,19 @@ import {
   updateVehiclePart,
   delVehiclePart
 } from '@/api/vmd/vehiclePart'
+import {
+  getUserVehicleRelation,
+  unbindUserVehicleRelation,
+  retryUserVehicleRevocation
+} from '@/api/iov/tsp/userVehicle'
+import {
+  bindingStatusLabel,
+  firstActivationLabel,
+  iviLoginLabel,
+  revocationStatusLabel,
+  formatUserVehicleTime,
+  createUnbindIdempotencyKey
+} from './userVehicleDisplay'
 
 export default {
   name: 'VehicleInfo',
@@ -340,7 +500,8 @@ export default {
         'TOL': '总装上线',
         'EOL': '电检下线',
         'CERTIFICATE': '打印合格证',
-        'POWER_DOWN': '车辆下电'
+        'POWER_DOWN': '车辆下电',
+        'VEHICLE_ACTIVE': '车辆激活'
       },
       // 遮罩层
       loading: true,
@@ -366,6 +527,32 @@ export default {
       open: false,
       // 是否显示弹出层（生命周期列表）
       openLifecycleList: false,
+      // 用户绑定/激活详情与解绑
+      openUserVehicle: false,
+      loadingUserVehicle: false,
+      currentUserVehicleVin: '',
+      userVehicle: {},
+      openUnbind: false,
+      unbindSubmitting: false,
+      revocationRetrying: false,
+      unbindForm: {
+        relationId: undefined,
+        rowVersion: undefined,
+        reason: '',
+        idempotencyKey: ''
+      },
+      unbindRules: {
+        reason: [{
+          validator: (rule, value, callback) => {
+            if (!value || !value.trim()) {
+              callback(new Error('请输入解绑原因'))
+              return
+            }
+            callback()
+          },
+          trigger: 'blur'
+        }]
+      },
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -462,6 +649,137 @@ export default {
       const remainder = sum % 11
       const checkDigit = remainder === 10 ? 'X' : String(remainder)
       return vin[8] === checkDigit
+    },
+    /** 用户车辆状态展示辅助 */
+    bindingStatusText: bindingStatusLabel,
+    firstActivationText: firstActivationLabel,
+    iviLoginText: iviLoginLabel,
+    revocationStatusText: revocationStatusLabel,
+    formatUserVehicleTime,
+    bindingStatusType(status) {
+      return status === 'BOUND' ? 'success' : 'info'
+    },
+    firstActivationType(status) {
+      if (status === 'RECORDED') return 'success'
+      if (status === 'PENDING' || status === 'UNKNOWN') return 'warning'
+      return 'info'
+    },
+    iviLoginType(status) {
+      if (status === 'SUCCEEDED') return 'success'
+      if (status === 'FAILED') return 'danger'
+      if (status === 'PENDING') return 'warning'
+      return 'info'
+    },
+    revocationStatusType(status) {
+      if (status === 'SUCCEEDED') return 'success'
+      if (status === 'FAILED') return 'danger'
+      return 'warning'
+    },
+    /** 打开用户绑定/激活详情 */
+    handleUserVehicle(row) {
+      this.currentUserVehicleVin = row.vin
+      this.userVehicle = { vin: row.vin }
+      this.title = '车辆 ' + row.vin + ' 用户绑定/激活'
+      this.openUserVehicle = true
+      this.loadUserVehicleRelation()
+    },
+    /** 查询用户绑定、车机登录与首次激活，不阻塞主车辆列表 */
+    loadUserVehicleRelation() {
+      const vin = this.currentUserVehicleVin
+      if (!vin) return Promise.resolve()
+      this.loadingUserVehicle = true
+      return getUserVehicleRelation(vin).then(response => {
+        if (this.currentUserVehicleVin === vin) {
+          this.userVehicle = response.data || { vin }
+        }
+      }).catch(() => {
+        if (this.currentUserVehicleVin === vin) {
+          this.userVehicle = { vin, firstActivation: { state: 'UNKNOWN' }}
+        }
+      }).finally(() => {
+        if (this.currentUserVehicleVin === vin) {
+          this.loadingUserVehicle = false
+        }
+      })
+    },
+    /** 打开解绑二次确认，保留同一幂等键直至成功或取消 */
+    handleOpenUnbind() {
+      const relation = this.userVehicle.relation
+      if (!relation || !relation.rowVersion) {
+        this.$modal.msgError('关系版本缺失，请刷新详情后重试')
+        return
+      }
+      this.unbindForm = {
+        relationId: relation.relationId,
+        rowVersion: relation.rowVersion,
+        reason: '',
+        idempotencyKey: createUnbindIdempotencyKey()
+      }
+      this.openUnbind = true
+      this.$nextTick(() => {
+        if (this.$refs.unbindForm) this.$refs.unbindForm.clearValidate()
+      })
+    },
+    /** 提交解绑；请求失败不关窗、不换幂等键，可直接安全重试 */
+    submitUnbind() {
+      this.$refs.unbindForm.validate(valid => {
+        if (!valid) return
+        const relationId = this.unbindForm.relationId
+        const request = {
+          rowVersion: this.unbindForm.rowVersion,
+          reason: this.unbindForm.reason.trim(),
+          idempotencyKey: this.unbindForm.idempotencyKey
+        }
+        this.unbindSubmitting = true
+        unbindUserVehicleRelation(relationId, request).then(response => {
+          this.openUnbind = false
+          this.notifyUnbindResult(response.data)
+          this.loadUserVehicleRelation()
+        }).catch(() => {
+          // 拦截器已展示错误；保留当前表单和幂等键供用户重试
+        }).finally(() => {
+          this.unbindSubmitting = false
+        })
+      })
+    },
+    /** 人工重试最近解绑操作的凭证撤销，不再次迁移关系 */
+    handleRevocationRetry() {
+      const latestUnbind = this.userVehicle.latestUnbind
+      if (!latestUnbind || !latestUnbind.operationId) return
+      this.revocationRetrying = true
+      retryUserVehicleRevocation(latestUnbind.operationId).then(response => {
+        this.notifyUnbindResult(response.data)
+        this.loadUserVehicleRelation()
+      }).catch(() => {
+      }).finally(() => {
+        this.revocationRetrying = false
+      })
+    },
+    notifyUnbindResult(result) {
+      if (!result) return
+      if (result.credentialRevocationStatus === 'SUCCEEDED') {
+        this.$modal.msgSuccess('车辆已解绑，相关车机凭证已撤销')
+      } else if (result.credentialRevocationStatus === 'FAILED') {
+        this.$modal.msgWarning('车辆已解绑，但凭证撤销失败，请重试凭证撤销')
+      } else {
+        this.$modal.msgWarning('车辆已解绑，凭证撤销处理中')
+      }
+    },
+    resetUnbindForm() {
+      this.unbindForm = {
+        relationId: undefined,
+        rowVersion: undefined,
+        reason: '',
+        idempotencyKey: ''
+      }
+      if (this.$refs.unbindForm) this.$refs.unbindForm.clearValidate()
+    },
+    closeUserVehicle() {
+      this.openUnbind = false
+      this.openUserVehicle = false
+      this.loadingUserVehicle = false
+      this.currentUserVehicleVin = ''
+      this.userVehicle = {}
     },
     /** 查询车辆列表（生命周期） */
     getListLifecycle(vin) {
