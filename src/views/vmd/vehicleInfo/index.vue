@@ -62,41 +62,33 @@
         >导出
         </el-button>
       </el-col>
-      <right-toolbar :show-search.sync="showSearch" @queryTable="getList" />
+      <right-toolbar :show-search.sync="showSearch" :columns="columns" @queryTable="getList" />
     </el-row>
 
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="车架号" fixed="left" min-width="200" prop="vin">
+      <el-table-column v-if="columns[0].visible" key="vin" label="车架号" fixed="left" width="180" prop="vin">
         <template slot-scope="scope">
-          <span>{{ scope.row.vin }}</span>
+          <span class="vin-text">{{ scope.row.vin }}</span>
           <el-tooltip v-if="!isValidVin(scope.row.vin)" content="VIN格式错误" placement="top">
             <i class="el-icon-warning" style="color: #E6A23C; margin-left: 5px;" />
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="工厂代码" prop="plantCode" align="center" width="80" />
-      <el-table-column label="品牌代码" prop="brandCode" align="center" width="80" />
-      <el-table-column label="平台代码" prop="platformCode" align="center" width="80" />
-      <el-table-column label="车系代码" prop="carLineCode" align="center" width="80" />
-      <el-table-column label="车型代码" prop="modelCode" align="center" width="80" />
-      <el-table-column label="版本代码" prop="variantCode" align="center" width="120" />
-      <el-table-column label="配置代码" prop="configurationCode" width="180" />
-      <el-table-column label="车辆下线时间" align="center" prop="eolTime" width="140">
+      <el-table-column v-if="columns[1].visible" key="plantCode" label="工厂代码" prop="plantCode" align="center" width="80" />
+      <el-table-column v-if="columns[2].visible" key="brandCode" label="品牌代码" prop="brandCode" align="center" width="80" />
+      <el-table-column v-if="columns[3].visible" key="platformCode" label="平台代码" prop="platformCode" align="center" width="80" />
+      <el-table-column v-if="columns[4].visible" key="carLineCode" label="车系代码" prop="carLineCode" align="center" width="80" />
+      <el-table-column v-if="columns[5].visible" key="modelCode" label="车型代码" prop="modelCode" align="center" width="80" />
+      <el-table-column v-if="columns[6].visible" key="variantCode" label="版本代码" prop="variantCode" align="center" width="120" />
+      <el-table-column v-if="columns[7].visible" key="configurationCode" label="配置代码" prop="configurationCode" width="180" />
+      <el-table-column v-if="columns[8].visible" key="eolTime" label="车辆下线时间" align="center" prop="eolTime" width="140">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.eolTime, '{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="380" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" fixed="right" width="160" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
-            v-hasPermi="['tsp:user-vehicle:query']"
-            size="mini"
-            type="text"
-            icon="el-icon-user"
-            @click="handleUserVehicle(scope.row)"
-          >绑定/激活
-          </el-button>
           <el-button
             v-hasPermi="['completeVehicle:vehicle:info:query']"
             size="mini"
@@ -105,22 +97,35 @@
             @click="handleLifecycle(scope.row)"
           >生命周期
           </el-button>
-          <el-button
-            v-hasPermi="['completeVehicle:vehicle:info:query']"
+          <el-dropdown
+            v-hasPermi="['tsp:user-vehicle:query', 'completeVehicle:vehicle:info:query', 'completeVehicle:vehicle:info:remove']"
             size="mini"
-            type="text"
-            icon="el-icon-setting"
-            @click="handlePartManagement(scope.row)"
-          >零件管理
-          </el-button>
-          <el-button
-            v-hasPermi="['completeVehicle:vehicle:info:remove']"
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-          >删除
-          </el-button>
+            style="margin-left: 10px"
+            @command="(command) => handleCommand(command, scope.row)"
+          >
+            <el-button size="mini" type="text" icon="el-icon-more">更多</el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                v-hasPermi="['tsp:user-vehicle:query']"
+                command="handleUserVehicle"
+                icon="el-icon-user"
+              >绑定/激活
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-hasPermi="['completeVehicle:vehicle:info:query']"
+                command="handlePartManagement"
+                icon="el-icon-setting"
+              >零件管理
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-hasPermi="['completeVehicle:vehicle:info:remove']"
+                command="handleDelete"
+                icon="el-icon-delete"
+                divided
+              >删除
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -532,6 +537,7 @@ import {
   unbindUserVehicleRelation,
   retryUserVehicleRevocation
 } from '@/api/iov/tsp/userVehicle'
+import cache from '@/plugins/cache'
 import {
   bindingStatusLabel,
   firstActivationLabel,
@@ -541,10 +547,47 @@ import {
   createUnbindIdempotencyKey
 } from './userVehicleDisplay'
 
+// 列显隐状态本地持久化键（浏览器维度，仅保存 key + visible，不保存文案）
+const COLUMN_CACHE_KEY = 'vmd:vehicleInfo:columns'
+
+// 默认列定义（与列表列顺序一致，默认全部展示）
+const DEFAULT_COLUMNS = [
+  { key: 0, label: '车架号', visible: true },
+  { key: 1, label: '工厂代码', visible: true },
+  { key: 2, label: '品牌代码', visible: true },
+  { key: 3, label: '平台代码', visible: true },
+  { key: 4, label: '车系代码', visible: true },
+  { key: 5, label: '车型代码', visible: true },
+  { key: 6, label: '版本代码', visible: true },
+  { key: 7, label: '配置代码', visible: true },
+  { key: 8, label: '车辆下线时间', visible: true }
+]
+
+// 读取本地持久化的列显隐状态；无缓存/缓存异常时回退默认值
+function loadColumns() {
+  let saved = null
+  try {
+    saved = cache.local.getJSON(COLUMN_CACHE_KEY)
+  } catch (e) {
+    saved = null
+  }
+  return DEFAULT_COLUMNS.map(column => {
+    const hit = Array.isArray(saved)
+      ? saved.find(item => item && item.key === column.key)
+      : null
+    return {
+      ...column,
+      visible: hit && typeof hit.visible === 'boolean' ? hit.visible : column.visible
+    }
+  })
+}
+
 export default {
   name: 'VehicleInfo',
   data() {
     return {
+      // 列信息（可通过显隐列开关展示/隐藏；状态本地持久化）
+      columns: loadColumns(),
       // 生命周期节点类型映射
       lifecycleNodeTypes: {
         'PRODUCE': '车辆生产',
@@ -651,11 +694,19 @@ export default {
       partFormTitle: ''
     }
   },
-  created() {
-    this.applyRouteQuery()
-    this.getList()
-  },
   watch: {
+    // 列显隐变化时持久化到 localStorage（RightToolbar 直接修改 columns 项，无需改公共组件）
+    columns: {
+      deep: true,
+      handler(columns) {
+        try {
+          cache.local.setJSON(COLUMN_CACHE_KEY,
+            columns.map(({ key, visible }) => ({ key, visible })))
+        } catch (e) {
+          // 存储不可用（隐私模式/配额满）时静默降级为仅会话内生效
+        }
+      }
+    },
     // 页面联动：从 TBOX 详情等携带 vin 跳转时，按参数过滤并刷新列表
     '$route.query': {
       handler() {
@@ -663,6 +714,10 @@ export default {
         this.getList()
       }
     }
+  },
+  created() {
+    this.applyRouteQuery()
+    this.getList()
   },
   methods: {
     /** 应用页面联动查询参数（如 TBOX 详情跳转携带的 vin） */
@@ -982,6 +1037,22 @@ export default {
       this.title = '车辆 ' + row.vin + ' 零件管理'
       this.getPartList()
     },
+    /** 更多操作下拉菜单命令分发 */
+    handleCommand(command, row) {
+      switch (command) {
+        case 'handleUserVehicle':
+          this.handleUserVehicle(row)
+          break
+        case 'handlePartManagement':
+          this.handlePartManagement(row)
+          break
+        case 'handleDelete':
+          this.handleDelete(row)
+          break
+        default:
+          break
+      }
+    },
     /** 查询零件列表 */
     getPartList() {
       this.partLoading = true
@@ -1084,3 +1155,10 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+/* 17 位 VIN 保持单行，列宽收窄后由单元格截断而不是折行 */
+.vin-text {
+  white-space: nowrap;
+}
+</style>
