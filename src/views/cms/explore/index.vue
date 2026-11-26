@@ -390,7 +390,7 @@
       <el-form :model="bannerForm" label-width="110px" size="small">
         <el-form-item label="标题"><el-input v-model="bannerForm.title" maxlength="255" /></el-form-item>
         <el-form-item label="主图">
-          <image-field v-model="bannerForm.image" />
+          <image-field v-model="bannerForm.image" :allowed-hosts="metadata.assetHosts || []" />
         </el-form-item>
         <target-editor v-model="bannerForm.target" :articles="articleOptions" :topics="topicOptions" :metadata="metadata" />
         <el-form-item label="默认排序"><el-input-number v-model="bannerForm.defaultSortNo" :min="0" :step="10" /></el-form-item>
@@ -406,7 +406,7 @@
       <el-form :model="topicForm" label-width="110px" size="small">
         <el-form-item label="名称"><el-input v-model="topicForm.name" maxlength="128" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="topicForm.summary" type="textarea" :rows="2" maxlength="1024" /></el-form-item>
-        <el-form-item label="封面"><image-field v-model="topicForm.cover" /></el-form-item>
+        <el-form-item label="封面"><image-field v-model="topicForm.cover" :allowed-hosts="metadata.assetHosts || []" /></el-form-item>
         <target-editor v-model="topicForm.target" :articles="articleOptions" :topics="topicOptions" :metadata="metadata" optional />
         <el-form-item label="文章选择">
           <el-select v-model="topicArticlePick" filterable placeholder="仅已发布文章" style="width: 100%" @change="addTopicArticle">
@@ -447,7 +447,7 @@
         </el-form-item>
         <el-form-item label="标题"><el-input v-model="articleForm.title" maxlength="255" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="articleForm.summary" type="textarea" :rows="2" maxlength="1024" /></el-form-item>
-        <el-form-item label="封面"><image-field v-model="articleForm.cover" /></el-form-item>
+        <el-form-item label="封面"><image-field v-model="articleForm.cover" :allowed-hosts="metadata.assetHosts || []" /></el-form-item>
         <el-form-item label="作者显示名"><el-input v-model="articleForm.authorName" maxlength="128" /></el-form-item>
         <el-form-item label="作者头像 URL"><el-input v-model="articleForm.authorAvatarUrl" /></el-form-item>
         <el-form-item label="展示时间">
