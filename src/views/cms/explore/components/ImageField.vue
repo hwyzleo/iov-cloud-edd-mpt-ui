@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { generateDefaultAsset, completeDefaultAsset } from '@/api/edd/oss/image'
+import { generateExploreAsset, completeExploreAsset } from '@/api/cms/explore'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -83,16 +83,14 @@ export default {
       }
       let stage = '申请上传'
       try {
-        const prepareResponse = await generateDefaultAsset({
-          assetName: this.assetName(file),
-          description: '探索页素材',
+        const prepareResponse = await generateExploreAsset({
           originalFilename: file.name,
           contentType: contentType,
           size: file.size
         })
         const prepare = prepareResponse.data || {}
         if (!prepare.objectId || !prepare.uploadUrl) {
-          throw new Error('EDD-OSS 未返回上传任务')
+          throw new Error('素材服务未返回上传任务')
         }
         stage = '图片直传 COS'
         const uploadResponse = await fetch(prepare.uploadUrl, {
@@ -104,10 +102,10 @@ export default {
           throw new Error('COS 返回 HTTP ' + uploadResponse.status)
         }
         stage = '完成确认'
-        const completeResponse = await completeDefaultAsset(prepare.objectId)
+        const completeResponse = await completeExploreAsset(prepare.objectId)
         const object = completeResponse.data || {}
         if (!object.accessUrl) {
-          throw new Error('EDD-OSS 未返回 accessUrl')
+          throw new Error('素材服务未返回 accessUrl')
         }
         const dimensions = await this.measure(file)
         this.warnIfHostNotAllowed(object.accessUrl)
@@ -142,10 +140,6 @@ export default {
       if (!contentType) return null
       if (ALLOWED_EXTENSIONS[contentType].indexOf(ext) < 0) return null
       return contentType
-    },
-    assetName(file) {
-      const name = file.name || 'explore-image'
-      return name.length > 100 ? name.substring(0, 100) : name
     },
     measure(file) {
       return new Promise(resolve => {

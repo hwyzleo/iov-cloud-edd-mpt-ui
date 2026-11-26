@@ -242,3 +242,19 @@ export function previewExploreDraft(pageId) {
     method: 'get'
   })
 }
+
+// ---------------- 素材上传（CMS 调用 EDD-OSS） ----------------
+export function generateExploreAsset(data) {
+  return request({
+    url: BASE + '/assets/uploads',
+    method: 'post',
+    data: data
+  })
+}
+
+export function completeExploreAsset(objectId) {
+  return request({
+    url: BASE + '/assets/uploads/' + objectId + '/complete',
+    method: 'post'
+  })
+}
