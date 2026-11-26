@@ -1,4 +1,7 @@
-## graphify
+# 当前项目配色与组件设计规范
+- 参考 Notion Page ID: 4240ec7a4b9280909844f59e81e9afbc
+
+# graphify
 
 This project has a graphify knowledge graph at graphify-out/.
 
