@@ -76,11 +76,25 @@
               <strong>{{ componentTypeLabel(component.type) }}</strong>
               <el-input-number v-model="component.sortNo" :min="0" :step="10" size="mini" controls-position="right" style="width: 100px" />
               <span class="component-actions">
-                <el-button type="text" icon="el-icon-plus" @click="openSelector(component.type)">添加条目</el-button>
+                <el-button type="text" icon="el-icon-plus" @click="openSelector(component, ci)">添加条目</el-button>
                 <el-button type="text" icon="el-icon-top" @click="moveComponent(ci, -1)" />
                 <el-button type="text" icon="el-icon-bottom" @click="moveComponent(ci, 1)" />
                 <el-button type="text" icon="el-icon-delete" style="color: #f56c6c" @click="removeComponent(ci)" />
               </span>
+            </div>
+            <div class="component-config">
+              <el-input v-model="component.config.title" size="mini" maxlength="64" placeholder="组件标题（可选）" style="width: 200px" />
+              <template v-if="component.type === 'TOPIC_GRID'">
+                <el-select v-model="component.config.style" size="mini" style="width: 150px">
+                  <el-option label="自适应网格" value="ADAPTIVE_GRID" />
+                  <el-option label="横滑竖卡" value="HORIZONTAL_SCROLL" />
+                  <el-option label="左图右文" value="IMAGE_TEXT_LIST" />
+                </el-select>
+                <el-select v-if="component.config.style === 'ADAPTIVE_GRID'" v-model="component.config.columns" size="mini" style="width: 90px">
+                  <el-option v-for="n in [2, 3, 4]" :key="n" :label="n + ' 列'" :value="n" />
+                </el-select>
+              </template>
+              <el-input-number v-if="component.type === 'BANNER_CAROUSEL'" v-model="component.config.intervalSeconds" :min="3" :max="10" size="mini" controls-position="right" style="width: 120px" />
             </div>
 
             <div v-if="!component.items || component.items.length === 0" class="empty-items">
@@ -88,7 +102,7 @@
             </div>
             <div
               v-for="(item, ii) in component.items"
-              :key="item.itemId || (item.refRevisionId + '-' + ii)"
+              :key="item.itemId || (item.refRevisionId + '-' + ii + '-' + ci)"
               class="item-row"
               draggable="true"
               @dragstart.stop="dragItem = { ci: ci, ii: ii }"
@@ -115,7 +129,6 @@
             v-for="type in metadata.componentTypes || []"
             :key="type"
             size="mini"
-            :disabled="hasComponent(type)"
             @click="addComponent(type)"
           >+ {{ componentTypeLabel(type) }}</el-button>
         </div>
@@ -447,7 +460,9 @@
         </el-form-item>
         <el-form-item label="标题"><el-input v-model="articleForm.title" maxlength="255" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="articleForm.summary" type="textarea" :rows="2" maxlength="1024" /></el-form-item>
-        <el-form-item label="封面"><image-field v-model="articleForm.cover" :allowed-hosts="metadata.assetHosts || []" /></el-form-item>
+        <el-form-item label="文章图片">
+          <image-list-field v-model="articleForm.images" :max="9" :allowed-hosts="metadata.assetHosts || []" />
+        </el-form-item>
         <el-form-item label="作者显示名"><el-input v-model="articleForm.authorName" maxlength="128" /></el-form-item>
         <el-form-item label="作者头像 URL"><el-input v-model="articleForm.authorAvatarUrl" /></el-form-item>
         <el-form-item label="展示时间">
@@ -526,28 +541,39 @@
         <div class="phone-channel">{{ previewData.channel && previewData.channel.name }}</div>
         <div class="phone-body">
           <div v-for="component in previewData.components || []" :key="component.componentId" class="phone-component">
+            <div v-if="component.title" class="phone-component-title">{{ component.title }}</div>
             <template v-if="component.type === 'BANNER_CAROUSEL'">
-              <el-carousel height="150px" :interval="5000" indicator-position="outside">
+              <el-carousel height="150px" :interval="(component.intervalSeconds || 5) * 1000" indicator-position="outside">
                 <el-carousel-item v-for="item in component.items" :key="item.itemId">
                   <img :src="item.image && item.image.url" class="banner-image">
                 </el-carousel-item>
               </el-carousel>
             </template>
             <template v-else-if="component.type === 'TOPIC_GRID'">
-              <div class="topic-grid">
+              <div class="topic-grid" :class="'topic-style-' + (component.style || 'ADAPTIVE_GRID')" :style="topicGridStyle(component)">
                 <div v-for="item in component.items" :key="item.itemId" class="topic-cell">
                   <img :src="item.cover && item.cover.url">
                   <div class="topic-name">{{ item.name }}</div>
+                  <div v-if="component.style === 'IMAGE_TEXT_LIST'" class="topic-summary">{{ item.summary }}</div>
                 </div>
               </div>
             </template>
             <template v-else-if="component.type === 'ARTICLE_FEED'">
               <div v-for="item in component.items" :key="item.itemId" class="article-card">
-                <img v-if="item.cover" :src="item.cover.url">
                 <div class="article-info">
                   <div class="article-title">{{ item.title }}</div>
                   <div class="article-summary">{{ item.summary }}</div>
                   <div class="article-meta">{{ item.authorName }} · {{ formatTime(item.displayAt) }}</div>
+                  <div
+                    v-if="articleImages(item).length"
+                    class="article-images"
+                    :class="'layout-' + (item.imageLayout || 'SINGLE')"
+                  >
+                    <div v-for="(image, imageIndex) in articleImages(item)" :key="imageIndex" class="article-image-cell">
+                      <img :src="image.url">
+                      <span v-if="imageIndex === 8 && item.imageCount > 9" class="image-more">+{{ item.imageCount - 8 }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
@@ -584,6 +610,7 @@
 
 <script>
 import ImageField from './components/ImageField'
+import ImageListField from './components/ImageListField'
 import TargetEditor from './components/TargetEditor'
 import {
   getExploreMetadata,
@@ -620,7 +647,7 @@ import {
 
 export default {
   name: 'ExploreManagement',
-  components: { ImageField, TargetEditor },
+  components: { ImageField, ImageListField, TargetEditor },
   data() {
     return {
       activeTab: 'page',
@@ -646,6 +673,7 @@ export default {
       releaseRows: [],
       selectorRows: [],
       selectorType: '',
+      selectorComponentIndex: -1,
       articleOptions: [],
       topicOptions: [],
       pageState: {
@@ -734,16 +762,30 @@ export default {
       this.page = {
         pageId: data.pageId,
         lockVersion: data.lockVersion || 0,
-        components: data.components || []
+        components: (data.components || []).map(component => ({
+          ...component,
+          config: component.config || {}
+        }))
       }
       this.currentReleaseId = (currentRes.data && currentRes.data.releaseId) || null
     },
-    hasComponent(type) {
-      return this.page.components.some(component => component.type === type)
-    },
     addComponent(type) {
-      if (this.hasComponent(type)) return
-      this.page.components.push({ type: type, sortNo: (this.page.components.length + 1) * 10, items: [], config: {}})
+      if (this.page.components.length >= 20) {
+        this.$modal.msgError('每页最多 20 个组件')
+        return
+      }
+      const config = type === 'TOPIC_GRID'
+        ? { title: '', style: 'ADAPTIVE_GRID', columns: 4 }
+        : type === 'BANNER_CAROUSEL'
+          ? { title: '', intervalSeconds: 5 }
+          : { title: '' }
+      this.page.components.push({
+        type: type,
+        sortNo: (this.page.components.length + 1) * 10,
+        items: [],
+        config: config,
+        _localKey: 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)
+      })
     },
     removeComponent(index) {
       this.$modal.confirm('确认移除该组件及其全部条目？').then(() => {
@@ -865,8 +907,9 @@ export default {
         await this.loadPage()
       }).catch(() => {})
     },
-    openSelector(componentType) {
-      this.selectorType = componentType
+    openSelector(component, index) {
+      this.selectorType = component.type
+      this.selectorComponentIndex = index
       this.dialogs.selector = true
       this.loadSelectorRows()
     },
@@ -888,7 +931,7 @@ export default {
       }
     },
     selectItem(row) {
-      const component = this.page.components.find(item => item.type === this.selectorType)
+      const component = this.page.components[this.selectorComponentIndex]
       if (!component) {
         this.$modal.msgError('请先添加对应组件')
         return
@@ -1134,7 +1177,7 @@ export default {
         sourceType: 'OFFICIAL',
         title: '',
         summary: '',
-        cover: null,
+        images: [],
         authorName: '',
         authorAvatarUrl: '',
         displayAt: null,
@@ -1155,7 +1198,7 @@ export default {
           sourceType: detail.sourceType,
           title: detail.title,
           summary: detail.summary,
-          cover: detail.cover,
+          images: detail.images && detail.images.length ? detail.images : (detail.cover ? [detail.cover] : []),
           authorName: detail.authorName,
           authorAvatarUrl: detail.authorAvatarUrl,
           displayAt: detail.displayAt ? new Date(detail.displayAt) : null,
@@ -1174,7 +1217,7 @@ export default {
           sourceType: this.articleForm.sourceType,
           title: this.articleForm.title,
           summary: this.articleForm.summary,
-          cover: this.articleForm.cover,
+          images: this.articleForm.images,
           authorName: this.articleForm.authorName,
           authorAvatarUrl: this.articleForm.authorAvatarUrl,
           displayAt: this.toIso(this.articleForm.displayAt),
@@ -1263,6 +1306,19 @@ export default {
         payload.params = target.params
       }
       return payload
+    },
+    topicGridStyle(component) {
+      if ((component.style || 'ADAPTIVE_GRID') !== 'ADAPTIVE_GRID') {
+        return {}
+      }
+      const columns = component.columns || 4
+      return { gridTemplateColumns: 'repeat(' + columns + ', 1fr)' }
+    },
+    articleImages(item) {
+      if (item && item.images && item.images.length) {
+        return item.images.slice(0, 9)
+      }
+      return item && item.cover ? [item.cover] : []
     },
     componentTypeLabel(type) {
       const labels = { BANNER_CAROUSEL: 'Banner 轮播', TOPIC_GRID: '专题网格', ARTICLE_FEED: '文章信息流' }
@@ -1465,5 +1521,106 @@ export default {
   gap: 10px;
   font-size: 12px;
   padding: 4px 0;
+}
+
+.component-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+.phone-component-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.topic-grid.topic-style-HORIZONTAL_SCROLL {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  grid-template-columns: none;
+  padding-bottom: 4px;
+}
+.topic-style-HORIZONTAL_SCROLL .topic-cell {
+  flex: 0 0 92px;
+}
+.topic-style-HORIZONTAL_SCROLL .topic-cell img {
+  aspect-ratio: 3 / 4;
+}
+.topic-grid.topic-style-IMAGE_TEXT_LIST {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+}
+.topic-style-IMAGE_TEXT_LIST .topic-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  background: #1f1f1f;
+  border-radius: 8px;
+  padding: 6px;
+}
+.topic-style-IMAGE_TEXT_LIST .topic-cell img {
+  width: 80px;
+  height: 60px;
+  aspect-ratio: auto;
+  flex: 0 0 auto;
+}
+.topic-summary {
+  font-size: 11px;
+  color: #b1b3b8;
+  overflow: hidden;
+  max-height: 32px;
+}
+.article-images {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+.article-images.layout-SINGLE {
+  grid-template-columns: 1fr;
+}
+.article-images.layout-TWO_COLUMNS {
+  grid-template-columns: repeat(2, 1fr);
+}
+.article-images.layout-ONE_LARGE_TWO_SMALL {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(2, 1fr);
+}
+.article-images.layout-ONE_LARGE_TWO_SMALL .article-image-cell:first-child {
+  grid-row: span 2;
+}
+.article-images.layout-TWO_BY_TWO {
+  grid-template-columns: repeat(2, 1fr);
+}
+.article-images.layout-THREE_COLUMNS,
+.article-images.layout-NINE_GRID_WITH_COUNT {
+  grid-template-columns: repeat(3, 1fr);
+}
+.article-image-cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.article-image-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+.layout-SINGLE .article-image-cell img {
+  aspect-ratio: 16 / 9;
+}
+.image-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>
