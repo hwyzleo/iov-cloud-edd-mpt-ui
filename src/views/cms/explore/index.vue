@@ -496,7 +496,11 @@
             <img v-if="itemCover(scope.row)" :src="itemCover(scope.row)" class="thumb">
           </template>
         </el-table-column>
-        <el-table-column prop="title" label="标题 / 名称" />
+        <el-table-column label="标题 / 名称" min-width="180">
+          <template slot-scope="scope">
+            {{ scope.row.title || scope.row.name || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="revisionId" label="修订标识" min-width="180" />
         <el-table-column prop="revisionNo" label="修订号" width="80" />
         <el-table-column label="操作" width="90">
