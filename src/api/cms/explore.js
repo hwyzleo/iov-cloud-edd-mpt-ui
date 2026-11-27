@@ -20,10 +20,34 @@ export function listExploreChannels() {
   })
 }
 
+export function createExploreChannel(data) {
+  return request({
+    url: BASE + '/channels',
+    method: 'post',
+    data: data
+  })
+}
+
 export function updateExploreChannel(channelCode, data) {
   return request({
     url: BASE + '/channels/' + channelCode,
     method: 'put',
+    data: data
+  })
+}
+
+export function deleteExploreChannel(channelCode, lockVersion) {
+  return request({
+    url: BASE + '/channels/' + channelCode,
+    method: 'delete',
+    params: { lockVersion: lockVersion }
+  })
+}
+
+export function publishExploreChannel(channelCode, data) {
+  return request({
+    url: BASE + '/channels/' + channelCode + '/action/publish',
+    method: 'post',
     data: data
   })
 }

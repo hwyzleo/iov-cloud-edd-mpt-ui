@@ -86,20 +86,20 @@ export function buildTopicTargetPayload(target) {
 
 /**
  * 编辑回显：图集归一（兼容只有封面的历史专题）
+ * MKT-CMS-DSN-CR-005 §7.2：保留显式 showInDetail，缺省按 true 回显。
  *
  * @param {object} form 服务端专题视图
  * @returns {Array} 有序图集
  */
 export function normalizeTopicImages(form) {
   const images = (form && form.images) || []
-  if (images.length > 0) {
-    return images.slice()
-  }
-  const cover = form && form.cover
-  if (cover && cover.url) {
-    return [cover]
-  }
-  return []
+  const source = images.length > 0
+    ? images.slice()
+    : (form && form.cover && form.cover.url) ? [form.cover] : []
+  return source.map(image => ({
+    ...image,
+    showInDetail: image.showInDetail !== false
+  }))
 }
 
 /**

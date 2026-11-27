@@ -58,14 +58,23 @@ test('文章列表仅在专题详情模式参与载荷', () => {
   assert.equal(article.target.type, 'ARTICLE')
 })
 
-test('图集回显：优先 images，兼容旧封面', () => {
+test('图集回显：优先 images，兼容旧封面，并保留显式详情标志', () => {
   const image = { url: 'https://assets.example/a.png', width: 1, height: 1, mime: 'image/png', size: 1 }
-  assert.deepEqual(normalizeTopicImages({ images: [image] }), [image])
-  assert.deepEqual(normalizeTopicImages({ images: [], cover: image }), [image])
+  const normalized = normalizeTopicImages({ images: [image] })
+  assert.equal(normalized.length, 1)
+  assert.equal(normalized[0].showInDetail, true)
+  assert.equal(normalized[0].url, image.url)
+
+  const legacy = normalizeTopicImages({ images: [], cover: image })
+  assert.equal(legacy.length, 1)
+  assert.equal(legacy[0].showInDetail, true)
   assert.deepEqual(normalizeTopicImages({ images: [], cover: null }), [])
+
+  const hidden = normalizeTopicImages({ images: [{ ...image, showInDetail: false }] })
+  assert.equal(hidden[0].showInDetail, false, '显式 false 必须保留')
 })
 
-test('保存载荷不再发送独立封面字段', () => {
+test('保存载荷不再发送独立封面字段，并保留每图详情可见标志', () => {
   const image = { url: 'https://assets.example/a.png', width: 1, height: 1, mime: 'image/png', size: 1 }
   const payload = buildTopicSavePayload(
     { name: '专题', summary: '摘要', images: [image], cover: image, lockVersion: 0 },
@@ -73,5 +82,13 @@ test('保存载荷不再发送独立封面字段', () => {
     { type: TOPIC_DETAIL }
   )
   assert.equal(Object.prototype.hasOwnProperty.call(payload, 'cover'), false)
-  assert.deepEqual(payload.images, [image])
+  assert.equal(payload.images.length, 1)
+  assert.equal(payload.images[0].showInDetail, true)
+
+  const hiddenPayload = buildTopicSavePayload(
+    { name: '专题', summary: '摘要', images: [{ ...image, showInDetail: false }], lockVersion: 0 },
+    [],
+    { type: TOPIC_DETAIL }
+  )
+  assert.equal(hiddenPayload.images[0].showInDetail, false)
 })

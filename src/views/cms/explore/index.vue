@@ -136,21 +136,70 @@
 
       <!-- ================= 频道 ================= -->
       <el-tab-pane label="频道" name="channel">
+        <el-form :inline="true" size="small">
+          <el-form-item>
+            <el-button
+              v-hasPermi="['mkt:cms:explore:add']"
+              type="success"
+              size="mini"
+              icon="el-icon-plus"
+              @click="openChannel()"
+            >新增频道</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-tag type="info" size="small">发布频道不发布页面；停用须保存草稿后发布</el-tag>
+          </el-form-item>
+        </el-form>
         <el-table v-loading="loading.channel" :data="channelRows" size="small" border>
-          <el-table-column prop="channelCode" label="频道编码" width="140" />
-          <el-table-column prop="name" label="名称" />
-          <el-table-column prop="sortNo" label="排序" width="90" />
-          <el-table-column prop="status" label="状态" width="110">
+          <el-table-column prop="channelCode" label="频道编码" width="150" />
+          <el-table-column label="草稿配置" min-width="210">
             <template slot-scope="scope">
-              <el-tag :type="scope.row.status === 'ENABLED' ? 'success' : 'info'">
-                {{ scope.row.status === 'ENABLED' ? '启用' : '停用' }}
+              <span v-if="scope.row.draft">
+                {{ scope.row.draft.name }} / 排序 {{ scope.row.draft.sortNo }} /
+                {{ channelStatusLabel(scope.row.draft.status) }}
+              </span>
+              <span v-else class="muted-text">无草稿（修改将基于当前发布配置创建）</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="已发布配置" min-width="210">
+            <template slot-scope="scope">
+              <span v-if="scope.row.published">
+                {{ scope.row.published.name }} / 排序 {{ scope.row.published.sortNo }} /
+                {{ channelStatusLabel(scope.row.published.status) }}
+              </span>
+              <span v-else class="muted-text">未发布（手机端不可见）</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="未发布变更" width="110">
+            <template slot-scope="scope">
+              <el-tag :type="scope.row.hasUnpublishedChanges ? 'warning' : 'info'">
+                {{ scope.row.hasUnpublishedChanges ? '待发布' : '无' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="lockVersion" label="lockVersion" width="110" />
-          <el-table-column label="操作" width="100">
+          <el-table-column label="操作" width="220">
             <template slot-scope="scope">
-              <el-button v-hasPermi="['mkt:cms:explore:edit']" type="text" size="mini" @click="openChannel(scope.row)">修改</el-button>
+              <el-button
+                v-hasPermi="['mkt:cms:explore:edit']"
+                type="text"
+                size="mini"
+                @click="openChannel(scope.row)"
+              >修改</el-button>
+              <el-button
+                v-hasPermi="['mkt:cms:explore:publish']"
+                type="text"
+                size="mini"
+                :disabled="!scope.row.draft"
+                @click="handlePublishChannel(scope.row)"
+              >发布</el-button>
+              <el-button
+                v-hasPermi="['mkt:cms:explore:edit']"
+                type="text"
+                size="mini"
+                :disabled="!scope.row.deletable"
+                @click="handleDeleteChannel(scope.row)"
+              >删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -382,9 +431,21 @@
     </el-tabs>
 
     <!-- ================= 频道编辑 ================= -->
-    <el-dialog title="维护频道" :visible.sync="dialogs.channel" width="420px" append-to-body>
-      <el-form :model="channelForm" label-width="100px" size="small">
-        <el-form-item label="频道编码"><el-input v-model="channelForm.channelCode" disabled /></el-form-item>
+    <el-dialog
+      :title="channelForm.isNew ? '新增频道' : '维护频道草稿'"
+      :visible.sync="dialogs.channel"
+      width="440px"
+      append-to-body
+    >
+      <el-form :model="channelForm" label-width="110px" size="small">
+        <el-form-item label="频道编码">
+          <el-input
+            v-model="channelForm.channelCode"
+            :disabled="!channelForm.isNew"
+            maxlength="32"
+            placeholder="大写字母开头，仅大写字母/数字/下划线"
+          />
+        </el-form-item>
         <el-form-item label="名称"><el-input v-model="channelForm.name" maxlength="64" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="channelForm.sortNo" :min="0" :step="10" /></el-form-item>
         <el-form-item label="状态">
@@ -393,11 +454,18 @@
             <el-option label="停用" value="DISABLED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="lockVersion"><el-input-number v-model="channelForm.lockVersion" disabled /></el-form-item>
+        <el-form-item v-if="!channelForm.isNew" label="lockVersion">
+          <el-input-number v-model="channelForm.lockVersion" disabled />
+        </el-form-item>
+        <el-form-item v-if="!channelForm.isNew" label="保存语义">
+          <span class="muted-text">仅保存草稿，手机端继续读取当前发布配置；需单独执行发布。</span>
+        </el-form-item>
       </el-form>
       <span slot="footer">
         <el-button size="small" @click="dialogs.channel = false">取消</el-button>
-        <el-button size="small" type="primary" @click="submitChannel">保存</el-button>
+        <el-button size="small" type="primary" @click="submitChannel">
+          {{ channelForm.isNew ? '创建频道' : '保存草稿' }}
+        </el-button>
       </span>
     </el-dialog>
 
@@ -423,7 +491,12 @@
         <el-form-item label="名称"><el-input v-model="topicForm.name" maxlength="128" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="topicForm.summary" type="textarea" :rows="2" maxlength="1024" /></el-form-item>
         <el-form-item label="专题图集">
-          <image-list-field v-model="topicForm.images" :max="9" :allowed-hosts="metadata.assetHosts || []" />
+          <image-list-field
+            v-model="topicForm.images"
+            :max="9"
+            :allowed-hosts="metadata.assetHosts || []"
+            show-detail
+          />
         </el-form-item>
         <target-editor
           v-model="topicForm.target"
@@ -646,7 +719,10 @@ import TargetEditor from './components/TargetEditor'
 import {
   getExploreMetadata,
   listExploreChannels,
+  createExploreChannel,
   updateExploreChannel,
+  deleteExploreChannel,
+  publishExploreChannel,
   listExploreArticles,
   getExploreArticle,
   createExploreArticle,
@@ -1017,19 +1093,99 @@ export default {
     },
     // ---------------- 频道 ----------------
     openChannel(row) {
-      this.channelForm = Object.assign({}, row)
+      if (!row) {
+        this.channelForm = {
+          isNew: true,
+          channelCode: '',
+          name: '',
+          sortNo: 0,
+          status: 'ENABLED',
+          lockVersion: 0
+        }
+      } else {
+        const current = row.draft || row.published || {}
+        this.channelForm = {
+          isNew: false,
+          channelCode: row.channelCode,
+          name: current.name || row.name || '',
+          sortNo: current.sortNo == null ? 0 : current.sortNo,
+          status: current.status || row.status || 'ENABLED',
+          lockVersion: row.lockVersion
+        }
+      }
       this.dialogs.channel = true
     },
     async submitChannel() {
-      await updateExploreChannel(this.channelForm.channelCode, {
-        name: this.channelForm.name,
-        sortNo: this.channelForm.sortNo,
-        status: this.channelForm.status,
-        lockVersion: this.channelForm.lockVersion
-      })
-      this.$modal.msgSuccess('频道已更新')
+      if (this.channelForm.isNew) {
+        await createExploreChannel({
+          channelCode: this.channelForm.channelCode,
+          name: this.channelForm.name,
+          sortNo: this.channelForm.sortNo,
+          status: this.channelForm.status
+        })
+        this.$modal.msgSuccess('频道已创建，发布后手机端才可见')
+      } else {
+        await updateExploreChannel(this.channelForm.channelCode, {
+          name: this.channelForm.name,
+          sortNo: this.channelForm.sortNo,
+          status: this.channelForm.status,
+          lockVersion: this.channelForm.lockVersion
+        })
+        this.$modal.msgSuccess('频道草稿已保存，发布后生效')
+      }
       this.dialogs.channel = false
       await this.loadChannels()
+    },
+    channelStatusLabel(status) {
+      if (status === 'ENABLED') return '启用'
+      if (status === 'DISABLED') return '停用'
+      return status || '-'
+    },
+    newRequestId() {
+      const random = Math.random().toString(36).slice(2, 10)
+      return ('chreq-' + Date.now().toString(36) + '-' + random).slice(0, 64)
+    },
+    handlePublishChannel(row) {
+      if (!row.draft) {
+        this.$modal.msgWarning('当前频道没有草稿，请先修改生成草稿')
+        return
+      }
+      const requestId = this.newRequestId()
+      const expected = row.published ? row.published.revisionId : null
+      const draftText = `${row.draft.name} / 排序 ${row.draft.sortNo} / ${this.channelStatusLabel(row.draft.status)}`
+      const publishedText = row.published
+        ? `${row.published.name} / 排序 ${row.published.sortNo} / ${this.channelStatusLabel(row.published.status)}`
+        : '无'
+      const message = [
+        `确认发布频道 ${row.channelCode}？`,
+        `草稿：${draftText}；当前发布：${publishedText}`,
+        `requestId=${requestId}`,
+        `expectedCurrentRevisionId=${expected || 'null'}`,
+        '',
+        '频道发布会生成新的不可变修订，但不会发布或下线任何页面。'
+      ].join('\n')
+      this.$modal.confirm(message)
+        .then(async() => {
+          await publishExploreChannel(row.channelCode, {
+            requestId: requestId,
+            expectedCurrentRevisionId: expected,
+            lockVersion: row.lockVersion
+          })
+          this.$modal.msgSuccess('频道配置已发布；页面需另行发布')
+          await this.loadChannels()
+        })
+    },
+    handleDeleteChannel(row) {
+      if (!row.deletable) {
+        this.$modal.msgWarning('频道已被页面引用，只能停用，不能物理删除')
+        return
+      }
+      this.$modal.confirm('确认删除频道 ' + row.channelCode + '？删除后编码不可复用，操作留痕仍保留。')
+        .then(async() => {
+          await deleteExploreChannel(row.channelCode, row.lockVersion)
+          this.$modal.msgSuccess('频道已删除')
+          await this.loadChannels()
+        })
     },
     // ---------------- Banner ----------------
     async loadBanners() {
@@ -1428,6 +1584,10 @@ export default {
 </script>
 
 <style scoped>
+.muted-text {
+  font-size: 12px;
+  color: #909399;
+}
 .explore-page .component-list {
   display: flex;
   flex-direction: column;

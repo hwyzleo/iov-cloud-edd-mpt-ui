@@ -2,9 +2,16 @@
   <div class="explore-image-list-field">
     <div v-if="value.length > 0" class="image-grid">
       <div v-for="(image, index) in value" :key="image.url + '-' + index" class="image-cell">
-        <img :src="image.url" :alt="image.url" />
+        <img :src="image.url" :alt="image.url">
         <div class="image-cell-meta">
           {{ image.width }} × {{ image.height }} · {{ image.mime }}
+        </div>
+        <div v-if="showDetail" class="image-cell-detail">
+          <el-switch
+            :value="image.showInDetail !== false"
+            active-text="详情展示"
+            @change="toggleDetail(index, $event)"
+          />
         </div>
         <div class="image-cell-actions">
           <el-button type="text" icon="el-icon-top" @click="move(index, -1)" />
@@ -21,6 +28,9 @@
     />
     <div class="image-list-tip">
       已上传 {{ value.length }} / {{ max }} 张；第 1 张作为列表封面。1/2/3/4/5～9 张将按不同布局展示。
+    </div>
+    <div v-if="showDetail" class="image-list-tip">
+      第 1 张始终作为卡片封面，关闭“详情展示”不影响封面；详情图集只包含开启的图片。
     </div>
   </div>
 </template>
@@ -43,6 +53,13 @@ export default {
     allowedHosts: {
       type: Array,
       default: () => []
+    },
+    /**
+     * 是否开放每图“详情展示”运营配置（仅专题图集，文章图集不开放）
+     */
+    showDetail: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -52,7 +69,15 @@ export default {
         this.$modal.msgError('最多上传 ' + this.max + ' 张图片')
         return
       }
-      const next = this.value.concat([image])
+      const nextImage = this.showDetail
+        ? { ...image, showInDetail: image.showInDetail !== false }
+        : image
+      const next = this.value.concat([nextImage])
+      this.$emit('input', next)
+    },
+    toggleDetail(index, visible) {
+      const next = this.value.slice()
+      next[index] = { ...next[index], showInDetail: visible }
       this.$emit('input', next)
     },
     remove(index) {
@@ -99,6 +124,13 @@ export default {
   font-size: 11px;
   color: #606266;
   margin-top: 4px;
+}
+.image-cell-detail {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.image-cell-detail ::v-deep .el-switch__label {
+  font-size: 11px;
 }
 .image-cell-actions {
   text-align: right;
