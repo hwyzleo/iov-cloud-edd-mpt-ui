@@ -234,8 +234,11 @@
           </el-table-column>
           <el-table-column prop="name" label="名称" />
           <el-table-column prop="summary" label="摘要" show-overflow-tooltip />
+          <el-table-column label="图集" width="80">
+            <template slot-scope="scope">{{ scope.row.imageCount || 0 }} 张</template>
+          </el-table-column>
           <el-table-column label="跳转目标" width="220">
-            <template slot-scope="scope">{{ targetLabel(scope.row.target) }}</template>
+            <template slot-scope="scope">{{ topicTargetLabel(scope.row.target) }}</template>
           </el-table-column>
           <el-table-column prop="revisionStatus" label="修订状态" width="110" />
           <el-table-column prop="status" label="根状态" width="100" />
@@ -419,10 +422,26 @@
       <el-form :model="topicForm" label-width="110px" size="small">
         <el-form-item label="名称"><el-input v-model="topicForm.name" maxlength="128" /></el-form-item>
         <el-form-item label="摘要"><el-input v-model="topicForm.summary" type="textarea" :rows="2" maxlength="1024" /></el-form-item>
-        <el-form-item label="封面"><image-field v-model="topicForm.cover" :allowed-hosts="metadata.assetHosts || []" /></el-form-item>
-        <target-editor v-model="topicForm.target" :articles="articleOptions" :topics="topicOptions" :metadata="metadata" optional />
+        <el-form-item label="专题图集">
+          <image-list-field v-model="topicForm.images" :max="9" :allowed-hosts="metadata.assetHosts || []" />
+        </el-form-item>
+        <target-editor
+          v-model="topicForm.target"
+          :articles="articleOptions"
+          :topics="topicOptions"
+          :metadata="metadata"
+          :topic-mode="true"
+          optional
+        />
         <el-form-item label="文章选择">
-          <el-select v-model="topicArticlePick" filterable placeholder="仅已发布文章" style="width: 100%" @change="addTopicArticle">
+          <el-select
+            v-model="topicArticlePick"
+            filterable
+            :disabled="!topicArticleEnabled"
+            :placeholder="topicArticleEnabled ? '仅已发布文章' : '非专题详情模式不维护文章列表'"
+            style="width: 100%"
+            @change="addTopicArticle"
+          >
             <el-option
               v-for="article in articleOptions"
               :key="article.articleId + '::' + article.revisionId"
@@ -431,15 +450,23 @@
             />
           </el-select>
         </el-form-item>
+        <el-alert
+          v-if="!topicArticleEnabled"
+          type="info"
+          :closable="false"
+          show-icon
+          title="当前跳转类型直接跳转目标，不展示本专题详情页，因此不允许关联文章列表"
+          style="margin-bottom: 8px"
+        />
         <el-form-item label="文章顺序">
           <div v-if="topicForm.items.length === 0" class="empty-items">尚未选择文章</div>
           <div v-for="(item, index) in topicForm.items" :key="item.articleRevisionId" class="selected-row">
             <span class="item-sort">#{{ (index + 1) * 10 }}</span>
             <span class="item-title">{{ item.title || item.articleRevisionId }}</span>
             <span class="item-ref">{{ item.articleRevisionId }}</span>
-            <el-button type="text" icon="el-icon-top" @click="moveTopicArticle(index, -1)" />
-            <el-button type="text" icon="el-icon-bottom" @click="moveTopicArticle(index, 1)" />
-            <el-button type="text" icon="el-icon-delete" style="color: #f56c6c" @click="removeTopicArticle(index)" />
+            <el-button type="text" icon="el-icon-top" :disabled="!topicArticleEnabled" @click="moveTopicArticle(index, -1)" />
+            <el-button type="text" icon="el-icon-bottom" :disabled="!topicArticleEnabled" @click="moveTopicArticle(index, 1)" />
+            <el-button type="text" icon="el-icon-delete" :disabled="!topicArticleEnabled" style="color: #f56c6c" @click="removeTopicArticle(index)" />
           </div>
         </el-form-item>
       </el-form>
@@ -648,6 +675,13 @@ import {
   copyExploreReleaseToDraft,
   previewExploreDraft
 } from '@/api/cms/explore'
+import {
+  TOPIC_DETAIL,
+  normalizeTopicImages,
+  normalizeTopicTarget,
+  isArticleListAllowed,
+  buildTopicSavePayload
+} from '@/utils/cms/exploreTopic'
 
 export default {
   name: 'ExploreManagement',
@@ -716,6 +750,23 @@ export default {
       dragComponent: null,
       dragItem: null,
       loadedTabs: {}
+    }
+  },
+  computed: {
+    /**
+     * 专题详情外的跳转类型不维护文章列表（MKT-CMS-DSN-CR-004 §7）
+     */
+    topicArticleEnabled() {
+      return isArticleListAllowed(this.topicForm && this.topicForm.target && this.topicForm.target.type)
+    }
+  },
+  watch: {
+    'topicForm.target.type'(type) {
+      if (!isArticleListAllowed(type) && this.topicForm.items.length > 0) {
+        this.topicForm.items = []
+        this.topicArticlePick = ''
+        this.$modal.msgWarning('该跳转类型不展示本专题详情页，已清空已选文章')
+      }
     }
   },
   created() {
@@ -1075,7 +1126,15 @@ export default {
       }
     },
     emptyTopic() {
-      return { topicId: null, name: '', summary: '', cover: null, target: null, items: [], lockVersion: null }
+      return {
+        topicId: null,
+        name: '',
+        summary: '',
+        images: [],
+        target: { type: TOPIC_DETAIL },
+        items: [],
+        lockVersion: null
+      }
     },
     async openTopic(row) {
       await this.loadTargetOptions()
@@ -1088,8 +1147,8 @@ export default {
           topicId: detail.topicId,
           name: detail.name,
           summary: detail.summary,
-          cover: detail.cover,
-          target: this.toTargetPayload(detail.target),
+          images: normalizeTopicImages(detail),
+          target: normalizeTopicTarget(detail.target),
           items: (detail.items || []).map(item => ({
             articleRevisionId: item.articleRevisionId,
             title: item.title || (item.display && item.display.title)
@@ -1123,14 +1182,7 @@ export default {
     async submitTopic() {
       this.saving = true
       try {
-        const payload = {
-          name: this.topicForm.name,
-          summary: this.topicForm.summary,
-          cover: this.topicForm.cover,
-          target: this.topicForm.target,
-          articleRevisionIds: this.topicForm.items.map(item => item.articleRevisionId),
-          lockVersion: this.topicForm.lockVersion
-        }
+        const payload = buildTopicSavePayload(this.topicForm, this.topicForm.items, this.topicForm.target)
         if (this.topicForm.topicId) {
           await updateExploreTopic(this.topicForm.topicId, payload)
         } else {
@@ -1335,6 +1387,15 @@ export default {
       if (target.type === 'H5') return 'H5：' + (target.url || '')
       if (target.type === 'NATIVE') return '原生：' + (target.routeCode || '')
       return target.type
+    },
+    /**
+     * 专题跳转目标标签：空目标与 TOPIC 均为专题详情模式
+     */
+    topicTargetLabel(target) {
+      if (!target || !target.type || target.type === TOPIC_DETAIL) {
+        return '专题详情'
+      }
+      return this.targetLabel(target)
     },
     itemTitle(item) {
       if (!item) return '-'

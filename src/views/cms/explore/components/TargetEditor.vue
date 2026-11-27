@@ -3,7 +3,7 @@
     <el-form-item label="跳转类型">
       <el-select
         v-model="target.type"
-        :clearable="optional"
+        :clearable="optional && !topicMode"
         placeholder="请选择跳转类型"
         style="width: 100%"
         @change="handleTypeChange"
@@ -30,7 +30,7 @@
       </el-form-item>
     </template>
 
-    <template v-if="target.type === 'TOPIC'">
+    <template v-if="target.type === 'TOPIC' && !topicMode">
       <el-form-item label="目标专题修订">
         <el-select v-model="topicKey" filterable placeholder="仅已发布专题" style="width: 100%" @change="handleTopicChange">
           <el-option
@@ -42,6 +42,12 @@
         </el-select>
       </el-form-item>
     </template>
+
+    <el-form-item v-if="topicMode && target.type === 'TOPIC'" label="专题详情">
+      <span class="topic-detail-tip">
+        卡片点击后打开本专题详情页（封面/图集 + 名称 + 摘要 + 文章列表），无需选择目标专题。
+      </span>
+    </el-form-item>
 
     <template v-if="target.type === 'H5'">
       <el-form-item label="H5 地址">
@@ -90,6 +96,13 @@ export default {
       default: () => ({})
     },
     optional: {
+      type: Boolean,
+      default: false
+    },
+    /**
+     * 专题编辑模式：专题详情的跳转目标恒为本专题，不渲染目标专题选择器
+     */
+    topicMode: {
       type: Boolean,
       default: false
     }
@@ -197,8 +210,10 @@ export default {
         payload.articleId = this.target.articleId
         payload.revisionId = this.target.revisionId
       } else if (this.target.type === 'TOPIC') {
-        payload.topicId = this.target.topicId
-        payload.revisionId = this.target.revisionId
+        if (!this.topicMode) {
+          payload.topicId = this.target.topicId
+          payload.revisionId = this.target.revisionId
+        }
       } else if (this.target.type === 'H5') {
         payload.url = this.target.url
       } else if (this.target.type === 'NATIVE') {
@@ -209,6 +224,9 @@ export default {
     },
     targetTypeLabel(type) {
       const labels = { ARTICLE: '文章详情', TOPIC: '专题详情', H5: 'H5 页面', NATIVE: '原生页面' }
+      if (type === 'TOPIC' && this.topicMode) {
+        return '专题详情（本专题）'
+      }
       return labels[type] || type
     }
   }
@@ -216,6 +234,12 @@ export default {
 </script>
 
 <style scoped>
+.topic-detail-tip {
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .param-row {
   display: flex;
   align-items: center;
